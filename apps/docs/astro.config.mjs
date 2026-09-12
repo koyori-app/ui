@@ -31,6 +31,8 @@ export default defineConfig({
             { label: 'Avatar・AvatarGroup', slug: 'components/avatar' },
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
+            { label: 'Checkbox', slug: 'components/checkbox' },
+            { label: 'DataList', slug: 'components/data-list' },
             { label: 'Dialog・ConfirmDialog', slug: 'components/dialog' },
             { label: 'Dropdown', slug: 'components/dropdown' },
             { label: 'Picker', slug: 'components/picker' },

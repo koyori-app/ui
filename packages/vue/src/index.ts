@@ -16,3 +16,6 @@ export { default as ChevronDownIcon, type ChevronDownIconProps } from './generat
 export { default as EllipsisIcon, type EllipsisIconProps } from './generated/components/EllipsisIcon/EllipsisIcon.vue';
 export { default as CheckIcon, type CheckIconProps } from './generated/components/CheckIcon/CheckIcon.vue';
 export { default as XIcon, type XIconProps } from './generated/components/XIcon/XIcon.vue';
+export { default as DataList, type DataListProps, type DataListColumn } from './generated/components/DataList/DataList.vue';
+export { default as DataListRow, type DataListRowProps } from './generated/components/DataListRow/DataListRow.vue';
+export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.vue';

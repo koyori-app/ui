@@ -1,0 +1,78 @@
+@import '../tokens.css';
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--koyori-space-xs);
+  max-width: 100%;
+  color: var(--koyori-color-text);
+  font: var(--koyori-font-size-sm)/var(--koyori-line-height-sm) var(--koyori-font-family);
+  cursor: pointer;
+}
+.control {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--koyori-control-height-sm);
+  height: var(--koyori-control-height-sm);
+}
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.box {
+  display: inline-flex;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--koyori-color-border-strong);
+  border-radius: calc(var(--koyori-radius-md) / 2);
+  background: var(--koyori-color-surface);
+  pointer-events: none;
+}
+.mark { display: block; width: 100%; height: 100%; overflow: visible; }
+.check {
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+.input:checked + .box {
+  border-color: var(--koyori-color-selection-indicator);
+  background: var(--koyori-color-selection);
+}
+.input:checked + .box .check {
+  stroke-dashoffset: 0;
+  opacity: 1;
+  transition: stroke-dashoffset var(--koyori-motion-base) var(--koyori-ease-out);
+}
+.root:hover .input:not(:disabled) + .box { border-color: var(--koyori-color-text); }
+.input:focus-visible + .box {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+.root[data-disabled='true'] { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
+.input:disabled + .box {
+  border-color: var(--koyori-color-text-disabled);
+  background: var(--koyori-color-surface-disabled);
+}
+.label { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  .input:checked + .box .check { transition: none; }
+}
+@media (forced-colors: active) {
+  .box { forced-color-adjust: none; background: Canvas; border-color: ButtonText; color: CanvasText; }
+  .input:checked + .box { background: Highlight; border-color: Highlight; color: HighlightText; }
+  .root:hover .input:not(:disabled) + .box { border-color: Highlight; }
+  .input:focus-visible + .box { outline-color: Highlight; }
+  .input:disabled + .box { background: Canvas; border-color: GrayText; color: GrayText; }
+}

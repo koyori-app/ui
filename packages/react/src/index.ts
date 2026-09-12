@@ -16,3 +16,6 @@ export { default as ChevronDownIcon, type ChevronDownIconProps } from './generat
 export { default as EllipsisIcon, type EllipsisIconProps } from './generated/components/EllipsisIcon/EllipsisIcon.js';
 export { default as CheckIcon, type CheckIconProps } from './generated/components/CheckIcon/CheckIcon.js';
 export { default as XIcon, type XIconProps } from './generated/components/XIcon/XIcon.js';
+export { default as DataList, type DataListProps, type DataListColumn } from './generated/components/DataList/DataList.js';
+export { default as DataListRow, type DataListRowProps } from './generated/components/DataListRow/DataListRow.js';
+export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.js';

@@ -1,0 +1,89 @@
+---
+title: DataList
+description: グループの開閉、選択表示、自由なセルを持つデータ一覧。
+---
+
+import DataListPreview from '../../../components/DataListPreview.astro';
+
+タスクやビルドなど、複数の項目を列に揃えて表示します。
+1つの DataList を1グループとして並べると、グループ別の件数と折り畳みを持つ一覧になります。
+同じ `columns` を渡すことで、グループ間の列幅を揃えられます。
+
+## プレビュー
+
+先頭列の Checkbox で行を選択・解除できます。複数行を同時に選択でき、チェック時は SVG の線が描かれます。担当者はアバターと名前の Picker で複数選択でき、トリガーの AvatarGroup に反映されます。優先度も個別に変更できます。
+
+<DataListPreview />
+
+## DataList の Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 必須 | ページ内で一意な ID |
+| `label` | `string` | 必須 | 見出しとテーブルの名前 |
+| `columns` | `DataListColumn[]` | 必須 | 列の ID・ラベル・幅。通常は1列以上を渡す |
+| `count` | `number` | 未指定 | 見出しの件数。取得済み件数でもサーバーの総件数でも指定可能 |
+| `collapsible` | `boolean` | `false` | グループを折り畳めるようにする |
+| `defaultOpen` | `boolean` | `true` | 初期状態で開く |
+| `open` | `boolean` | 未指定 | 外側で管理する開閉状態 |
+| `onOpenChange` | `(open: boolean) => void` | — | 開閉操作の通知 |
+| `headingLevel` | `2` 〜 `6` | `3` | 見出しの階層 |
+| `status` | `'ready'` / `'empty'` / `'loading'` / `'error'` | `'ready'` | 一覧の状態 |
+| `message` | `string` | 状態ごとの文言 | 空・読み込み中・エラーの説明を上書き |
+| `onRetry` | `() => void` | — | エラー表示に再試行ボタンを追加 |
+| 子要素 | `DataListRow` | — | 表示する行。Vue は既定スロット |
+
+`collapsible` が無効なら常に開きます。折り畳みは DOM を保持するため、セル内の入力や Picker の選択は残ります。
+`open` を指定した場合は `onOpenChange` でアプリ側の値も更新してください。
+Vue では `:on-open-change="handler"`、React では `onOpenChange={handler}` で渡します。
+
+### DataListColumn
+
+`{ id: string, label: string, width?: string }` を指定します。
+`id` は列内で一意にし、幅を指定しない列が残りの幅を使います。幅は `'8rem'` など CSS の長さです。
+
+## セルと選択状態
+
+DataListRow に `selected` を渡すと選択背景が付きます。行自体はクリック操作を持ちません。
+例では選択した ID の配列を持ち、同じ値から Checkbox の `checked` と DataListRow の `selected` を決めています。
+`onCheckedChange` で ID を追加・削除することで、複数行の選択・解除と行の背景が連動します。
+`label` に対象を含め、`hideLabel` で読み上げ名を保ったままチェックだけを表示します。
+担当者や優先度の Picker の操作では、行の選択は変わりません。
+
+DataListRow の子には、列順にネイティブの `<td>` または `<th scope="row">` を渡します。
+セルの中には Checkbox・Button・Avatar・Picker・入力などを配置できます。
+API の取得・更新、ソート、グループ分け、ページングはアプリ側で扱います。
+
+## 空・読み込み・エラー
+
+- `empty`: 行を表示せず「項目がありません」を表示します。件数は `count={0}` で明示します。
+- `loading`: 渡した行を残し、「読み込み中…」を表示します。追加ページの取得にも使えます。
+- `error`: 渡した行を残し、エラー文言を表示します。`onRetry` があれば再試行できます。
+
+状態の切り替えと二重送信の防止はアプリ側で管理します。再試行を開始したら `status="loading"` に切り替えてください。
+
+## 操作とアクセシビリティ
+
+ネイティブの `table`・列見出し・行見出しを使います。各ボタン・入力へは `Tab` で移動します。
+グループのボタンは `Enter` / `Space` で開閉します。閉じた内容は読み上げと Tab 移動から除かれます。
+外側から閉じたときは、内部にあったフォーカスを開閉ボタンへ戻します。
+
+幅が足りない場合は一覧内を横スクロールできます。スクロール領域もキーボードでフォーカスできます。
+DataList 内の Dropdown・Picker は、Popover API 対応ブラウザーでは最前面のレイヤーに表示し、一覧からはみ出しても切り取られません。
+非対応ブラウザーでは通常のメニュー配置になるため、一覧の枠で切り取られる場合があります。
+
+行と見出しのホバーは薄い背景色だけで表し、背景の移動や拡大は行いません。選択中の行はホバーしても選択色を保持します。
+開閉アイコンの回転は `prefers-reduced-motion` で止めます。
+セル間の矢印移動や Shift キーによる範囲選択は実装していません。
+[W3C の Table パターン](https://www.w3.org/WAI/ARIA/apg/patterns/table/)を参照してください。
+
+## スタイル
+
+```css
+.task-list {
+  --koyori-data-list-min-width: 42rem; /* 既定: 36rem */
+  --koyori-data-list-cell-padding: 2px 10px; /* 既定のトークンではこの余白 */
+}
+```
+
+既存の文字・色・余白・フォーカス・モーションの共通トークンも使えます。
