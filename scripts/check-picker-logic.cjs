@@ -31,6 +31,8 @@ assert.deepEqual(rows.map(row => [row.sourceIndex, row.selected, row.above, row.
 items[0].label = 'Design';
 assert.deepEqual(pickerOptions(items, ['a'], 'front').map(row => row.value), ['c'], 'in-place label changes are not cached');
 assert.equal(pickerOptions(items, ['b'], '')[1].disabled, true);
+const withImages = [{ value: 'a', label: '山田 太郎', src: 'photo.svg' }, { value: 'b', label: '佐藤 花子' }];
+assert.deepEqual(pickerOptions(withImages, [], '').map(row => row.src), ['photo.svg', undefined], 'rows keep the item image');
 
 function readsFor(size) {
   let reads = 0;

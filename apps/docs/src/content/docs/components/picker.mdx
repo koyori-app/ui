@@ -32,7 +32,8 @@ import PickerPreview from '../../../components/PickerPreview.astro';
 | 名前 | 型 | 既定値・説明 |
 | --- | --- | --- |
 | `label` | `string` | 必須。選ぶ対象の名前と未選択時の表示 |
-| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean }[]`。`value` は一意にする |
+| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean, src?: string }[]`。`value` は一意にする |
+| `avatars` | `boolean` | `false`。選択肢の先頭に 24px のアバターを表示する。`src` がなければイニシャル |
 | `selectionMode` | `'single' \| 'multiple'` | `single` |
 | `searchable` | `boolean` | `true`。`false` なら検索欄を表示せず全候補から選ぶ |
 | `selectedValues` | `string[]` | 外側で管理する選択値 |

@@ -22,8 +22,8 @@ import AssigneePickerPreview from '../../../components/AssigneePickerPreview.ast
 4. 選択値から人の一覧を絞り込み、そのまま AvatarGroup の `items` に渡します。`max` で表示する人数を制限します。
 5. AvatarGroup を Picker の `trigger`（Vue: `#trigger` スロット）に渡し、選択中の人をトリガーに表示します。
 
-Picker は表示用の文言を持ちますが、画像は持ちません。
-アバターに必要な `name` と `src` は、選択値から元の一覧を引いて取り出します。
+一覧の各行にもアバターを出す場合は、`items` に `src` を渡して Picker に `avatars` を付けます。
+トリガーの AvatarGroup に必要な `name` と `src` は、選択値から元の一覧を引いて取り出します。
 
 ## 気をつけること
 

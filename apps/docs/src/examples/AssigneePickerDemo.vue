@@ -12,7 +12,7 @@ const members = [
   { id: 'suzuki', name: '鈴木 一郎' },
   { id: 'takahashi', name: '高橋 次郎' },
 ];
-const items = members.map((member) => ({ value: member.id, label: member.name }));
+const items = members.map((member) => ({ value: member.id, label: member.name, src: member.src }));
 
 const assignees = ref<string[]>(['yamada']);
 const selected = computed(() => members.filter((member) => assignees.value.includes(member.id)));
@@ -20,7 +20,7 @@ const selected = computed(() => members.filter((member) => assignees.value.inclu
 
 <template>
   <div style="display: grid; gap: 12px; justify-items: start">
-    <Picker label="担当者" :items="items" selection-mode="multiple" search-placeholder="名前で検索"
+    <Picker label="担当者" :items="items" selection-mode="multiple" search-placeholder="名前で検索" avatars
       :selected-values="assignees" :on-selection-change="(values) => assignees = values">
       <template #trigger>
         <AvatarGroup v-if="selected.length > 0" label="選択中の担当者" :items="selected" :max="3" :size="24" />

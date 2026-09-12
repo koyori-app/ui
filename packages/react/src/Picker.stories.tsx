@@ -137,3 +137,18 @@ export const UpdatingParent: Story = {
   args: { defaultOpen: true },
   render: args => <UpdatingParentExample {...args} />,
 };
+
+const memberPhoto = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><rect width="2" height="2" fill="%23c4b5df"/><circle cx="1" cy="0.75" r="0.45" fill="%23faf8f5"/><circle cx="1" cy="2.1" r="0.85" fill="%23faf8f5"/></svg>';
+
+export const WithAvatars: Story = {
+  args: {
+    label: '担当者', avatars: true, selectionMode: 'multiple', defaultOpen: true, defaultSelectedValues: ['yamada'],
+    items: [
+      { value: 'yamada', label: '山田 太郎', src: memberPhoto },
+      { value: 'sato', label: '佐藤 花子' },
+      { value: 'yupix', label: 'yupix', src: memberPhoto },
+      { value: 'suzuki', label: '鈴木 一郎' },
+      { value: 'takahashi', label: '高橋 次郎', disabled: true },
+    ],
+  },
+};

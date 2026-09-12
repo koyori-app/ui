@@ -90,6 +90,8 @@ Storybook の Actions で実行通知と Tab 移動を確認できます。
 Picker は単一・複数選択用です。`label` と `items: { value, label, disabled? }[]` を渡します。
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
 単一選択は選ぶと閉じ、`selectionMode="multiple"` は選択・解除しても開いたままです。
+`avatars` を付けると、選択肢の先頭に 24px の Avatar を出します。画像は `items` の `src`、なければイニシャルです。
+行の上下の余白を詰めて高さは 36px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
 トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。
 アバターなどを置いても、開閉・キーボード操作・読み上げ名（`label` と選択中のラベル）はそのままです。
 中身は `button` の内容として正しい要素にしてください（AvatarGroup のルートは `span` です）。

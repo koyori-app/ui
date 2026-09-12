@@ -18,8 +18,8 @@ export default function AssigneePickerDemo() {
 
   return (
     <div style={{ display: 'grid', gap: 12, justifyItems: 'start' }}>
-      <Picker label="担当者" selectionMode="multiple" searchPlaceholder="名前で検索"
-        items={members.map((member) => ({ value: member.id, label: member.name }))}
+      <Picker label="担当者" selectionMode="multiple" searchPlaceholder="名前で検索" avatars
+        items={members.map((member) => ({ value: member.id, label: member.name, src: member.src }))}
         selectedValues={assignees} onSelectionChange={setAssignees}
         trigger={selected.length > 0
           ? <AvatarGroup label="選択中の担当者" items={selected} max={3} size={24} />
