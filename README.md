@@ -61,6 +61,15 @@ UI の開発では [アクセシビリティの指針](AGENT.md) を参照して
 ButtonGroup は子の Button をつなげ、隣り合う枠線を1本に重ねて外側の角だけを丸めます。
 `label` を `role="group"` の `aria-label` に使います。グループ内では押下時の縮小を止めます。
 
+Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
+`src` がない場合と読み込みに失敗した場合はイニシャルを表示し、読み上げは常に `name` になります。
+イニシャルは空白区切りの語の先頭を2つまで使います（「山田 太郎」→「山太」、「山田太郎」→「山」）。
+直径と文字サイズの計算・イニシャルの算出は `components/Avatar/avatar.ts` にまとめ、AvatarGroup と共有します。
+
+AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を超えた分を `+N` にまとめます。
+`label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
+重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
+
 Field は `id`・`label`・`description`・`error`・`required` を受け取り、中の Input（1行）・Textarea（複数行）・Picker（選択）に渡します。Field 内には対象を1つだけ置きます。
 `id` は入力欄に付き、ラベルの `for` と説明・エラーの `aria-describedby` に使います。エラーがあると `aria-invalid="true"` を付けます。
 エラー領域は常設の `aria-live="polite"` で、後から出たエラーも通知します。`requiredText` で「必須」の表示を差し替えられます。
@@ -144,7 +153,7 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Button・ButtonGroup・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Avatar・Button・ButtonGroup・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 
 ```sh

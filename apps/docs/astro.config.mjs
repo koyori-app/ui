@@ -27,6 +27,7 @@ export default defineConfig({
         {
           label: 'コンポーネント',
           items: [
+            { label: 'Avatar・AvatarGroup', slug: 'components/avatar' },
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
             { label: 'Dropdown', slug: 'components/dropdown' },
