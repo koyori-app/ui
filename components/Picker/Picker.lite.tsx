@@ -264,13 +264,13 @@ export default function Picker(props: PickerProps) {
             {/* Mitosis はスロットの既定値に式だけを置くと文字列にしてしまうため、要素で包む。 */}
             <Slot name="trigger"><span>{state.view.label}</span></Slot>
           </span>
-          {/* Field 内の名前は id 参照で作る。トリガーを差し替えても選択中のラベルを名前に残す。 */}
-          <span class={styles.status} id={state.id ? `${state.id}-value` : undefined}>{state.view.label}</span>
           <Show when={props.icon !== null}>
             <span class={controls.icon} aria-hidden="true"><Slot name="icon"><ChevronDownIcon /></Slot></span>
           </Show>
         </span>
       </button>
+      {/* Field 内の名前は id 参照で作る。button の外に置き、トリガーの文字列を二重にしない。 */}
+      <span class={styles.status} id={state.id ? `${state.id}-value` : undefined} aria-hidden="true">{state.view.label}</span>
       <div ref={panelRef!} id={state.id ? `${state.id}-panel` : undefined} class={menu.panel}
         role="group" aria-label={props.label} hidden={!state.open || props.disabled}
         onKeyDown={(event) => state.navigate(event)}
