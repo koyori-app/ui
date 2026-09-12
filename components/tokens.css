@@ -2,7 +2,9 @@
 :root {
   --koyori-font-family: system-ui, sans-serif;
   --koyori-font-size-sm: 0.875rem;
+  --koyori-font-size-md: 1rem;
   --koyori-line-height-sm: calc(20 / 14);
+  --koyori-line-height-md: 1.5;
 
   /* 入れ子の外側は、利用箇所で内側の角丸 + padding を計算する。 */
   --koyori-radius-md: 8px;
@@ -23,6 +25,7 @@
   --koyori-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --koyori-ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
 
+  --koyori-dialog-width: 480px;
   --koyori-menu-width: 200px;
   --koyori-menu-max-height: 360px;
   --koyori-menu-gap: 8px;

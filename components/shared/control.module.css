@@ -62,6 +62,12 @@
   --button-border: var(--koyori-color-border);
 }
 
+.button[data-variant='danger'] {
+  --button-background: var(--koyori-color-danger);
+  --button-hover-background: var(--koyori-color-danger-hover);
+  --button-color: var(--koyori-color-on-danger);
+}
+
 .button[data-variant='ghost'] {
   --button-background: transparent;
   --button-hover-background: var(--koyori-color-surface-hover);

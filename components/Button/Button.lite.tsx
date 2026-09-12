@@ -4,7 +4,7 @@ import styles from '../shared/control.module.css';
 interface ButtonOptions {
   /** React: rendered icon. Vue: use the icon slot. */
   icon?: any;
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger';
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   onClick?: () => void;

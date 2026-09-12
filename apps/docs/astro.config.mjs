@@ -30,6 +30,7 @@ export default defineConfig({
             { label: 'Avatar・AvatarGroup', slug: 'components/avatar' },
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
+            { label: 'Dialog・ConfirmDialog', slug: 'components/dialog' },
             { label: 'Dropdown', slug: 'components/dropdown' },
             { label: 'Picker', slug: 'components/picker' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },

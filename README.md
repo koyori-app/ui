@@ -49,7 +49,8 @@ Dropdown のパネルは `calc(var(--koyori-radius-md) + var(--koyori-space-xs))
 }
 ```
 
-Button は `variant="primary" | "secondary" | "tertiary" | "ghost"` で切り替えます（既定値: `primary`）。
+Button は `variant="primary" | "secondary" | "tertiary" | "ghost" | "danger"` で切り替えます（既定値: `primary`）。
+`danger` は削除など取り消せない操作に使い、ラベルにも結果が分かる言葉を入れてください。
 各種類の通常・無効状態の Story と、Docs・アクセシビリティ確認用のアドオンを用意しています。
 共通 CSS で hover 時の色の遷移と押下時の縮小を実装し、`prefers-reduced-motion` に対応しています。
 押下時は内側の背景・ラベルだけを縮め、外側の寸法・クリック領域・フォーカス枠を維持します。
@@ -69,6 +70,15 @@ Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（�
 AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を超えた分を `+N` にまとめます。
 `label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
 重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
+
+Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダルです。`open`・`title`・`description`・`onClose` を受け取り、
+本文は既定スロット、操作ボタンは `actions`（Vue は `#actions` スロット）に置きます。表示状態はアプリ側で持ち、`onClose` で false に戻します。
+フォーカスの閉じ込め・背景の操作停止・Escape・フォーカス復帰はブラウザーに任せ、`open` 属性はバインドしません（非モーダルになるため）。
+背景クリックは pointerdown の対象が dialog 自身のときだけ閉じ、開いている間は `body:has(dialog:modal)` で背景のスクロールを止めます。
+幅は `--koyori-dialog-width`、覆いの色は `--koyori-color-backdrop`、角丸は内側のボタンの角丸 + `--koyori-space-xl` です。
+
+ConfirmDialog は Dialog と Button を組み合わせた二択の確認です。`title`・`message`・`confirmLabel` は必須で、
+`destructive` で実行ボタンを danger にします。キャンセルを先頭に置くため、初期フォーカスは常に取り消し側です。
 
 Field は `id`・`label`・`description`・`error`・`required` を受け取り、中の Input（1行）・Textarea（複数行）・Picker（選択）に渡します。Field 内には対象を1つだけ置きます。
 `id` は入力欄に付き、ラベルの `for` と説明・エラーの `aria-describedby` に使います。エラーがあると `aria-invalid="true"` を付けます。
@@ -151,6 +161,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 
 ブラウザー検証は Storybook のビルド後に `node scripts/check-dropdown.cjs` で実行します。
 `node scripts/check-picker-logic.cjs` はブラウザーなしで選択計算を検証します。
+`node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
@@ -158,7 +169,7 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Avatar・Button・ButtonGroup・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Avatar・Button・ButtonGroup・Dialog・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
