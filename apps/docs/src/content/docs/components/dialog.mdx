@@ -1,0 +1,107 @@
+---
+title: Dialog・ConfirmDialog
+description: 操作を中断して確認・入力を求めるモーダルダイアログ。
+---
+
+import DialogPreview from '../../../components/DialogPreview.astro';
+
+Dialog は、いまの操作を中断して入力や確認を求めるモーダルです。
+ConfirmDialog は「削除しますか？」のような二択の確認に絞った Dialog です。
+
+ネイティブの `dialog` 要素を使い、フォーカスの閉じ込め・背景の操作停止・Escape での終了・
+閉じたあとのフォーカス復帰をブラウザーに任せています。
+
+## プレビュー
+
+「タスクを編集」は入力付きの Dialog、「タスクを削除」は ConfirmDialog です。
+
+<DialogPreview />
+
+## 使い方
+
+表示状態はアプリ側で持ちます。`open` に渡し、`onClose`（ConfirmDialog は `onCancel`）で false に戻してください。
+コンポーネントは自分で閉じず、閉じてよいタイミングを知らせるだけです。開くボタンはアプリ側に置きます。
+
+```tsx
+// React
+const [open, setOpen] = useState(false);
+
+<Button label="タスクを編集" onClick={() => setOpen(true)} />
+<Dialog open={open} title="タスクを編集" onClose={() => setOpen(false)}
+  actions={<>
+    <Button label="キャンセル" variant="tertiary" onClick={() => setOpen(false)} />
+    <Button label="保存" onClick={save} />
+  </>}>
+  <Field id="task-title" label="タイトル"><Input value={title} onValueChange={setTitle} /></Field>
+</Dialog>
+```
+
+```vue
+<!-- Vue -->
+<Dialog :open="open" title="タスクを編集" :on-close="() => open = false">
+  <Field id="task-title" label="タイトル"><Input :value="title" :on-value-change="(v) => title = v" /></Field>
+  <template #actions>
+    <Button label="キャンセル" variant="tertiary" :on-click="() => open = false" />
+    <Button label="保存" :on-click="save" />
+  </template>
+</Dialog>
+```
+
+## Dialog の Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `open` | `boolean` | 必須 | 表示状態。アプリ側で管理する |
+| `title` | `string` | 必須 | 見出し。ダイアログの名前として読み上げる |
+| `description` | `string` | — | 見出しの下の補足。説明として関連付ける |
+| `onClose` | `() => void` | — | Escape・背景クリックで呼ぶ |
+| `plain` | `boolean` | `false` | 見出しと説明を読み上げにだけ残し、内側の余白を外して本文を全面にする |
+| 子要素 | — | — | 本文。Vue は既定スロット |
+| `actions` | React の要素 | — | 右下に並べる操作ボタン。Vue は `#actions` スロット |
+
+`plain` は、中身が自前でレイアウトを持つ場合に使います。`title` は画面に出なくなりますが、
+ダイアログの名前として必要なので引き続き必須です。中身はダイアログいっぱいに広げてください。
+余白が残ると、そこを押したときに背景の扱いになって閉じます。`plain` では `actions` を使いません。
+組み方は [2 列のダイアログ](../../blocks/two-column-dialog/) にあります。
+
+## ConfirmDialog の Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `open` | `boolean` | 必須 | 表示状態 |
+| `title` | `string` | 必須 | 「タスクを削除しますか？」のような問いかけ |
+| `message` | `string` | 必須 | 結果を伝える本文。説明として関連付ける |
+| `confirmLabel` | `string` | 必須 | 実行ボタンのラベル。「削除する」のように結果が分かる言葉にする |
+| `cancelLabel` | `string` | `キャンセル` | 取り消しボタンのラベル |
+| `destructive` | `boolean` | `false` | 実行ボタンを danger の色にする |
+| `onConfirm` | `() => void` | — | 実行ボタンを押したときに呼ぶ |
+| `onCancel` | `() => void` | — | 取り消しボタン・Escape・背景クリックで呼ぶ |
+
+## キーボード操作
+
+| キー | 動作 |
+| --- | --- |
+| `Tab` / `Shift + Tab` | ダイアログ内だけを移動する。背景の要素には移らない |
+| `Escape` | 閉じて `onClose`（`onCancel`）を呼ぶ。中でメニューが開いていれば、そのメニューだけが閉じる |
+| `Enter` / `Space` | フォーカス中のボタンを実行する |
+
+背景をクリックしても閉じます。開いている間は背景をスクロールできません。
+
+## アクセシビリティ
+
+- 開くと最初のフォーカス可能な要素にフォーカスが移り、閉じると開く前の要素に戻ります。
+- ConfirmDialog は取り消しボタンを先に置くので、最初のフォーカスは「キャンセル」です。取り消せない操作を誤って実行しにくくしています。
+- `title` は見出しとして読み上げ、`description`（ConfirmDialog は `message`）は説明として関連付けます。
+- 破壊的な操作は色だけで伝えません。`confirmLabel` に「削除する」のように結果が分かる言葉を必ず入れてください。
+- 閉じるための × ボタンは持ちません。Escape・背景クリック・操作ボタンで閉じます。
+  独自に閉じるボタンを置く場合は、`onClose` と同じ処理を呼ぶ Button を本文の中に置いてください。
+  記号だけのラベル（`×` など）は避け、「閉じる」のように読んで分かる言葉にします。
+  アイコンだけにする場合は `XIcon` を使い、Button の `ariaLabel` で名前を付けてください。
+  Storybook の TwoColumn で、右上に置いた例を確認できます。
+- 開閉でスクロールバーが消えて画面がずれる場合は、アプリ側で `html { scrollbar-gutter: stable; }` を指定してください。
+
+## スタイル
+
+幅は `--koyori-dialog-width`（480px）、背景の覆いは `--koyori-color-backdrop` です。
+角丸は内側のボタンの角丸に余白を足した値で、`--koyori-radius-md` や `--koyori-space-xl` を変えると追従します。
+開くときだけ拡大と淡い表示のアニメーションがあり、「動きを減らす」設定では止まります。

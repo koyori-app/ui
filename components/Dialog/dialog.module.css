@@ -1,0 +1,122 @@
+@import '../tokens.css';
+
+/* display は上書きしない。閉じた dialog を隠すブラウザーの既定を壊さないため。 */
+.root {
+  box-sizing: border-box;
+  width: var(--koyori-dialog-width);
+  max-width: calc(100% - 2 * var(--koyori-space-xl));
+  max-height: calc(100% - 2 * var(--koyori-space-xl));
+  /* 背景クリックの判定に使うため、余白は内側の panel が持つ。 */
+  padding: 0;
+  border: 1px solid var(--koyori-color-border);
+  /* 入れ子の角丸は、内側のボタンの角丸 + panel の余白。 */
+  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-xl));
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  box-shadow: var(--koyori-shadow-panel);
+  transition: opacity var(--koyori-motion-base) var(--koyori-ease-out),
+    transform var(--koyori-motion-base) var(--koyori-ease-pop);
+}
+
+/* ::backdrop はトップレイヤーにあり、DOM の祖先からトークンを継承しないブラウザーがある。 */
+.root::backdrop {
+  background: var(--koyori-color-backdrop, #38344080);
+  transition: opacity var(--koyori-motion-base) var(--koyori-ease-out);
+}
+
+@starting-style {
+  .root[open] {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  .root[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.root:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--koyori-space-xl);
+  padding: var(--koyori-space-xl);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--koyori-space-sm);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--koyori-font-size-md);
+  line-height: var(--koyori-line-height-md);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  margin: 0;
+  color: var(--koyori-color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--koyori-space-md);
+}
+
+/* 本文・操作ボタンがないときに、空の要素で余白を作らない。 */
+.body:empty, .actions:empty {
+  display: none;
+}
+
+/* plain: 中身が自前でレイアウトを持つとき用。見出しは読み上げにだけ残す。 */
+.root[data-plain='true'] {
+  height: var(--koyori-dialog-height);
+}
+
+/* 余白のない全面表示。背景クリックの判定のため、panel が dialog を埋める。 */
+.root[data-plain='true'] .panel {
+  height: 100%;
+  gap: 0;
+  padding: 0;
+}
+
+.root[data-plain='true'] .header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.root[data-plain='true'] .body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 開いている間は背景をスクロールさせない。閉じれば自動で戻る。 */
+:global(body:has(dialog:modal)) {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root, .root::backdrop {
+    transition: none;
+  }
+}

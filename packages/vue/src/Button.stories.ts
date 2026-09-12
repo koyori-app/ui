@@ -8,7 +8,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'radio',
-      options: ['primary', 'secondary', 'tertiary', 'ghost'],
+      options: ['primary', 'secondary', 'tertiary', 'ghost', 'danger'],
     },
   },
   render: (args) => ({
@@ -30,6 +30,8 @@ export const PrimaryDisabled: Story = { args: { disabled: true } };
 export const SecondaryDisabled: Story = { args: { variant: 'secondary', disabled: true } };
 export const TertiaryDisabled: Story = { args: { variant: 'tertiary', disabled: true } };
 export const GhostDisabled: Story = { args: { variant: 'ghost', disabled: true } };
+export const Danger: Story = { args: { label: '削除する', variant: 'danger' } };
+export const DangerDisabled: Story = { args: { label: '削除する', variant: 'danger', disabled: true } };
 
 const iconTemplate = '<Button v-bind="args"><template #icon><EllipsisIcon :size="16" /></template></Button>';
 
