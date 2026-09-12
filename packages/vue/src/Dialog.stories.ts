@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { ref } from 'vue';
-import { Button, Dialog, Field, Input, Picker } from './index';
+import { Button, Dialog, Field, Input, Picker, XIcon } from './index';
 
 /* showModal() は開いた瞬間にページ全体を inert にするため、Docs では iframe で描画する。 */
 const meta = {
@@ -96,7 +96,9 @@ export const TwoColumn: Story = {
           </div>
           <aside class="story-form__side">
             <!-- Dialog は閉じるボタンを持たないため、アプリ側で置く。 -->
-            <div class="story-form__side-head"><Button label="閉じる" variant="ghost" /></div>
+            <div class="story-form__side-head">
+              <Button ariaLabel="閉じる" variant="ghost"><template #icon><XIcon /></template></Button>
+            </div>
             <Field id="story-priority" label="優先度">
               <Picker label="中" :items="priorities" :searchable="false" />
             </Field>

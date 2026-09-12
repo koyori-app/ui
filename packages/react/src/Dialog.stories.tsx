@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { Button, Dialog, Field, Input, Picker, type DialogProps } from './index';
+import { Button, Dialog, Field, Input, Picker, XIcon, type DialogProps } from './index';
 
 /* showModal() は開いた瞬間にページ全体を inert にするため、Docs では iframe で描画する。 */
 const meta = {
@@ -88,7 +88,9 @@ export const TwoColumn: Story = {
           </div>
           <aside className="story-form__side">
             {/* Dialog は閉じるボタンを持たないため、アプリ側で置く。 */}
-            <div className="story-form__side-head"><Button label="閉じる" variant="ghost" /></div>
+            <div className="story-form__side-head">
+              <Button ariaLabel="閉じる" variant="ghost" icon={<XIcon />} />
+            </div>
             <Field id="story-priority" label="優先度">
               <Picker label="中" searchable={false} items={[
                 { value: 'high', label: '高' },

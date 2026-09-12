@@ -96,7 +96,7 @@ const [open, setOpen] = useState(false);
 - 閉じるための × ボタンは持ちません。Escape・背景クリック・操作ボタンで閉じます。
   独自に閉じるボタンを置く場合は、`onClose` と同じ処理を呼ぶ Button を本文の中に置いてください。
   記号だけのラベル（`×` など）は避け、「閉じる」のように読んで分かる言葉にします。
-  アイコンだけにする場合は、Button の `ariaLabel` で名前を付けてください。
+  アイコンだけにする場合は `XIcon` を使い、Button の `ariaLabel` で名前を付けてください。
   Storybook の TwoColumn で、右上に置いた例を確認できます。
 - 開閉でスクロールバーが消えて画面がずれる場合は、アプリ側で `html { scrollbar-gutter: stable; }` を指定してください。
 

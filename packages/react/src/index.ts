@@ -12,3 +12,4 @@ export { default as Picker, type PickerProps, type PickerItem } from './generate
 export { default as ChevronDownIcon, type ChevronDownIconProps } from './generated/components/ChevronDownIcon/ChevronDownIcon.js';
 export { default as EllipsisIcon, type EllipsisIconProps } from './generated/components/EllipsisIcon/EllipsisIcon.js';
 export { default as CheckIcon, type CheckIconProps } from './generated/components/CheckIcon/CheckIcon.js';
+export { default as XIcon, type XIconProps } from './generated/components/XIcon/XIcon.js';

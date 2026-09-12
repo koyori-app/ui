@@ -151,7 +151,8 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 ブラウザー検証は Storybook のビルド後に `node scripts/check-picker.cjs` で実行します（Dropdown と同じ実行環境）。
 
 アイコンは [Lucide](https://lucide.dev/) の必要な SVG を Mitosis の共通コンポーネントとして取り込みます。
-`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
+`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
+`XIcon` はダイアログの閉じるボタンなどに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
 `size` で縦横のサイズを指定できます（既定値: 16px）。色は親の `color` を引き継ぎます。
 装飾用として読み上げから除外するため、アイコンだけのボタンにはボタン側で `aria-label` を付けてください。
 アイコンを追加するときは出典・コミット・ライセンスを `THIRD_PARTY_NOTICES.md` に記録します。

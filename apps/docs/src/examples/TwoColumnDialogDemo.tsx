@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dialog, Field, Input, Picker, Textarea } from '@koyori-app/ui-react';
+import { Button, Dialog, Field, Input, Picker, Textarea, XIcon } from '@koyori-app/ui-react';
 import '@koyori-app/ui-react/style.css';
 
 /* 2 列のレイアウトはアプリ側の CSS で組む。ダイアログの幅と高さはトークンで指定する。 */
@@ -62,7 +62,7 @@ export default function TwoColumnDialogDemo() {
 
           <aside className="task-form__side">
             <div className="task-form__side-head">
-              <Button label="閉じる" variant="ghost" onClick={close} />
+              <Button ariaLabel="閉じる" variant="ghost" icon={<XIcon />} onClick={close} />
             </div>
             <div className="task-form__props">
               <Field id="task-priority" label="優先度">

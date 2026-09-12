@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Button, Dialog, Field, Input, Picker, Textarea } from '@koyori-app/ui-vue';
+import { Button, Dialog, Field, Input, Picker, Textarea, XIcon } from '@koyori-app/ui-vue';
 import '@koyori-app/ui-vue/style.css';
 
 const priorities = [
@@ -45,7 +45,9 @@ function submit() {
 
         <aside class="task-form__side">
           <div class="task-form__side-head">
-            <Button label="閉じる" variant="ghost" :on-click="close" />
+            <Button ariaLabel="閉じる" variant="ghost" :on-click="close">
+              <template #icon><XIcon /></template>
+            </Button>
           </div>
           <div class="task-form__props">
             <Field id="task-priority" label="優先度">
