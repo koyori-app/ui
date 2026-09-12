@@ -76,6 +76,8 @@ Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダ
 フォーカスの閉じ込め・背景の操作停止・Escape・フォーカス復帰はブラウザーに任せ、`open` 属性はバインドしません（非モーダルになるため）。
 背景クリックは pointerdown の対象が dialog 自身のときだけ閉じ、開いている間は `body:has(dialog:modal)` で背景のスクロールを止めます。
 幅は `--koyori-dialog-width`、覆いの色は `--koyori-color-backdrop`、角丸は内側のボタンの角丸 + `--koyori-space-xl` です。
+中身が自前でレイアウトを持つ場合は `plain` を使います。見出しと説明は読み上げにだけ残し、内側の余白を外して本文が全面に広がります。
+幅と高さ（`--koyori-dialog-height`、既定 `auto`）はダイアログを囲む要素で指定します。2 列の組み方は Web ドキュメントのブロックに載せています。
 
 ConfirmDialog は Dialog と Button を組み合わせた二択の確認です。`title`・`message`・`confirmLabel` は必須で、
 `destructive` で実行ボタンを danger にします。キャンセルを先頭に置くため、初期フォーカスは常に取り消し側です。

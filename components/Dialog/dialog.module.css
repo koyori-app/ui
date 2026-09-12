@@ -82,6 +82,34 @@
   display: none;
 }
 
+/* plain: 中身が自前でレイアウトを持つとき用。見出しは読み上げにだけ残す。 */
+.root[data-plain='true'] {
+  height: var(--koyori-dialog-height);
+}
+
+/* 余白のない全面表示。背景クリックの判定のため、panel が dialog を埋める。 */
+.root[data-plain='true'] .panel {
+  height: 100%;
+  gap: 0;
+  padding: 0;
+}
+
+.root[data-plain='true'] .header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.root[data-plain='true'] .body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 /* 開いている間は背景をスクロールさせない。閉じれば自動で戻る。 */
 :global(body:has(dialog:modal)) {
   overflow: hidden;

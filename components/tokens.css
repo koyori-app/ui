@@ -26,6 +26,8 @@
   --koyori-ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
 
   --koyori-dialog-width: 480px;
+  /* plain のときだけ効く。max-height の範囲で高さを固定する。 */
+  --koyori-dialog-height: auto;
   --koyori-menu-width: 200px;
   --koyori-menu-max-height: 360px;
   --koyori-menu-gap: 8px;

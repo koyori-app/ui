@@ -66,6 +66,39 @@ export const LongContent: Story = {
     </Dialog>
   ),
 };
+/* plain と 2 列レイアウト。CSS はアプリ側で組む前提なので story 内に置く。 */
+const twoColumnCss = `
+.story-form { --koyori-dialog-width: 880px; --koyori-dialog-height: min(560px, 90vh); }
+.story-form__columns { display: flex; flex: 1; min-height: 0; }
+.story-form__main { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: 16px; gap: 12px; }
+.story-form__side { display: flex; flex-direction: column; gap: 12px; width: 260px; flex-shrink: 0; padding: 16px; border-left: 1px solid var(--koyori-color-border); background: var(--koyori-color-accent-subtle); }
+`;
+
+export const TwoColumn: Story = {
+  args: { plain: true, title: '新規タスク', description: 'KOY にタスクを追加します' },
+  render: (args) => (
+    <div className="story-form">
+      <style>{twoColumnCss}</style>
+      <Dialog {...args}>
+        <div className="story-form__columns">
+          <div className="story-form__main">
+            <Field id="story-title" label="タイトル"><Input placeholder="タイトルを入力" /></Field>
+            <Button label="作成" />
+          </div>
+          <aside className="story-form__side">
+            <Field id="story-priority" label="優先度">
+              <Picker label="中" searchable={false} items={[
+                { value: 'high', label: '高' },
+                { value: 'normal', label: '中' },
+              ]} />
+            </Field>
+            <Field id="story-due" label="期限"><Input placeholder="2026-09-30" /></Field>
+          </aside>
+        </div>
+      </Dialog>
+    </div>
+  ),
+};
 export const NoActions: Story = {
   render: (args) => <Dialog {...args} title="保存しました" description="変更はすべて反映されています。" />,
 };

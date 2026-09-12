@@ -12,6 +12,11 @@ export interface DialogProps {
    * The argument is unused; it exists because Mitosis wraps callbacks passed between components.
    */
   onClose?: (event?: unknown) => void;
+  /**
+   * Hides the heading and description visually, removes the inner padding and
+   * lets the content fill the dialog. Use it when the content brings its own layout.
+   */
+  plain?: boolean;
   children?: any;
   /** React: rendered buttons. Vue: use the actions slot. */
   actions?: any;
@@ -51,6 +56,7 @@ export default function Dialog(props: DialogProps) {
 
   return (
     <dialog ref={dialogRef!} class={styles.root}
+      data-plain={props.plain ? 'true' : undefined}
       aria-labelledby={state.id ? `${state.id}-title` : undefined}
       aria-describedby={props.description && state.id ? `${state.id}-description` : undefined}
       onPointerDown={(event) => state.dismiss(event)}

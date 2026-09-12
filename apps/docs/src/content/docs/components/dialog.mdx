@@ -55,8 +55,14 @@ const [open, setOpen] = useState(false);
 | `title` | `string` | 必須 | 見出し。ダイアログの名前として読み上げる |
 | `description` | `string` | — | 見出しの下の補足。説明として関連付ける |
 | `onClose` | `() => void` | — | Escape・背景クリックで呼ぶ |
+| `plain` | `boolean` | `false` | 見出しと説明を読み上げにだけ残し、内側の余白を外して本文を全面にする |
 | 子要素 | — | — | 本文。Vue は既定スロット |
 | `actions` | React の要素 | — | 右下に並べる操作ボタン。Vue は `#actions` スロット |
+
+`plain` は、中身が自前でレイアウトを持つ場合に使います。`title` は画面に出なくなりますが、
+ダイアログの名前として必要なので引き続き必須です。中身はダイアログいっぱいに広げてください。
+余白が残ると、そこを押したときに背景の扱いになって閉じます。`plain` では `actions` を使いません。
+組み方は [2 列のダイアログ](../../blocks/two-column-dialog/) にあります。
 
 ## ConfirmDialog の Props
 

@@ -1,0 +1,40 @@
+---
+title: 2 列のダイアログ
+description: 左に本文、右にプロパティを置く大きなダイアログの組み方。
+---
+
+import TwoColumnDialogPreview from '../../../components/TwoColumnDialogPreview.astro';
+
+タスク作成のように、本文を広く書きながら細かい設定も並べたい画面の組み方です。
+Dialog に `plain` を付け、2 列のレイアウトはアプリ側の CSS で作ります。
+
+## プレビュー
+
+「タスクを作成」で開きます。狭い画面では 1 列に積み重なります。
+
+<TwoColumnDialogPreview />
+
+## 組み立て方
+
+1. Dialog に `plain` を付けます。見出しと説明は読み上げにだけ残り、内側の余白がなくなって本文が全面に広がります。
+2. ダイアログを囲む要素で `--koyori-dialog-width` と `--koyori-dialog-height` を指定します。例では 1040px × `min(720px, 90vh)` です。
+3. 本文の直下を横並びの 2 列にします。左は本文、右はプロパティです。
+4. 列ごとにスクロールさせる場合は、その要素に `min-height: 0` と `overflow-y: auto` を付けます。付けないとダイアログ全体がスクロールします。
+5. 狭い画面では `--koyori-dialog-height: auto` に戻し、列を縦積みにします。
+
+```css
+.task-form { --koyori-dialog-width: 1040px; --koyori-dialog-height: min(720px, 90vh); }
+.task-form__columns { display: flex; flex: 1; min-height: 0; }
+.task-form__main { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.task-form__body { flex: 1; min-height: 0; overflow-y: auto; }
+.task-form__side { width: 288px; border-left: 1px solid var(--koyori-color-border); background: var(--koyori-color-accent-subtle); }
+```
+
+## 気をつけること
+
+- `plain` でも `title` は必須です。画面には出ませんが、ダイアログの名前として読み上げます。
+  画面上の大きなタイトル入力には、別に `aria-label` を付けてください。
+- 中身はダイアログいっぱいに広げてください。余白が残ると、そこを押したときに背景の扱いになって閉じます。
+- Tab の順番は書いた順です。閉じるボタンを右上に置くと、左列のあとに読まれます。Escape でも閉じられるため、この順番で問題ありません。
+- 操作ボタンは本文の中に置きます。`plain` では `actions` を使いません。
+- 右列で Picker や Dropdown を開くと、メニューがダイアログの端で切れることがあります。列をスクロールさせる場合は特に起きやすいので、選択肢が多い項目は上寄りに置いてください。

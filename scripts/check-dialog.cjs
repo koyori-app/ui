@@ -46,6 +46,9 @@ assert.match(react, /addEventListener\(\s*["']close["']/, 'React 版が close �
 assert.match(react, /onPointerDown=\{/, 'React 版が背景クリックを受ける');
 assert.doesNotMatch(react, /<dialog[^>]*\sopen=/s, 'open 属性をバインドしない');
 
+assert.match(vue, /data-plain/, 'Vue 版が plain を属性で出す');
+assert.match(react, /data-plain/, 'React 版が plain を属性で出す');
+
 const confirmVue = read('packages/vue/src/generated/components/ConfirmDialog/ConfirmDialog.vue');
 assert.doesNotMatch(confirmVue, /:actions=/, 'Vue 版が actions を壊れた属性として渡していない');
 
@@ -54,6 +57,8 @@ for (const framework of ['vue', 'react']) {
   assert.match(css, /dialog:modal/, `${framework}: 背景のスクロールを止める規則がある`);
   assert.match(css, /@starting-style/, `${framework}: 開くときのアニメーションがある`);
   assert.match(css, /--koyori-dialog-width/, `${framework}: ダイアログ幅のトークンがある`);
+  assert.match(css, /--koyori-dialog-height/, `${framework}: ダイアログ高さのトークンがある`);
+  assert.match(css, /\[data-plain=/, `${framework}: plain の規則がある`);
 }
 
 console.log('Dialog の開閉同期、生成物の構造、配布 CSS の規則を確認しました。');
