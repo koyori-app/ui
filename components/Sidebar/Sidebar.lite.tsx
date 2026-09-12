@@ -22,7 +22,9 @@ export default function Sidebar(props: SidebarProps) {
       <div class={styles.header}><Slot name="header" /></div>
       <nav class={styles.navigation} aria-label={props.label}>
         <div ref={itemsRef!} class={styles.items} data-hover-group="">
-          <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
+          <span class={styles.highlightClip} aria-hidden="true">
+            <span class={highlights.highlight} data-hover-highlight="" />
+          </span>
           {props.children}
         </div>
       </nav>

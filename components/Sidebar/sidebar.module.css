@@ -40,12 +40,19 @@
   --sidebar-link-hover-background: transparent;
   position: relative;
   isolation: isolate;
-  /* A departing surface must not extend the scroll area after a group closes. */
-  overflow: clip;
   /* Leave room for the shared focus outline within the scroll container. */
   padding: calc(var(--koyori-focus-width) + var(--koyori-focus-offset));
 }
 
-.items > :not([data-hover-highlight]) + :not([data-hover-highlight]) { margin-top: var(--koyori-space-xs); }
-.items > [data-hover-highlight] { z-index: -1; }
+.items > :not(.highlightClip) + :not(.highlightClip) { margin-top: var(--koyori-space-xs); }
 .items [data-hover-item][data-variant] { --button-hover-background: transparent; }
+
+/* Clip only the moving background so it cannot extend the scroll area after
+   groups close. Child popups remain free to overflow the item wrapper. */
+.highlightClip {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: clip;
+  pointer-events: none;
+}

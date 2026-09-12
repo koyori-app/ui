@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Accordion, Avatar, CheckIcon, EllipsisIcon, Sidebar, SidebarLink } from './index';
+import { useState } from 'react';
+import { Accordion, Avatar, CheckIcon, Dropdown, EllipsisIcon, Picker, Sidebar, SidebarLink } from './index';
 
 const meta = {
   title: 'Components/Sidebar', component: Sidebar,
@@ -32,3 +33,17 @@ export const Scrollable: Story = {
   </Sidebar></div>,
 };
 export const Narrow: Story = { render: args => <div style={{ width: 180 }}><Sidebar {...args}><SidebarLink label="とても長い名前のプロジェクトを小さな画面で表示する例" href="#long" current /><Accordion id="sidebar-narrow" label="関連するプロジェクト" defaultOpen><SidebarLink label="小さな画面で確認" href="#small" /></Accordion></Sidebar></div> };
+
+export const WithMenus: Story = {
+  render: function WithMenus(args) {
+    const [action, setAction] = useState('未実行');
+    return <>
+      <div style={{ height: 460 }}><Sidebar {...args}>
+        <SidebarLink label="概要" href="#overview" />
+        <div><Dropdown label="操作" items={[{ value: 'edit', label: '編集' }, { value: 'share', label: '共有' }, { value: 'duplicate', label: '複製' }]} onSelect={setAction} /></div>
+        <div><Picker label="並び順" searchable={false} items={[{ value: 'name', label: '名前順' }, { value: 'created', label: '作成日順' }, { value: 'updated', label: '更新日順' }]} /></div>
+      </Sidebar></div>
+      <output aria-label="実行結果">{action}</output>
+    </>;
+  },
+};

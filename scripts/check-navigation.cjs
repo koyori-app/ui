@@ -32,6 +32,28 @@ let browser;
         assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
       };
 
+      // Popups may extend past the natural height of the Sidebar's item wrapper.
+      await story('sidebar', 'with-menus');
+      const popupNav = page.getByRole('navigation', { name: 'メインナビゲーション' });
+      for (const [label, role, lastLabel] of [['操作', 'menuitem', '複製'], ['並び順', 'option', '更新日順']]) {
+        await popupNav.getByRole('button', { name: label, exact: true }).click();
+        const last = popupNav.getByRole(role, { name: lastLabel, exact: true });
+        await last.waitFor();
+        const box = await last.boundingBox();
+        const wrapper = await popupNav.locator(':scope > div').boundingBox();
+        const navBox = await popupNav.boundingBox();
+        assert(box.y > wrapper.y + wrapper.height, 'the last popup row extends below the item wrapper');
+        assert(box.y + box.height < navBox.y + navBox.height, 'the popup fits inside the navigation viewport');
+        assert(await last.evaluate(el => {
+          const rect = el.getBoundingClientRect();
+          return el.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+        }), `${framework}: ${label} must remain visible and receive pointer input below the item wrapper`);
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        if (role === 'menuitem') assert.equal(await page.getByLabel('実行結果').innerText(), 'duplicate');
+        else assert(await popupNav.getByRole('button', { name: /更新日順/ }).isVisible());
+        assert.equal(await last.count(), 0, 'selection closes the popup');
+      }
+
       await story('accordion', 'default');
       const trigger = page.getByRole('button', { name: '通知の設定', exact: true });
       assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
@@ -180,6 +202,11 @@ let browser;
       assert.deepEqual(await page.getByText('プロジェクト一覧', { exact: true }).boundingBox(), top);
       assert.deepEqual(await page.getByText('ワークスペース設定', { exact: true }).boundingBox(), bottom);
 
+      // A stale highlight below the remaining content must not keep a scrollbar alive.
+      await nav.getByRole('link').evaluateAll(links => links.slice(1).forEach(link => link.remove()));
+      await page.waitForTimeout(360);
+      assert(await nav.evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollTop === 0), 'shrinking content does not leave highlight overflow');
+
       await page.setViewportSize({ width: 320, height: 700 });
       await story('sidebar', 'narrow');
       assert.equal((await sidebar.boundingBox()).width, 180);
@@ -192,7 +219,7 @@ let browser;
       assert.equal(await trigger.locator('svg').evaluate(el => getComputedStyle(el.parentElement).transitionDuration), '0s');
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Accordion state, keyboard, focus and retention; Sidebar entry/moving highlight, nesting, current/disabled state, scrolling, sizing, reduced motion and axe passed.`);
+      console.log(`${framework}: Accordion state, keyboard, focus and retention; Sidebar embedded menus, entry/moving highlight, nesting, current/disabled state, scrolling, sizing, reduced motion and axe passed.`);
     }
   } finally {
     await browser?.close();
