@@ -36,8 +36,9 @@ export default function AvatarGroup(props: AvatarGroupProps) {
   return (
     <div class={styles.group} role="group" aria-label={props.label}>
       <For each={state.shown}>
-        {(item, index) => (
-          <Avatar key={index} name={item.name} src={item.src} size={props.size} />
+        {(item) => (
+          /* 並び替え・削除で、読み込み失敗の状態が別の人へ引き継がれないようにする。 */
+          <Avatar key={`${item.name}|${item.src ?? ''}`} name={item.name} src={item.src} size={props.size} />
         )}
       </For>
       <Show when={state.hidden > 0}>

@@ -1,4 +1,4 @@
-import { Show, useStore } from '@builder.io/mitosis';
+import { onUpdate, Show, useStore } from '@builder.io/mitosis';
 import { avatarInitials, avatarSizeStyle } from './avatar';
 import styles from './avatar.module.css';
 
@@ -23,6 +23,11 @@ export default function Avatar(props: AvatarProps) {
       return avatarInitials(props.name);
     },
   });
+
+  /* src が差し替わったら、前の画像の読み込み失敗を持ち越さない。 */
+  onUpdate(() => {
+    state.failed = false;
+  }, [props.src]);
 
   return (
     <span class={styles.avatar} style={state.style}>
