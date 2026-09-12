@@ -1,5 +1,8 @@
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.vue';
 export { default as ButtonGroup, type ButtonGroupProps } from './generated/components/ButtonGroup/ButtonGroup.vue';
+export { default as Accordion, type AccordionProps } from './generated/components/Accordion/Accordion.vue';
+export { default as Sidebar, type SidebarProps } from './generated/components/Sidebar/Sidebar.vue';
+export { default as SidebarLink, type SidebarLinkProps } from './generated/components/SidebarLink/SidebarLink.vue';
 export { default as Avatar, type AvatarProps } from './generated/components/Avatar/Avatar.vue';
 export { default as AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './generated/components/AvatarGroup/AvatarGroup.vue';
 export { default as Dialog, type DialogProps } from './generated/components/Dialog/Dialog.vue';

@@ -1,8 +1,10 @@
+import { enterHighlight, hideHighlight, highlightItem, leaveHighlight } from '../shared/highlight';
+import highlights from '../shared/highlight.module.css';
 import { For, Show, Slot, useContext, useRef, useStore, useDefaultProps, onMount, onUnMount, onUpdate } from '@builder.io/mitosis';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
 import CheckIcon from '../CheckIcon/CheckIcon.lite';
 import Avatar from '../Avatar/Avatar.lite';
-import { enterMenu, hideMenuHighlight, highlightMenuItem, leaveMenu, listenToMenu, normalizeMenuText, positionMenu, resetMenu, MENU_TYPEAHEAD_TIMEOUT } from '../shared/menu';
+import { listenToMenu, normalizeMenuText, positionMenu, resetMenu, MENU_TYPEAHEAD_TIMEOUT } from '../shared/menu';
 import FieldContext from '../Field/field.context.lite';
 import { getFieldContext } from '../Field/field';
 import { pickerOptions, pickerValues, PICKER_ANNOUNCE_DELAY } from './picker';
@@ -132,7 +134,7 @@ export default function Picker(props: PickerProps) {
       state.query = text;
       state.resetActive(text);
       if (listRef) listRef.scrollTop = 0;
-      hideMenuHighlight(listRef);
+      hideHighlight(listRef);
     },
     input(event: { type: string; target: EventTarget | null }) {
       /* React needs onChange for controlled inputs; filter the duplicate event. */
@@ -160,14 +162,14 @@ export default function Picker(props: PickerProps) {
     revealActive() {
       const active = listRef?.querySelector<HTMLElement>('[data-active="true"]');
       active?.scrollIntoView({ block: 'nearest' });
-      if (active) highlightMenuItem(listRef, active);
+      if (active) highlightItem(listRef, active);
     },
     focusList() {
       if (!state.activeId()) state.resetActive();
       requestAnimationFrame(() => state.revealActive());
     },
     leave() {
-      leaveMenu(listRef, document.activeElement === listRef
+      leaveHighlight(listRef, document.activeElement === listRef
         ? listRef?.querySelector<HTMLElement>('[data-active="true"]') : null);
     },
     navigate(event: { key: string; keyCode?: number; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean; isComposing?: boolean; nativeEvent?: { isComposing?: boolean }; target: EventTarget | null; preventDefault(): void; stopPropagation(): void }) {
@@ -288,10 +290,10 @@ export default function Picker(props: PickerProps) {
           aria-activedescendant={state.view.activeId} tabIndex={state.view.canFocus ? 0 : -1}
           data-avatars={props.avatars}
           onFocus={() => state.focusList()}
-          onMouseEnter={(event) => enterMenu(listRef, event)}
+          onMouseEnter={(event) => enterHighlight(listRef, event)}
           onMouseLeave={() => state.leave()}
         >
-          <span class={menu.highlight} aria-hidden="true" />
+          <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
           <For each={state.view.items}>
             {(item, index) => (
               <div key={item.value} id={state.optionId(item)} class={`${menu.item} ${styles.option}`} role="option"
@@ -300,7 +302,7 @@ export default function Picker(props: PickerProps) {
                 data-above={item.above} data-below={item.below}
                 data-grow-top={item.above || (state.growingValue === item.value && state.growTop)}
                 data-grow-bottom={item.below || (state.growingValue === item.value && state.growBottom)}
-                onMouseEnter={(event) => highlightMenuItem(listRef, event.currentTarget)}
+                onMouseEnter={(event) => highlightItem(listRef, event.currentTarget)}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => state.select(index)}
               >
