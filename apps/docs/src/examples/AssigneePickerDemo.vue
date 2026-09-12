@@ -21,9 +21,12 @@ const selected = computed(() => members.filter((member) => assignees.value.inclu
 <template>
   <div style="display: grid; gap: 12px; justify-items: start">
     <Picker label="担当者" :items="items" selection-mode="multiple" search-placeholder="名前で検索"
-      :selected-values="assignees" :on-selection-change="(values) => assignees = values" />
-    <AvatarGroup v-if="selected.length > 0" label="このタスクの担当者" :items="selected" :max="3" />
-    <p v-else>担当者は未選択です。</p>
+      :selected-values="assignees" :on-selection-change="(values) => assignees = values">
+      <template #trigger>
+        <AvatarGroup v-if="selected.length > 0" label="選択中の担当者" :items="selected" :max="3" :size="24" />
+        <template v-else>担当者を選ぶ</template>
+      </template>
+    </Picker>
     <p role="status">担当者: {{ selected.map((member) => member.name).join('、') || 'なし' }}</p>
   </div>
 </template>

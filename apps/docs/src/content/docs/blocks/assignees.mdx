@@ -5,12 +5,12 @@ description: Picker で選んだ人を AvatarGroup で表示する、複数コ�
 
 import AssigneePickerPreview from '../../../components/AssigneePickerPreview.astro';
 
-タスクの担当者を Picker で選び、選んだ人を AvatarGroup で表示します。
+タスクの担当者を Picker で選び、選んだ人をトリガーの中に AvatarGroup で表示します。
 選択状態はアプリ側で持ち、Picker と AvatarGroup の両方に渡します。
 
 ## プレビュー
 
-名前で検索して複数人を選べます。4人以上を選ぶと、あふれた分が `+N` にまとまります。
+名前で検索して複数人を選べます。選ぶとトリガーの表示がアバターに変わり、4人以上であふれた分は `+N` にまとまります。
 
 <AssigneePickerPreview />
 
@@ -20,13 +20,14 @@ import AssigneePickerPreview from '../../../components/AssigneePickerPreview.ast
 2. Picker には `{ value: id, label: name }` を渡し、`selectionMode="multiple"` で複数選択にします。
 3. 選択値（`id` の配列）をアプリ側の状態に保存し、`selectedValues` と `onSelectionChange` でやり取りします。
 4. 選択値から人の一覧を絞り込み、そのまま AvatarGroup の `items` に渡します。`max` で表示する人数を制限します。
+5. AvatarGroup を Picker の `trigger`（Vue: `#trigger` スロット）に渡し、選択中の人をトリガーに表示します。
 
 Picker は表示用の文言を持ちますが、画像は持ちません。
 アバターに必要な `name` と `src` は、選択値から元の一覧を引いて取り出します。
 
 ## 気をつけること
 
-- 未選択のときは AvatarGroup を空で置かず、状態が分かる文章を表示します。
+- 未選択のときはトリガーに文章を出します。この例では「担当者を選ぶ」と表示します。
 - 選んだ結果はアバターだけでなく、文章でも伝えます。この例では `role="status"` の行に名前を並べています。
 - AvatarGroup の `label` は「このタスクの担当者」のように、何のまとまりかが分かる言葉にします。
 - 担当者を外す操作は Picker 側で行います。アバターは表示だけで、押せません。

@@ -20,10 +20,10 @@ export default function AssigneePickerDemo() {
     <div style={{ display: 'grid', gap: 12, justifyItems: 'start' }}>
       <Picker label="担当者" selectionMode="multiple" searchPlaceholder="名前で検索"
         items={members.map((member) => ({ value: member.id, label: member.name }))}
-        selectedValues={assignees} onSelectionChange={setAssignees} />
-      {selected.length > 0
-        ? <AvatarGroup label="このタスクの担当者" items={selected} max={3} />
-        : <p>担当者は未選択です。</p>}
+        selectedValues={assignees} onSelectionChange={setAssignees}
+        trigger={selected.length > 0
+          ? <AvatarGroup label="選択中の担当者" items={selected} max={3} size={24} />
+          : '担当者を選ぶ'} />
       <p role="status">担当者: {selected.map((member) => member.name).join('、') || 'なし'}</p>
     </div>
   );

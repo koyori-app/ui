@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
-import { Button, Field, Picker, EllipsisIcon, type PickerProps } from './index';
+import { AvatarGroup, Button, Field, Picker, EllipsisIcon, type PickerProps } from './index';
 
 const meta = {
   title: 'Components/Picker',
@@ -45,6 +45,15 @@ export const BottomEdge: Story = {
 };
 export const NoIcon: Story = { args: { icon: null } };
 export const CustomIcon: Story = { render: (args) => <Picker {...args} icon={<EllipsisIcon />} /> };
+export const CustomTrigger: Story = {
+  args: { selectionMode: 'multiple', defaultSelectedValues: ['design', 'frontend', 'backend', 'review'] },
+  render: (args) => (
+    <Picker {...args} trigger={
+      <AvatarGroup label="選択中のチーム" size={24} max={3}
+        items={[{ name: 'デザイン' }, { name: 'Frontend' }, { name: 'Backend' }, { name: 'レビュー' }]} />
+    } />
+  ),
+};
 export const TwoPickers: Story = {
   render: (args) => <div><Picker {...args} /><Picker {...args} label="確認チーム" /></div>,
 };

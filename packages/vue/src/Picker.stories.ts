@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { onMounted, onUnmounted, ref } from 'vue';
-import { Button, Field, Picker, EllipsisIcon } from './index';
+import { AvatarGroup, Button, Field, Picker, EllipsisIcon } from './index';
 
 const meta = {
   title: 'Components/Picker',
@@ -52,6 +52,16 @@ export const CustomIcon: Story = {
   render: (args) => ({
     components: { Picker, EllipsisIcon }, setup: () => ({ args }),
     template: '<Picker v-bind="args"><template #icon><EllipsisIcon /></template></Picker>',
+  }),
+};
+export const CustomTrigger: Story = {
+  args: { selectionMode: 'multiple', defaultSelectedValues: ['design', 'frontend', 'backend', 'review'] },
+  render: (args) => ({
+    components: { Picker, AvatarGroup },
+    setup: () => ({ args, teams: [{ name: 'デザイン' }, { name: 'Frontend' }, { name: 'Backend' }, { name: 'レビュー' }] }),
+    template: `<Picker v-bind="args">
+      <template #trigger><AvatarGroup label="選択中のチーム" :items="teams" :size="24" :max="3" /></template>
+    </Picker>`,
   }),
 };
 export const TwoPickers: Story = {

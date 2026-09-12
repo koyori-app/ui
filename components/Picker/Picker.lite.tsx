@@ -34,6 +34,8 @@ export interface PickerProps {
   onSelectionChange?: (values: string[]) => void;
   /** React: rendered icon. Vue: use the icon slot. null hides the icon. */
   icon?: any;
+  /** Replaces the selected label shown in the trigger. React: rendered node. Vue: use the trigger slot. */
+  trigger?: any;
 }
 
 export default function Picker(props: PickerProps) {
@@ -253,7 +255,10 @@ export default function Picker(props: PickerProps) {
         }}
       >
         <span class={`${controls.surface} ${styles.triggerSurface}`}>
-          <span class={styles.triggerLabel} id={state.id ? `${state.id}-value` : undefined}>{state.view.label}</span>
+          <span class={styles.triggerLabel} id={state.id ? `${state.id}-value` : undefined}>
+            {/* Mitosis はスロットの既定値に式だけを置くと文字列にしてしまうため、要素で包む。 */}
+            <Slot name="trigger"><span>{state.view.label}</span></Slot>
+          </span>
           <Show when={props.icon !== null}>
             <span class={controls.icon} aria-hidden="true"><Slot name="icon"><ChevronDownIcon /></Slot></span>
           </Show>
