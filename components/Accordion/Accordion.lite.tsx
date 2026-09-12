@@ -43,7 +43,7 @@ export default function Accordion(props: AccordionProps) {
     <div class={styles.root}>
       <div class={styles.heading} role="heading" aria-level={props.headingLevel ?? 3}>
         <button ref={triggerRef!} id={`${props.id}-trigger`} type="button"
-          class={`${controls.button} ${styles.trigger}`} data-variant="ghost" disabled={props.disabled}
+          class={`${controls.button} ${styles.trigger}`} data-hover-item="" data-variant="ghost" disabled={props.disabled}
           aria-expanded={state.isOpen()} aria-controls={`${props.id}-panel`} onClick={() => state.toggle()}
         >
           <span class={`${controls.surface} ${styles.surface}`}>

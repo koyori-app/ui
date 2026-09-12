@@ -17,7 +17,7 @@
   transition: background-color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
-.link:hover { background: var(--koyori-color-surface-hover); }
+.link:hover { background: var(--sidebar-link-hover-background, var(--koyori-color-surface-hover)); }
 
 .link[aria-current='page'] {
   background: var(--koyori-color-selection);

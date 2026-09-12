@@ -1,0 +1,21 @@
+/* A single surface travels between rows; the hit areas stay still. */
+.highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--highlight-width, 100%);
+  height: var(--highlight-height, var(--koyori-control-height-sm));
+  transform: translate(var(--highlight-x, 0px), var(--highlight-y, 0px));
+  opacity: var(--highlight-opacity, 0);
+  border-radius: var(--koyori-radius-md);
+  background: var(--highlight-background, var(--koyori-color-surface-active));
+  pointer-events: none;
+  transition: var(--highlight-transition,
+    transform var(--koyori-motion-slow) var(--koyori-ease-out),
+    width var(--koyori-motion-slow) var(--koyori-ease-out),
+    height var(--koyori-motion-slow) var(--koyori-ease-out), opacity var(--koyori-motion-fast) var(--koyori-ease-out));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .highlight { transition: none; }
+}

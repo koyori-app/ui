@@ -1,6 +1,8 @@
+import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlight';
+import highlights from '../shared/highlight.module.css';
 import { For, Show, Slot, useRef, useStore, onMount, onUnMount, onUpdate } from '@builder.io/mitosis';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
-import { enterMenu, highlightMenuItem, leaveMenu, listenToMenu, normalizeMenuText, positionMenu, resetMenu } from '../shared/menu';
+import { listenToMenu, normalizeMenuText, positionMenu, resetMenu } from '../shared/menu';
 import styles from '../shared/menu.module.css';
 import controls from '../shared/control.module.css';
 
@@ -112,15 +114,15 @@ export default function Dropdown(props: DropdownProps) {
         hidden={!state.open || props.disabled} onKeyDown={(event) => state.navigate(event)}
       >
         <div ref={listRef!} class={styles.list} role="presentation"
-          onMouseEnter={(event) => enterMenu(listRef, event)} onMouseLeave={() => leaveMenu(listRef)}
+          onMouseEnter={(event) => enterHighlight(listRef, event)} onMouseLeave={() => leaveHighlight(listRef)}
         >
-          <span class={styles.highlight} aria-hidden="true" />
+          <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
           <For each={props.items}>
             {(item, index) => (
               <button key={item.value} type="button" class={styles.item} role="menuitem" tabIndex={-1}
                 aria-disabled={item.disabled || undefined}
-                onMouseEnter={(event) => highlightMenuItem(listRef, event.currentTarget)}
-                onFocus={(event) => highlightMenuItem(listRef, event.currentTarget)}
+                onMouseEnter={(event) => highlightItem(listRef, event.currentTarget)}
+                onFocus={(event) => highlightItem(listRef, event.currentTarget)}
                 onClick={() => state.select(index)}
               >
                 <span class={styles.itemLabel}>{item.label}</span>

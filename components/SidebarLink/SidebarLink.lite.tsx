@@ -13,7 +13,7 @@ export interface SidebarLinkProps {
 
 export default function SidebarLink(props: SidebarLinkProps) {
   return (
-    <a class={styles.link} href={props.disabled ? undefined : props.href}
+    <a class={styles.link} data-hover-item="" href={props.disabled ? undefined : props.href}
       aria-current={props.current ? 'page' : undefined} aria-disabled={props.disabled || undefined}
       role={props.disabled ? 'link' : undefined} tabIndex={props.disabled ? -1 : undefined}
     >
