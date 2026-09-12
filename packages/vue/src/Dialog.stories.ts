@@ -78,6 +78,7 @@ const twoColumnCss = `
 .story-form__columns { display: flex; flex: 1; min-height: 0; }
 .story-form__main { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: 16px; gap: 12px; }
 .story-form__side { display: flex; flex-direction: column; gap: 12px; width: 260px; flex-shrink: 0; padding: 16px; border-left: 1px solid var(--koyori-color-border); background: var(--koyori-color-accent-subtle); }
+.story-form__side-head { display: flex; justify-content: flex-end; }
 `;
 
 export const TwoColumn: Story = {
@@ -94,6 +95,8 @@ export const TwoColumn: Story = {
             <Button label="作成" />
           </div>
           <aside class="story-form__side">
+            <!-- Dialog は閉じるボタンを持たないため、アプリ側で置く。 -->
+            <div class="story-form__side-head"><Button label="閉じる" variant="ghost" /></div>
             <Field id="story-priority" label="優先度">
               <Picker label="中" :items="priorities" :searchable="false" />
             </Field>

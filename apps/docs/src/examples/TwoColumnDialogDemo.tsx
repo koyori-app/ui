@@ -62,7 +62,7 @@ export default function TwoColumnDialogDemo() {
 
           <aside className="task-form__side">
             <div className="task-form__side-head">
-              <Button ariaLabel="閉じる" variant="ghost" label="×" onClick={close} />
+              <Button label="閉じる" variant="ghost" onClick={close} />
             </div>
             <div className="task-form__props">
               <Field id="task-priority" label="優先度">

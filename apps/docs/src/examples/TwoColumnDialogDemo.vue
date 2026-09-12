@@ -45,7 +45,7 @@ function submit() {
 
         <aside class="task-form__side">
           <div class="task-form__side-head">
-            <Button aria-label="閉じる" variant="ghost" label="×" :on-click="close" />
+            <Button label="閉じる" variant="ghost" :on-click="close" />
           </div>
           <div class="task-form__props">
             <Field id="task-priority" label="優先度">
