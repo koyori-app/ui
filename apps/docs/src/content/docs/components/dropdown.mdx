@@ -1,0 +1,80 @@
+---
+title: Dropdown
+description: コピー・アーカイブなどの操作を実行するアクションメニュー。
+---
+
+import DropdownPreview from '../../../components/DropdownPreview.astro';
+
+コピーやアーカイブなどの操作を一覧から実行するコンポーネントです。
+項目を実行すると閉じて、`onSelect(value)` を呼び出します。
+ステータスやラベルの選択には [Picker](../picker/) を使います。
+
+## プレビュー
+
+「タスクの操作」は Dropdown、「ステータス」と「ラベル」は検索なしの Picker です。
+操作のデモは値を表示するだけで、実際のコピーやアーカイブは実行しません。
+
+<DropdownPreview />
+
+## Props・コールバック
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | トリガーとメニューの名前 |
+| `items` | `DropdownItem[]` | 必須 | 表示する操作 |
+| `disabled` | `boolean` | `false` | トリガーを無効にし、メニューを隠す |
+| `emptyMessage` | `string` | `項目がありません` | 空一覧の文言 |
+| `defaultOpen` | `boolean` | `false` | 初期表示で開き、先頭項目にフォーカスする |
+| `icon` | React の要素、または `null` | 下向き矢印 | React の差し替え。`null` は両環境で非表示 |
+| `onSelect` | `(value: string) => void` | — | 有効な操作を実行したときに呼ぶ |
+
+Vue では `:on-select="handler"` でコールバックを渡します。
+アイコンの差し替えは Vue の `#icon` スロットを使います。上のデモでは `EllipsisIcon` を使っています。
+
+### DropdownItem
+
+| 名前 | 型 | 説明 |
+| --- | --- | --- |
+| `value` | `string` | 一覧内で一意な値。実行時のコールバックに渡す |
+| `label` | `string` | 項目に表示するラベル |
+| `disabled` | `boolean`（任意） | 実行を無効にする。キーボードでフォーカスは可能 |
+
+`items` が空の場合は「項目がありません」を無効な項目として表示します。`emptyMessage` で差し替えられます。
+
+## キーボード操作
+
+| キー | 動作 |
+| --- | --- |
+| トリガーで `Enter` / `Space` / `↓` | 開いて先頭の項目へ移動 |
+| トリガーで `↑` | 開いて最後の項目へ移動 |
+| 一覧で `↓` / `↑` | 前後の項目へ移動。端では循環する |
+| `Home` / `End` | 最初・最後の項目へ移動 |
+| 項目の先頭文字 | その文字で始まる次の項目へ移動 |
+| 項目で `Enter` / `Space` | 操作を実行して閉じる |
+| `Tab` / `Shift + Tab` | 閉じて次・前の操作へ移動 |
+| `Escape` | 閉じてトリガーに戻る |
+
+外側クリックでも閉じます。無効な項目は `aria-disabled` で状態を伝え、フォーカスできても実行はできません。
+[W3C の Menu Button パターン](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/)を参考に、
+トリガーに `aria-haspopup="menu"` と `aria-controls`、一覧に `menu`、各項目に `menuitem` を使っています。
+
+## 選択モードからの移行
+
+Dropdown の `selectionMode`・`selectedValues`・`defaultSelectedValues`・`onSelectionChange` は Picker に移しました。
+既存の選択用途は `<Picker searchable={false} ... />`（Vue: `:searchable="false"`）に置き換えてください。
+`label` には選ぶ対象の名前を渡し、現在値の表示は Picker に任せます。
+単一選択は選ぶと閉じ、複数選択は開いたままです。単一選択の解除は `selectedValues` に空配列を渡します。
+
+## 配置とスタイル
+
+幅は親に影響されない 200px を基準にし、狭い画面では縮小します。
+下に収まらず上の空きが広い場合は上に開き、両側とも足りない場合は高さを制限して一覧をスクロールします。
+親の `overflow: hidden` などによる切り取りは回避しません。
+パネル・項目・ホバー背景と配置計算は Picker と共通です。動きを減らす設定ではアニメーションを停止します。
+
+親要素の `--dropdown-hover-background` でホバーの背景色を変更できます。
+
+## サーバーでの描画
+
+現在の Vue 版は初期化時にもブラウザー API を使います。SSR 環境ではブラウザー側だけで描画してください。
+このサイトでは Astro の `client:only="vue"` でデモを表示しています。

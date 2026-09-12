@@ -1,0 +1,68 @@
+---
+title: Field・Input・Textarea
+description: ラベル・説明・エラーを入力欄に関連付けるフォーム部品。
+---
+
+import FieldPreview from '../../../components/FieldPreview.astro';
+
+Field は、ラベル・説明・エラーを中の Input・Textarea・Picker に関連付けます。
+Input は1行、Textarea は複数行の文字入力です。
+
+## プレビュー
+
+タイトルを空のまま「タスクを作成」を押すと、エラーを表示してタイトルへフォーカスを戻します。
+
+<FieldPreview />
+
+## 使い方
+
+Field の中に Input・Textarea・Picker のいずれかを1つだけ置きます。Field の `id` が入力欄に付き、ラベルの `for` と説明・エラーの関連付けに使われます。
+`id` はページ内で一意にしてください。
+
+入力値は `value` で渡し、変更は `onValueChange(value)`（Vue: `:on-value-change`）で受け取ります。
+入力のたびに呼ばれます。
+
+## Field の Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 必須 | 中の入力欄に付ける id |
+| `label` | `string` | 必須 | 入力欄のラベル |
+| `description` | `string` | — | ラベルの下に表示する補足 |
+| `error` | `string` | — | 入力欄の下に表示するエラー。指定すると入力欄を無効な値として伝える |
+| `requiredText` | `string` | `必須` | 必須表示の文言 |
+| `required` | `boolean` | `false` | 入力を必須にし、ラベルに「必須」を表示する |
+
+## Input・Textarea の Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `value` | `string` | — | 入力値 |
+| `onValueChange` | `(value: string) => void` | — | 入力のたびに呼ぶ関数 |
+| `name` | `string` | — | フォーム送信時の名前 |
+| `placeholder` | `string` | — | 入力例。ラベルの代わりには使わない |
+| `disabled` | `boolean` | `false` | 操作を無効にする |
+| `readOnly` | `boolean` | `false` | 読み取り専用にする |
+| `ariaLabel` | `string` | — | Field の外で使うときの名前（`aria-label`） |
+| `id` | `string` | — | Field の外で使うときの id。Field の中では Field の `id` を使う |
+| `type` | `'text' \| 'email' \| 'password' \| 'search' \| 'tel' \| 'url'` | `'text'` | Input のみ。入力の種類 |
+| `autocomplete` | `string` | — | Input のみ。自動入力の種類。例: `email`、`name` |
+| `rows` | `number` | `3` | Textarea のみ。表示する行数 |
+
+## アクセシビリティ
+
+- ラベルは `label` 要素で入力欄に関連付けます。ラベルを押すと入力欄にフォーカスが移ります。
+- 説明とエラーは `aria-describedby` で入力欄に関連付け、エラーがあるときは `aria-invalid="true"` を付けます。
+- 常設の `aria-live="polite"` 領域で後から出たエラーを通知します。
+- Picker の必須状態は一覧の `aria-required` と、トリガーの名前に含めた `requiredText` で伝えます。説明・エラーはトリガーだけに関連付けます。選択値の必須チェックとフォーム送信はアプリ側で行います。
+- エラーは枠線の色だけでなく、文章でも伝えます。何が誤りで、どう直せばよいかを書いてください。
+- 送信時にエラーがあれば、最初のエラーの入力欄にフォーカスを移してください。プレビューの例もそうしています。
+- Input・Textarea の `required` はネイティブの `required` 属性を付けます。ブラウザーの検証メッセージを使わない場合は、`form` に `novalidate` を付けます。
+- 「必須」の表示は読み上げから除き、入力欄の必須状態として伝えます。
+- 名前やメールアドレスなど利用者自身の情報を入力する欄には、`autocomplete` を指定してください。
+- Field の外で使う場合は、`ariaLabel` などで必ず名前を付けてください。
+
+## スタイル
+
+入力欄の枠線は `--koyori-color-border-strong`、エラーの文字と枠線は `--koyori-color-danger` を使います。
+変更するときも、枠線は背景とのコントラスト比 3:1、エラーの文字は 4.5:1 以上を保ってください。

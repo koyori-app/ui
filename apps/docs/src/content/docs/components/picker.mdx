@@ -1,0 +1,96 @@
+---
+title: Picker
+description: 単一・複数の項目を選ぶ Picker。検索欄は省略可能。
+---
+
+import PickerPreview from '../../../components/PickerPreview.astro';
+
+単一・複数の項目を選ぶコンポーネントです。検索欄は `searchable={false}`（Vue: `:searchable="false"`）で省略できます。
+選んだ項目のラベルは自動でトリガーとアクセシブルネームに反映されます。`label` には選ぶ対象の名前を渡してください。
+コピーなどの操作実行には [Dropdown](../dropdown/) を使います。
+
+## プレビュー
+
+「担当チーム」は単一選択、「共有チーム」は複数選択です。`end` や `ﾃﾞｻﾞｲﾝ` で絞り込めます。
+
+<PickerPreview />
+
+## 選択と検索
+
+既定の単一選択は項目を選ぶと閉じます。`selectionMode="multiple"` は選択・解除しても開いたままです。
+検索で見えなくなった項目の選択状態も保持します。開き直すと検索文字列をクリアします。
+検索はラベルの部分一致で、大文字・小文字と全角・半角の違いを吸収します。
+候補と空表示はすぐ更新し、件数の読み上げは入力が300ms止まってからまとめて通知します。閉じると保留中の通知を取り消します。
+
+`selectedValues` と `onSelectionChange` でアプリ側から選択を管理できます。
+省略した場合は内部で管理し、`defaultSelectedValues` を初期値に使います。
+存在しない値は表示から除き、単一選択に複数の値を渡すと項目順で先頭の1件を使います。
+単一選択を解除するときは、外側から `selectedValues` に空配列を渡してください。
+
+## Props
+
+| 名前 | 型 | 既定値・説明 |
+| --- | --- | --- |
+| `label` | `string` | 必須。選ぶ対象の名前と未選択時の表示 |
+| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean }[]`。`value` は一意にする |
+| `selectionMode` | `'single' \| 'multiple'` | `single` |
+| `searchable` | `boolean` | `true`。`false` なら検索欄を表示せず全候補から選ぶ |
+| `selectedValues` | `string[]` | 外側で管理する選択値 |
+| `defaultSelectedValues` | `string[]` | `[]`。内部で管理するときの初期値 |
+| `onSelectionChange` | `(values: string[]) => void` | 選択時のコールバック |
+| `searchPlaceholder` | `string` | `検索…` |
+| `searchLabel` | `string` | 「label を検索」に相当する検索欄の名前 |
+| `formatResultsCount` | `(count: number) => string` | 候補数の通知文。既定は「N件の候補」 |
+| `selectionSeparator` | `string` | 複数のラベルの区切り。既定は `、` |
+| `emptyMessage` | `string` | 空なら「項目がありません」、検索結果がなければ「該当する項目がありません」 |
+| `disabled` | `boolean` | `false`。全体を無効化する |
+| `defaultOpen` | `boolean` | `false`。初期表示で開く |
+| `icon` | React の要素、または `null` | 下矢印。`null` で非表示。Vue の差し替えは `#icon` スロット |
+
+Vue では `:selected-values="values"`・`:on-selection-change="handler"` のように渡します。
+
+## Field との連携
+
+Field 内ではトリガーを Input と同じ枠線・背景・エラー色にし、幅も Field に揃えます。
+説明とエラーはトリガーにだけ関連付け、検索欄・一覧への移動で同じ説明を繰り返しません。
+Field の `id` はトリガー、`required` は一覧の `aria-required` に使います。
+必須の場合はトリガーの名前にも Field の `requiredText` を含め、閉じた状態で必須と分かるようにします。
+必須チェックやフォーム送信する値はアプリ側で管理し、エラーを Field の `error` に渡してください。
+選択結果は `onSelectionChange` で受け取ります。
+
+## キーボード操作
+
+| 場所・キー | 動作 |
+| --- | --- |
+| トリガーで `Enter` / `Space` / `↓` / `↑` | 開いて検索欄へ移動。検索なしは選択済みの候補（なければ先頭の有効な候補）、`↑` は最後へ |
+| 検索欄で文字入力 | 一覧を絞り込む。日本語入力の変換確定では選択しない |
+| 検索欄で `↓` / `↑` | 候補へ移動。`↑` は最後の候補へ |
+| 一覧で `↓` / `↑` / `Home` / `End` | 無効な候補を飛ばして移動 |
+| `Enter` | 対象の候補を選択。検索欄では選択済みの候補、なければ先頭の有効な候補 |
+| 一覧で `Space` | 選択・解除。検索欄では空白を入力 |
+| 一覧で先頭文字を入力 | その文字で始まる有効な候補へ移動 |
+| `Tab` / `Shift + Tab` | 検索欄と一覧を移動。外に出ると閉じる |
+| `Escape` | 閉じてトリガーに戻る |
+
+検索欄と、単一・複数選択に対応したラベル付きの `listbox` を組み合わせています。
+検索なしで有効な候補がない場合は、トリガーにフォーカスを残します。
+候補の操作は [W3C の Listbox パターン](https://www.w3.org/WAI/ARIA/apg/patterns/listbox/) を参考にしています。
+外側クリックでも閉じ、動きを減らす設定ではアニメーションを停止します。
+
+## 配置とスタイル
+
+候補一覧は Vue では computed として共有し、React では参照ごとに再計算します。
+各計算は件数に比例する処理です。1,001 件の検索・選択を検証しています。
+全候補を DOM に置くため、数万件はアプリ側で検索・分割してください。
+
+`--koyori-menu-width`（200px）と `--koyori-menu-max-height`（360px）で寸法を調整できます。
+最大高・`--koyori-menu-gap`・`--koyori-menu-viewport-margin` は `px` に加え、`rem`・`calc()` でも指定できます。
+これらの長さは開くときに計測し、開いている間は再利用します。変更は次に開いたときに反映します。
+幅は Dropdown と同じ 200px で、トリガーや親要素の幅に影響されません。
+狭い画面では縮小し、下に余白が足りないときは上に開きます。長い一覧では検索欄を残して候補だけをスクロールします。
+親の `overflow: hidden` 等による切り取りは回避しません。
+共通トークンと `--dropdown-hover-background`・`--dropdown-selected-background` を参照します。
+パネル・項目・ハイライトは Dropdown とともに `shared/menu.module.css` を参照し、配置とハイライト座標の計算も共有します。
+
+Vue 版を SSR 環境で使うときは、現在の生成方式に合わせてブラウザー側だけで描画してください。
+このページでは `client:only="vue"` を使っています。

@@ -1,0 +1,52 @@
+{
+  "name": "@koyori-app/ui-react",
+  "version": "0.0.0",
+  "description": "Koyori UI components for React",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koyori-app/ui.git",
+    "directory": "packages/react"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "storybook": "storybook dev -p 6007 --no-open",
+    "build-storybook": "storybook build",
+    "prepack": "pnpm -w generate && pnpm build && node ../../scripts/copy-licenses.mjs"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "10.6.0",
+    "@storybook/addon-docs": "10.6.0",
+    "@storybook/react-vite": "10.6.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "storybook": "10.6.0",
+    "vite": "8.3.0"
+  }
+}

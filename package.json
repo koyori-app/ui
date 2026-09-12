@@ -1,0 +1,29 @@
+{
+  "name": "koyori-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "generate": "mitosis build --config mitosis.config.cjs && node scripts/copy-css.mjs",
+    "typecheck": "pnpm generate && tsc -p tsconfig.mitosis.json && pnpm --filter './packages/*' build && pnpm -r typecheck",
+    "build": "pnpm generate && pnpm -r build",
+    "storybook:vue": "pnpm generate && pnpm --filter @koyori-app/ui-vue storybook",
+    "storybook:react": "pnpm generate && pnpm --filter @koyori-app/ui-react storybook",
+    "build-storybook": "pnpm generate && pnpm -r build-storybook",
+    "dev:docs": "pnpm generate && pnpm --filter './packages/*' build && pnpm --filter @koyori-app/docs dev",
+    "build:docs": "pnpm generate && pnpm --filter @koyori-app/docs... build",
+    "preview:docs": "pnpm --filter @koyori-app/docs preview"
+  },
+  "devDependencies": {
+    "@builder.io/mitosis": "0.14.0",
+    "@builder.io/mitosis-cli": "0.14.0",
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3",
+    "prettier": "3.9.6"
+  }
+}

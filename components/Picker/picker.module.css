@@ -1,0 +1,85 @@
+.search {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--koyori-control-height-sm);
+  margin-bottom: var(--koyori-space-xs);
+  padding: var(--koyori-space-md) var(--koyori-space-lg);
+  border: 0;
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-surface-hover);
+  color: inherit;
+  font: inherit;
+}
+
+.search::placeholder {
+  color: var(--koyori-color-text-muted);
+  opacity: 1;
+}
+
+.search:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-offset));
+}
+
+.list {
+  outline: none;
+}
+
+.list:focus-visible .option[data-active='true'] {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-offset));
+}
+
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (forced-colors: active) {
+  .option[aria-selected='true'] { color: Highlight; }
+  .option[aria-disabled='true'] { color: GrayText; }
+}
+.field {
+  display: block;
+}
+
+/* Match text inputs inside a Field; standalone Pickers keep the ghost surface. */
+.field .trigger {
+  --button-background: var(--koyori-color-surface);
+  --button-hover-background: var(--koyori-color-surface);
+  --button-border: var(--koyori-color-border-strong);
+  --button-press-scale: 1;
+  width: 100%;
+  text-align: start;
+}
+
+.field .triggerSurface {
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+  padding-inline: var(--koyori-space-lg);
+}
+
+.field .triggerLabel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.field .trigger:hover:not(:disabled) {
+  --button-border: var(--koyori-color-text-secondary);
+}
+
+.field .trigger[aria-invalid='true']:not(:disabled) {
+  --button-border: var(--koyori-color-danger);
+}
+
+.field .trigger:disabled .triggerSurface {
+  border-color: var(--koyori-color-border);
+}

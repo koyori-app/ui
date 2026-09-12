@@ -1,0 +1,101 @@
+@import '../tokens.css';
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--koyori-space-sm);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+/* ラベルの横の余白を押しても入力欄へ移らないよう、文字の幅に収める。 */
+.label {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--koyori-space-xs);
+  font-weight: 600;
+}
+
+.required {
+  color: var(--koyori-color-danger);
+  font-weight: 400;
+}
+
+.description, .error {
+  margin: 0;
+}
+
+.description {
+  color: var(--koyori-color-text-secondary);
+}
+
+.error {
+  color: var(--koyori-color-danger);
+}
+
+/* Keep the live region mounted without adding a blank row. */
+.error:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Input と Textarea で共有する。Field の外でも同じ見た目にする。 */
+.control {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--koyori-control-height-sm);
+  margin: 0;
+  padding: var(--koyori-space-sm) var(--koyori-space-lg);
+  border: 1px solid var(--koyori-color-border-strong);
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  transition: border-color var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+textarea.control {
+  resize: vertical;
+}
+
+.control::placeholder {
+  color: var(--koyori-color-text-muted);
+  opacity: 1;
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--koyori-color-text-secondary);
+}
+
+.control[aria-invalid='true'],
+.control[aria-invalid='true']:hover {
+  border-color: var(--koyori-color-danger);
+}
+
+.control:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+.control:disabled {
+  border-color: var(--koyori-color-border);
+  background: var(--koyori-color-surface-disabled);
+  color: var(--koyori-color-text-disabled);
+  /* Safari は color だけでは無効時の文字色を変えない。 */
+  -webkit-text-fill-color: var(--koyori-color-text-disabled);
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control {
+    transition: none;
+  }
+}

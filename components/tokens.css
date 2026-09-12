@@ -1,0 +1,55 @@
+/* 共通の既定値。利用側の :root やコンポーネントを囲む要素で上書きできます。 */
+:root {
+  --koyori-font-family: system-ui, sans-serif;
+  --koyori-font-size-sm: 0.875rem;
+  --koyori-line-height-sm: calc(20 / 14);
+
+  /* 入れ子の外側は、利用箇所で内側の角丸 + padding を計算する。 */
+  --koyori-radius-md: 8px;
+
+  --koyori-space-xs: 4px;
+  --koyori-space-sm: 6px;
+  --koyori-space-md: 8px;
+  --koyori-space-lg: 10px;
+  --koyori-space-xl: 16px;
+  --koyori-control-height-sm: 36px;
+
+  --koyori-focus-width: 2px;
+  --koyori-focus-offset: 2px;
+  --koyori-focus-color: var(--koyori-color-text);
+  --koyori-motion-fast: 140ms;
+  --koyori-motion-base: 220ms;
+  --koyori-motion-slow: 320ms;
+  --koyori-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --koyori-ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
+
+  --koyori-menu-width: 200px;
+  --koyori-menu-max-height: 360px;
+  --koyori-menu-gap: 8px;
+  --koyori-menu-viewport-margin: 8px;
+  --koyori-z-menu: 10;
+
+  /* くすんだラベンダーとセージ。背景に色を持たせ、文字は濃く保つ。 */
+  --koyori-color-accent: #c4b5df;
+  --koyori-color-accent-hover: #b6a3d4;
+  --koyori-color-on-accent: #352d46;
+  --koyori-color-accent-soft: #dbe5dc;
+  --koyori-color-accent-soft-hover: #cadbcf;
+  --koyori-color-accent-subtle: #e4ddf0;
+  --koyori-color-text: #383440;
+  --koyori-color-text-secondary: #5f5968;
+  --koyori-color-text-muted: #706879;
+  --koyori-color-text-disabled: #a09ba5;
+  --koyori-color-surface: #faf8f5;
+  --koyori-color-surface-disabled: #edeaf0;
+  --koyori-color-surface-hover: #e6dff0;
+  --koyori-color-surface-active: #ddd4ed;
+  --koyori-color-selection: #d0c4e4;
+  --koyori-color-selection-indicator: #594867;
+  --koyori-color-border: #d9d3df;
+  /* 入力欄の境界。背景とのコントラスト比 3:1 以上を保つ。 */
+  --koyori-color-border-strong: #8d8597;
+  /* エラーの文字と枠線。背景とのコントラスト比 4.5:1 以上を保つ。 */
+  --koyori-color-danger: #a23b5a;
+  --koyori-shadow-panel: 0 8px 24px #4439580a, 0 2px 4px #44395805;
+}

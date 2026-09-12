@@ -1,0 +1,32 @@
+{
+  "name": "@koyori-app/docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check && vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/react": "6.0.5",
+    "@astrojs/starlight": "0.42.0",
+    "@astrojs/vue": "7.0.2",
+    "@koyori-app/ui-react": "workspace:*",
+    "@koyori-app/ui-vue": "workspace:*",
+    "astro": "7.3.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vue": "3.5.42",
+    "@astrojs/markdown-remark": "7.3.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "6.0.3",
+    "vue-tsc": "3.3.11"
+  }
+}

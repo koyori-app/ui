@@ -1,0 +1,100 @@
+@import '../tokens.css';
+
+.button {
+  --button-background: var(--koyori-color-accent);
+  --button-hover-background: var(--koyori-color-accent-hover);
+  --button-color: var(--koyori-color-on-accent);
+  --button-border: transparent;
+
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: var(--koyori-radius-md);
+  background: transparent;
+  color: var(--button-color);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  cursor: pointer;
+}
+
+/* 外側の button がレイアウトとクリック領域を維持し、内側だけを動かす。 */
+.surface {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--koyori-space-sm);
+  box-sizing: border-box;
+  min-height: var(--koyori-control-height-sm);
+  padding: var(--koyori-space-sm) var(--koyori-space-xl);
+  border: 1px solid var(--button-border);
+  border-radius: inherit;
+  background: var(--button-background);
+  pointer-events: none;
+  transition: background-color var(--koyori-motion-fast) var(--koyori-ease-out), transform var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* アイコン未指定のときは、空の要素で gap を作らない。 */
+.icon:empty {
+  display: none;
+}
+
+.button[data-icon-only='true'] .surface {
+  min-width: var(--koyori-control-height-sm);
+  padding-inline: var(--koyori-space-sm);
+}
+
+.button[data-variant='secondary'] {
+  --button-background: var(--koyori-color-accent-soft);
+  --button-hover-background: var(--koyori-color-accent-soft-hover);
+  --button-color: var(--koyori-color-text);
+}
+
+.button[data-variant='tertiary'] {
+  --button-background: transparent;
+  --button-hover-background: var(--koyori-color-accent-subtle);
+  --button-color: var(--koyori-color-text);
+  --button-border: var(--koyori-color-border);
+}
+
+.button[data-variant='ghost'] {
+  --button-background: transparent;
+  --button-hover-background: var(--koyori-color-surface-hover);
+  --button-color: var(--koyori-color-text-secondary);
+}
+
+.button:hover:not(:disabled) .surface {
+  background: var(--button-hover-background);
+}
+
+.button:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+.button:disabled {
+  color: var(--koyori-color-text-disabled);
+  cursor: not-allowed;
+}
+
+.button:disabled .surface {
+  border-color: transparent;
+  background: var(--koyori-color-surface-disabled);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:active:not(:disabled) .surface {
+    transform: scale(var(--button-press-scale, 0.96));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface {
+    transition: none;
+  }
+}

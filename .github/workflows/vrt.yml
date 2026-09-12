@@ -1,0 +1,89 @@
+name: VRT
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  vrt:
+    name: VRT (${{ matrix.framework }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [vue, react]
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate components
+        run: pnpm generate
+
+      - name: Typecheck
+        run: |
+          pnpm exec tsc -p tsconfig.mitosis.json
+          pnpm --filter @koyori-app/ui-${{ matrix.framework }} typecheck
+
+      - name: Build package
+        run: pnpm --filter @koyori-app/ui-${{ matrix.framework }} build
+
+      - name: Build Storybook
+        run: pnpm --filter @koyori-app/ui-${{ matrix.framework }} build-storybook
+
+      # Fork・Dependabot PR でもビルドまでは検証する。Secret が必要な送信だけ除外する。
+      - name: Check VRT configuration
+        if: >-
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          VRT_TOKEN: ${{ secrets.VRT_TOKEN }}
+          VRT_PROJECT_VUE: ${{ vars.VRT_PROJECT_VUE }}
+          VRT_PROJECT_REACT: ${{ vars.VRT_PROJECT_REACT }}
+        run: |
+          if [[ -z "$VRT_TOKEN" || -z "$VRT_PROJECT_VUE" || -z "$VRT_PROJECT_REACT" ]]; then
+            echo '::error::Set VRT_TOKEN, VRT_PROJECT_VUE and VRT_PROJECT_REACT. See README.md.'
+            exit 1
+          fi
+          if [[ "$VRT_PROJECT_VUE" == "$VRT_PROJECT_REACT" ]]; then
+            echo '::error::Vue and React require separate VRT projects to keep baselines independent.'
+            exit 1
+          fi
+
+      - name: Upload to VRT
+        if: >-
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        uses: koyori-app/vrt-actions@ca529f2000f543930dda075f0a7501eeb56d1a1e
+        with:
+          token: ${{ secrets.VRT_TOKEN }}
+          project: ${{ matrix.framework == 'vue' && vars.VRT_PROJECT_VUE || vars.VRT_PROJECT_REACT }}
+          url: https://vrt.koyori.app/api
+          mode: storybook
+          dir: packages/${{ matrix.framework }}/storybook-static
+          wait: true
+          cli-version: cli-v0.1.2

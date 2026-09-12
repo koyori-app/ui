@@ -1,0 +1,10 @@
+node_modules/
+dist/
+storybook-static/
+*.tsbuildinfo
+*.log
+*.tgz
+packages/*/LICENSE
+packages/*/THIRD_PARTY_NOTICES.md
+packages/*/src/generated/
+.astro/

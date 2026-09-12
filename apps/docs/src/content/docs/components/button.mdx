@@ -1,0 +1,67 @@
+---
+title: Button
+description: Primary・Secondary・Tertiary・Ghost の4種類のボタン。
+---
+
+import ButtonPreview from '../../../components/ButtonPreview.astro';
+
+タスクの作成・保存など、操作を実行するボタンです。
+ラベルには「タスクを作成」「変更を保存」のように、結果が伝わる言葉を使います。
+
+## プレビュー
+
+ボタンを押すとクリック回数が増えます。「無効にする」で disabled の見た目も確認できます。
+
+<ButtonPreview />
+
+## 種類の使い分け
+
+| variant | 用途の目安 |
+| --- | --- |
+| `primary` | 画面やフォームの主な操作。例: タスクを作成 |
+| `secondary` | 主な操作を補助する操作。例: 下書きを保存 |
+| `tertiary` | 枠線で区別したい操作。例: キャンセル |
+| `ghost` | ツールバーなどで控えめに置く操作。例: 詳細を表示 |
+
+## Props・コールバック
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | — | ボタンに表示するラベル。省略するとアイコンだけのボタンになる |
+| `ariaLabel` | `string` | — | 読み上げる名前（`aria-label`）。`label` を省略するときは必須 |
+| `icon` | React の要素 | — | ラベルの前に表示するアイコン。Vue では `#icon` スロットを使う |
+| `variant` | `'primary' \| 'secondary' \| 'tertiary' \| 'ghost'` | `'primary'` | ボタンの種類 |
+| `disabled` | `boolean` | `false` | 操作を無効にする |
+| `type` | `'button' \| 'submit' \| 'reset'` | `'button'` | ネイティブ button の種類 |
+| `onClick` | `() => void` | — | ボタンを実行したときに呼ぶ関数 |
+
+Vue では `:on-click="handler"`、React では `onClick={handler}` でコールバックを渡します。
+フォームを送信するボタンには `type="submit"` を指定してください。
+
+## アイコン
+
+```tsx
+// React
+<Button ariaLabel="その他の操作" icon={<EllipsisIcon size={16} />} variant="tertiary" />
+```
+
+```vue
+<!-- Vue -->
+<Button ariaLabel="その他の操作" variant="tertiary">
+  <template #icon><EllipsisIcon :size="16" /></template>
+</Button>
+```
+
+`label` を省略すると、アイコンだけの正方形のボタンになります。アイコンは読み上げから除外するため、`ariaLabel`（Vue も `ariaLabel`）で操作の名前を付けてください。
+React・Vue ともに、型でも `label` または `ariaLabel` の指定を必須にしています。
+アイコンの既定サイズは 16px です。
+`label` があるボタンに `ariaLabel` を付ける場合は、表示中のラベルの文言を含めてください。
+
+## 操作とアニメーション
+
+- `Tab` でフォーカスを移し、`Enter` または `Space` で実行します。
+- `disabled` のボタンは操作できず、Tab 移動の対象から外れます。
+- 押下中は内側の背景とラベルが縮みます。外側の寸法・クリック領域・フォーカス枠は変わりません。
+- OS の「動きを減らす」設定（`prefers-reduced-motion`）が有効なときは、縮小と色のアニメーションを停止します。
+
+ネイティブの `button` を使っています。ページ移動にはリンクを使い、`label` と `ariaLabel` の両方を空にしないでください。

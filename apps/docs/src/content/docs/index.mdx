@@ -1,0 +1,99 @@
+---
+title: はじめに
+description: Koyori UI の導入方法と Vue・React での使い方。
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Koyori UI は、Koyori のプロジェクトで共有する UI コンポーネントです。
+Mitosis の共通ソースから Vue・React 向けのパッケージを生成し、同じ見た目と操作を提供します。
+
+各コンポーネントのページでは、**Vue／React のタブ**で実際のデモとコピーできるコードを切り替えられます。
+
+## 導入
+
+Vue 3.5 以降、または React 19 が必要です。CSS を読み込むには Vite などのバンドラーを使います。
+現在は、このリポジトリからパッケージを作成して利用します。作成には Node.js 24 と pnpm 12.4.1 を使います。
+
+<Tabs syncKey="framework">
+<TabItem label="Vue">
+
+```sh
+# ui リポジトリで実行
+pnpm install --frozen-lockfile
+pnpm --filter @koyori-app/ui-vue pack --pack-destination /tmp/koyori-ui-packages
+
+# 利用するアプリのディレクトリで実行
+pnpm add /tmp/koyori-ui-packages/koyori-app-ui-vue-0.0.0.tgz
+```
+
+```vue title="App.vue"
+<script setup lang="ts">
+import { Button } from '@koyori-app/ui-vue';
+import '@koyori-app/ui-vue/style.css';
+</script>
+
+<template>
+  <Button label="タスクを作成" />
+</template>
+```
+
+</TabItem>
+<TabItem label="React">
+
+```sh
+# ui リポジトリで実行
+pnpm install --frozen-lockfile
+pnpm --filter @koyori-app/ui-react pack --pack-destination /tmp/koyori-ui-packages
+
+# 利用するアプリのディレクトリで実行
+pnpm add /tmp/koyori-ui-packages/koyori-app-ui-react-0.0.0.tgz
+```
+
+```tsx title="App.tsx"
+import { Button } from '@koyori-app/ui-react';
+import '@koyori-app/ui-react/style.css';
+
+export default function App() {
+  return <Button label="タスクを作成" />;
+}
+```
+
+</TabItem>
+</Tabs>
+
+CSS の import はアプリのエントリーなどで一度だけ行えば十分です。
+同じ pnpm workspace 内では、パッケージを依存関係に `workspace:*` で追加して利用できます。
+パッケージのバージョンが変わった場合は、上の `.tgz` 名も合わせて変更してください。
+
+## コンポーネント
+
+| コンポーネント | 用途 |
+| --- | --- |
+| [Button](./components/button/) | タスクの作成・保存などの操作。Primary・Secondary・Tertiary・Ghost の4種類 |
+| [ButtonGroup](./components/button-group/) | 関連する Button をつなげて1つのまとまりとして並べる |
+| [Dropdown](./components/dropdown/) | コピー・アーカイブなどを実行するアクションメニュー |
+| [Picker](./components/picker/) | 単一・複数の項目を選択。検索欄は省略可能 |
+| [Field・Input・Textarea](./components/field/) | ラベル・説明・エラーを関連付けた1行・複数行の文字入力 |
+
+コンポーネントの色は現在ライト背景向けです。ドキュメントをダーク表示にしても、デモは白い背景で表示します。
+
+## アクセシビリティ
+
+ラベルで操作の目的を伝え、キーボードだけでも利用できるようにします。
+各ページにはフォーカス・キー操作・動きを減らす設定の説明を載せています。
+
+設計・実装時は、デジタル庁の
+[ウェブアクセシビリティ導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)と
+W3C の [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) を参考にします。
+
+## 開発と検証
+
+このサイトでは使い方と API を確認できます。
+コンポーネントの状態一覧、アクセシビリティ確認、VRT は引き続き Storybook で扱います。
+
+```sh
+pnpm dev:docs             # このサイトを起動
+pnpm storybook:vue    # Vue の Storybook
+pnpm storybook:react  # React の Storybook
+```
