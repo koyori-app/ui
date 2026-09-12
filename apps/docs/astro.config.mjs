@@ -35,6 +35,12 @@ export default defineConfig({
             { label: 'Field・Input・Textarea', slug: 'components/field' },
           ],
         },
+        {
+          label: 'ブロック',
+          items: [
+            { label: '担当者の選択', slug: 'blocks/assignees' },
+          ],
+        },
       ],
       customCss: ['./src/styles/custom.css'],
     }),

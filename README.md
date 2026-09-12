@@ -155,6 +155,8 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 Astro + Starlight のサイトを `apps/docs` に置いています。
 導入手順・Avatar・Button・ButtonGroup・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
+複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
+現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
 
 ```sh
 pnpm dev:docs          # http://localhost:4321
