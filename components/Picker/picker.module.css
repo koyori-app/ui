@@ -27,6 +27,18 @@
   outline: none;
 }
 
+/* 選択背景・ホバー背景は絶対配置なので、アバターも重なり順に加える。 */
+.optionAvatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* 24px のアバターでも行の高さを 36px に保つ。 */
+.list[data-avatars='true'] .option {
+  padding-block: var(--koyori-space-sm);
+}
+
 .list:focus-visible .option[data-active='true'] {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: calc(-1 * var(--koyori-focus-offset));

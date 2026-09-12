@@ -1,5 +1,7 @@
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.vue';
 export { default as ButtonGroup, type ButtonGroupProps } from './generated/components/ButtonGroup/ButtonGroup.vue';
+export { default as Avatar, type AvatarProps } from './generated/components/Avatar/Avatar.vue';
+export { default as AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './generated/components/AvatarGroup/AvatarGroup.vue';
 export { default as Field, type FieldProps } from './generated/components/Field/Field.vue';
 export { default as Input, type InputProps } from './generated/components/Input/Input.vue';
 export { default as Textarea, type TextareaProps } from './generated/components/Textarea/Textarea.vue';

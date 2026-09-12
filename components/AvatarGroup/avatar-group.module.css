@@ -1,0 +1,30 @@
+@import '../tokens.css';
+
+.group {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 背景色の縁取りで、重なった隣との境界を作る。 */
+.group > * {
+  box-shadow: 0 0 0 2px var(--koyori-color-surface);
+}
+
+.group > * + * {
+  margin-inline-start: -8px;
+}
+
+.overflow {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--koyori-color-accent-soft);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}

@@ -32,7 +32,8 @@ import PickerPreview from '../../../components/PickerPreview.astro';
 | 名前 | 型 | 既定値・説明 |
 | --- | --- | --- |
 | `label` | `string` | 必須。選ぶ対象の名前と未選択時の表示 |
-| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean }[]`。`value` は一意にする |
+| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean, src?: string }[]`。`value` は一意にする |
+| `avatars` | `boolean` | `false`。選択肢の先頭に 24px のアバターを表示する。`src` がなければイニシャル |
 | `selectionMode` | `'single' \| 'multiple'` | `single` |
 | `searchable` | `boolean` | `true`。`false` なら検索欄を表示せず全候補から選ぶ |
 | `selectedValues` | `string[]` | 外側で管理する選択値 |
@@ -46,8 +47,35 @@ import PickerPreview from '../../../components/PickerPreview.astro';
 | `disabled` | `boolean` | `false`。全体を無効化する |
 | `defaultOpen` | `boolean` | `false`。初期表示で開く |
 | `icon` | React の要素、または `null` | 下矢印。`null` で非表示。Vue の差し替えは `#icon` スロット |
+| `trigger` | React の要素 | トリガーに表示する内容。既定は選択中のラベル。Vue は `#trigger` スロット |
 
 Vue では `:selected-values="values"`・`:on-selection-change="handler"` のように渡します。
+
+## トリガーの表示を差し替える
+
+`trigger` を渡すと、トリガーに出る選択中のラベルを別の表示に置き換えられます。
+開閉・キーボード操作・`aria-expanded` はそのままで、読み上げ名も `label` と選択中のラベルから作ります。
+
+```tsx
+// React: 選択中の人をアバターで表示する
+<Picker label="担当者" items={items} selectionMode="multiple"
+  selectedValues={values} onSelectionChange={setValues}
+  trigger={<AvatarGroup label="選択中の担当者" items={selected} max={3} size={24} />} />
+```
+
+```vue
+<!-- Vue -->
+<Picker label="担当者" :items="items" selection-mode="multiple"
+  :selected-values="values" :on-selection-change="handler">
+  <template #trigger>
+    <AvatarGroup label="選択中の担当者" :items="selected" :max="3" :size="24" />
+  </template>
+</Picker>
+```
+
+中身はトリガーの `button` に入るため、`div` などは置けません。文字・`span`・画像を使ってください。
+AvatarGroup のルートは `span` なので、そのまま置けます。
+組み合わせた例は [担当者の選択](../../blocks/assignees/) にあります。
 
 ## Field との連携
 

@@ -1,6 +1,7 @@
 import { For, Show, Slot, useContext, useRef, useStore, useDefaultProps, onMount, onUnMount, onUpdate } from '@builder.io/mitosis';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
 import CheckIcon from '../CheckIcon/CheckIcon.lite';
+import Avatar from '../Avatar/Avatar.lite';
 import { enterMenu, hideMenuHighlight, highlightMenuItem, leaveMenu, listenToMenu, normalizeMenuText, positionMenu, resetMenu, MENU_TYPEAHEAD_TIMEOUT } from '../shared/menu';
 import FieldContext from '../Field/field.context.lite';
 import { getFieldContext } from '../Field/field';
@@ -14,6 +15,8 @@ export interface PickerItem {
   value: string;
   label: string;
   disabled?: boolean;
+  /** Shown when avatars is true. Falls back to initials of the label. */
+  src?: string;
 }
 
 export interface PickerProps {
@@ -34,6 +37,10 @@ export interface PickerProps {
   onSelectionChange?: (values: string[]) => void;
   /** React: rendered icon. Vue: use the icon slot. null hides the icon. */
   icon?: any;
+  /** Replaces the selected label shown in the trigger. React: rendered node. Vue: use the trigger slot. */
+  trigger?: any;
+  /** Shows a 24px Avatar before each option label. */
+  avatars?: boolean;
 }
 
 export default function Picker(props: PickerProps) {
@@ -253,12 +260,17 @@ export default function Picker(props: PickerProps) {
         }}
       >
         <span class={`${controls.surface} ${styles.triggerSurface}`}>
-          <span class={styles.triggerLabel} id={state.id ? `${state.id}-value` : undefined}>{state.view.label}</span>
+          <span class={styles.triggerLabel}>
+            {/* Mitosis はスロットの既定値に式だけを置くと文字列にしてしまうため、要素で包む。 */}
+            <Slot name="trigger"><span>{state.view.label}</span></Slot>
+          </span>
           <Show when={props.icon !== null}>
             <span class={controls.icon} aria-hidden="true"><Slot name="icon"><ChevronDownIcon /></Slot></span>
           </Show>
         </span>
       </button>
+      {/* Field 内の名前は id 参照で作る。button の外に置き、トリガーの文字列を二重にしない。 */}
+      <span class={styles.status} id={state.id ? `${state.id}-value` : undefined} aria-hidden="true">{state.view.label}</span>
       <div ref={panelRef!} id={state.id ? `${state.id}-panel` : undefined} class={menu.panel}
         role="group" aria-label={props.label} hidden={!state.open || props.disabled}
         onKeyDown={(event) => state.navigate(event)}
@@ -274,6 +286,7 @@ export default function Picker(props: PickerProps) {
           aria-labelledby={state.context?.labelId}
           aria-required={state.context?.required || undefined} aria-invalid={state.context?.invalid || undefined}
           aria-activedescendant={state.view.activeId} tabIndex={state.view.canFocus ? 0 : -1}
+          data-avatars={props.avatars}
           onFocus={() => state.focusList()}
           onMouseEnter={(event) => enterMenu(listRef, event)}
           onMouseLeave={() => state.leave()}
@@ -292,6 +305,12 @@ export default function Picker(props: PickerProps) {
                 onClick={() => state.select(index)}
               >
                 <span class={menu.selection} aria-hidden="true" />
+                <Show when={props.avatars}>
+                  {/* 名前は label が伝えるため、アバターは装飾として読み上げから外す。 */}
+                  <span class={styles.optionAvatar} aria-hidden="true">
+                    <Avatar name={item.label} src={item.src} size={24} />
+                  </span>
+                </Show>
                 <span class={menu.itemLabel}>{item.label}</span>
                 <span class={menu.check} aria-hidden="true"><CheckIcon /></span>
               </div>

@@ -61,6 +61,15 @@ UI の開発では [アクセシビリティの指針](AGENT.md) を参照して
 ButtonGroup は子の Button をつなげ、隣り合う枠線を1本に重ねて外側の角だけを丸めます。
 `label` を `role="group"` の `aria-label` に使います。グループ内では押下時の縮小を止めます。
 
+Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
+`src` がない場合と読み込みに失敗した場合はイニシャルを表示し、読み上げは常に `name` になります。
+イニシャルは空白区切りの語の先頭を2つまで使います（「山田 太郎」→「山太」、「山田太郎」→「山」）。
+直径と文字サイズの計算・イニシャルの算出は `components/Avatar/avatar.ts` にまとめ、AvatarGroup と共有します。
+
+AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を超えた分を `+N` にまとめます。
+`label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
+重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
+
 Field は `id`・`label`・`description`・`error`・`required` を受け取り、中の Input（1行）・Textarea（複数行）・Picker（選択）に渡します。Field 内には対象を1つだけ置きます。
 `id` は入力欄に付き、ラベルの `for` と説明・エラーの `aria-describedby` に使います。エラーがあると `aria-invalid="true"` を付けます。
 エラー領域は常設の `aria-live="polite"` で、後から出たエラーも通知します。`requiredText` で「必須」の表示を差し替えられます。
@@ -81,6 +90,11 @@ Storybook の Actions で実行通知と Tab 移動を確認できます。
 Picker は単一・複数選択用です。`label` と `items: { value, label, disabled? }[]` を渡します。
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
 単一選択は選ぶと閉じ、`selectionMode="multiple"` は選択・解除しても開いたままです。
+`avatars` を付けると、選択肢の先頭に 24px の Avatar を出します。画像は `items` の `src`、なければイニシャルです。
+行の上下の余白を詰めて高さは 36px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
+トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。
+アバターなどを置いても、開閉・キーボード操作・読み上げ名（`label` と選択中のラベル）はそのままです。
+中身は `button` の内容として正しい要素にしてください（AvatarGroup のルートは `span` です）。
 選んだラベルはトリガーとアクセシブルネームに反映します。`label` は選ぶ対象の名前として固定してください。
 `selectedValues: string[]` と `onSelectionChange(values)` で外側から状態を管理できます。
 省略すると内部で管理し、初期値は `defaultSelectedValues` です。
@@ -144,8 +158,10 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Button・ButtonGroup・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Avatar・Button・ButtonGroup・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
+複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
+現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
 
 ```sh
 pnpm dev:docs          # http://localhost:4321

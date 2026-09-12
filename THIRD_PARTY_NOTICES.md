@@ -1,39 +1,5 @@
 # Third-party notices
 
-## Fluid Functionalism
-
-- Source: https://github.com/mickadesign/fluid-functionalism
-- License: MIT
-- License source: https://github.com/mickadesign/fluid-functionalism/blob/c0b2b2f79928151d7558cb4e6bc3f83263d2d4f6/LICENSE
-- 状態: 導入予定のライセンス表記を準備したものです。実装コードはまだ取り込んでいません。
-
-取り込み時に対象ファイルと取り込み元コミットを追記し、状態を更新してください。
-コピー・改変・Vue への移植を含め、以下の著作権表示とライセンス文を保持します。
-
-```text
-MIT License
-
-Copyright (c) 2026 Micka Touillaud
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
 ## Lucide Icons
 
 - Source: https://github.com/lucide-icons/lucide
