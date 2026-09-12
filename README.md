@@ -29,8 +29,8 @@ Storybook 起動中もこのコマンドで変更を反映できます。生成�
 Story は各パッケージの `src/*.stories.*` に追加します。
 
 角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
-Button・Field・Dropdown・Picker が参照し、生成先と配布用の `style.css` にも含まれます。
-Button・Dropdown・Picker は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
+各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
+Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
 配色はくすんだラベンダーとセージを使い、背景に色を持たせながら文字は濃く保ちます。
 主ボタン・ホバー・選択背景はラベンダーの濃淡で揃え、選択時はホバーより少し濃くします。
 補助ボタンはセージ、選択チェックは丸背景のない濃い紫です。
@@ -61,6 +61,18 @@ UI の開発では [アクセシビリティの指針](AGENT.md) を参照して
 
 ButtonGroup は子の Button をつなげ、隣り合う枠線を1本に重ねて外側の角だけを丸めます。
 `label` を `role="group"` の `aria-label` に使います。グループ内では押下時の縮小を止めます。
+
+Accordion は `id`・`label` と本文を受け取る開閉セクションです。`id` はページ内で一意にします。
+`defaultOpen` は初期表示、`open` と `onOpenChange` は外側からの制御に使います。省略時は各セクションが独立して開閉します。
+同時にひとつだけ開く例は Storybook の SingleOpen、複数を開く例は MultipleOpen にあります。
+`headingLevel`（既定 3）で見出し階層、`disabled` で操作の無効化、`icon`（Vue は `#icon`）で先頭アイコンを指定できます。
+Enter / Space で開閉し、閉じた内容は Tab 移動・読み上げから除きます。本文の DOM と入力内容は保持します。
+
+Sidebar は `label` をナビゲーションの名前にし、`header`・`footer`（Vue は同名スロット）と本文を縦に並べます。
+SidebarLink の `label`・`href` でページ移動、`current` で現在地、`badge` で補足、`disabled` で移動の無効化を指定します。
+アイコンは `icon`（Vue は `#icon`）で渡します。通常のリンクなので新しいタブでも開け、現在地はアプリの URL から渡します。
+本文に Accordion を置くとグループを開閉できます。幅は `--koyori-sidebar-width`（240px）、高さは親要素で指定します。
+項目が多い場合はナビゲーション部分だけがスクロールします。Accordion 本文の余白は `--koyori-accordion-padding` で変更できます。
 
 Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
 `src` がない場合と読み込みに失敗した場合はイニシャルを表示し、読み上げは常に `name` になります。
@@ -166,13 +178,14 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-picker-logic.cjs` はブラウザーなしで選択計算を検証します。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
+`node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロールを両フレームワークのブラウザーで検証します。
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
 
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Avatar・Button・ButtonGroup・Dialog・Dropdown・Picker・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Button・ButtonGroup・Dialog・Dropdown・Picker・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

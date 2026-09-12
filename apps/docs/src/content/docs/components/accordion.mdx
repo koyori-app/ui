@@ -1,0 +1,49 @@
+---
+title: Accordion
+description: 見出しを押して内容を開閉するアコーディオン。
+---
+
+import AccordionPreview from '../../../components/AccordionPreview.astro';
+
+Accordion はひとつの開閉セクションです。複数並べて設定画面や FAQ を作れます。
+この例では、外側で状態を管理して同時にひとつだけ開きます。
+
+<AccordionPreview />
+
+## 基本の使い方
+
+```tsx
+<Accordion id="project-settings" label="プロジェクトの設定" defaultOpen>
+  <p>ここに本文やフォームを置きます。</p>
+</Accordion>
+```
+
+Vue では本文を既定スロットに置き、初期表示を開くときは `default-open` を指定します。
+`id` はページ内で一意にしてください。SSR 時から見出しと内容の関連付けに使います。
+
+## Props
+
+| 名前 | 型 | 説明 |
+| --- | --- | --- |
+| `id` | `string` | 必須。ページ内で一意な識別子 |
+| `label` | `string` | 必須。見出しの文字列 |
+| `defaultOpen` | `boolean` | 初期表示を開く。既定は `false` |
+| `open` | `boolean` | 開閉状態を外側で管理する場合に指定 |
+| `onOpenChange` | `(open: boolean) => void` | 利用者による開閉の通知 |
+| `disabled` | `boolean` | 開閉操作を無効にする。現在の表示状態は保持 |
+| `headingLevel` | `2 \| 3 \| 4 \| 5 \| 6` | 見出しレベル。既定は `3` |
+| `icon` | React の要素 | 見出しの先頭に表示。Vue は `#icon` スロット |
+
+`open` を省略すると各セクションが独立して開閉し、複数を同時に開けます。
+同時にひとつだけ開く場合は、プレビューのように開いている ID をアプリ側で持ち、`open` と `onOpenChange` に渡します。
+`open` を指定した場合は通知を受けて値を更新してください。`defaultOpen` の変更は初期表示後には反映しません。
+
+## キーボード・表示
+
+Enter / Space で開閉し、Tab / Shift + Tab で見出しと表示中の操作要素を移動します。
+閉じた内容は読み上げと Tab 移動の対象から外しますが、DOM は保持するため入力内容は消えません。
+見出しには `aria-expanded` と `aria-controls` を付けます。
+[APG の Accordion パターン](https://www.w3.org/WAI/ARIA/apg/patterns/accordion/)に沿って見出しレベルを指定できます。
+
+表示時に短いフェードを付け、`prefers-reduced-motion` では止めます。
+本文の余白は `--koyori-accordion-padding` で調整できます。Sidebar 内ではリンクを少し字下げする余白になります。

@@ -1,0 +1,54 @@
+---
+title: Sidebar
+description: 現在地を示すリンクと折りたたみグループを組み合わせるサイドバー。
+---
+
+import SidebarPreview from '../../../components/SidebarPreview.astro';
+
+Sidebar はヘッダー・ナビゲーション・フッターを縦に並べます。
+ページ移動には SidebarLink、グループの開閉には [Accordion](../accordion/) を組み合わせます。
+プレビューではリンクを押すと URL のハッシュと現在地表示が変わります。
+
+<SidebarPreview />
+
+## 基本の使い方
+
+```tsx
+<Sidebar label="メインナビゲーション" header={<strong>Koyori</strong>}>
+  <SidebarLink label="概要" href="/overview" current />
+  <Accordion id="projects" label="プロジェクト" defaultOpen>
+    <SidebarLink label="Koyori UI" href="/projects/ui" />
+  </Accordion>
+</Sidebar>
+```
+
+Vue は `#header`・`#footer` スロット、リンクと Accordion は既定スロットに置きます。
+ナビゲーションは `nav`、リンクは通常の `a` 要素です。Tab で移動し、ブラウザーの「新しいタブで開く」などをそのまま使えます。
+
+## Sidebar の Props
+
+| 名前 | 型 | 説明 |
+| --- | --- | --- |
+| `label` | `string` | 必須。ナビゲーション領域の読み上げ名 |
+| `header` | React の要素 | 上部の内容。Vue は `#header` |
+| `footer` | React の要素 | 下部の内容。Vue は `#footer` |
+
+ヘッダーとフッターは未指定なら余白ごと消えます。
+高さは親要素に合わせ、収まらない場合はナビゲーション部分だけがスクロールします。
+幅は `--koyori-sidebar-width`（既定 `240px`）で変更でき、親要素より広くなりません。
+ページ内での配置や、小画面でサイドバー全体を表示・非表示にする操作は利用側のレイアウトで組みます。
+
+## SidebarLink の Props
+
+| 名前 | 型 | 説明 |
+| --- | --- | --- |
+| `label` | `string` | 必須。リンクの文字列 |
+| `href` | `string` | 必須。移動先 |
+| `current` | `boolean` | 現在地。背景色と `aria-current="page"` で示す |
+| `disabled` | `boolean` | 移動先と Tab 移動を無効にする |
+| `badge` | `string` | 右端の補足。例: 未読数 `"4"` |
+| `icon` | React の要素 | 左端の装飾アイコン。Vue は `#icon` |
+
+`current` はアプリの URL やルーターの状態から渡します。リンク自身は現在地を保持しません。
+アイコンのない項目には空のアイコン領域を作りません。長いラベルは省略せず折り返します。
+Sidebar と Accordion を複数置く場合は、各 Accordion に異なる `id` を指定してください。

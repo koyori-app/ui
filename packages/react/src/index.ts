@@ -1,5 +1,8 @@
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.js';
 export { default as ButtonGroup, type ButtonGroupProps } from './generated/components/ButtonGroup/ButtonGroup.js';
+export { default as Accordion, type AccordionProps } from './generated/components/Accordion/Accordion.js';
+export { default as Sidebar, type SidebarProps } from './generated/components/Sidebar/Sidebar.js';
+export { default as SidebarLink, type SidebarLinkProps } from './generated/components/SidebarLink/SidebarLink.js';
 export { default as Avatar, type AvatarProps } from './generated/components/Avatar/Avatar.js';
 export { default as AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './generated/components/AvatarGroup/AvatarGroup.js';
 export { default as Dialog, type DialogProps } from './generated/components/Dialog/Dialog.js';
