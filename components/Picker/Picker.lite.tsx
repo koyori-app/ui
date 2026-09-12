@@ -260,10 +260,12 @@ export default function Picker(props: PickerProps) {
         }}
       >
         <span class={`${controls.surface} ${styles.triggerSurface}`}>
-          <span class={styles.triggerLabel} id={state.id ? `${state.id}-value` : undefined}>
+          <span class={styles.triggerLabel}>
             {/* Mitosis はスロットの既定値に式だけを置くと文字列にしてしまうため、要素で包む。 */}
             <Slot name="trigger"><span>{state.view.label}</span></Slot>
           </span>
+          {/* Field 内の名前は id 参照で作る。トリガーを差し替えても選択中のラベルを名前に残す。 */}
+          <span class={styles.status} id={state.id ? `${state.id}-value` : undefined}>{state.view.label}</span>
           <Show when={props.icon !== null}>
             <span class={controls.icon} aria-hidden="true"><Slot name="icon"><ChevronDownIcon /></Slot></span>
           </Show>

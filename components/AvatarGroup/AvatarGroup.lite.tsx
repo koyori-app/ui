@@ -37,9 +37,9 @@ export default function AvatarGroup(props: AvatarGroupProps) {
   return (
     <span class={styles.group} role="group" aria-label={props.label}>
       <For each={state.shown}>
-        {(item) => (
-          /* 並び替え・削除で、読み込み失敗の状態が別の人へ引き継がれないようにする。 */
-          <Avatar key={`${item.name}|${item.src ?? ''}`} name={item.name} src={item.src} size={props.size} />
+        {(item, index) => (
+          /* 同姓同名・同じ画像でも重複しない key にする。差し替えで src が変われば Avatar 側が失敗状態を戻す。 */
+          <Avatar key={index} name={item.name} src={item.src} size={props.size} />
         )}
       </For>
       <Show when={state.hidden > 0}>
