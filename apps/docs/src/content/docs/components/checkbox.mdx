@@ -1,0 +1,43 @@
+---
+title: Checkbox
+description: SVG のチェック線を描画する、ラベル付きのチェックボックス。
+---
+
+import CheckboxPreview from '../../../components/CheckboxPreview.astro';
+
+タスクの完了や行の選択に使います。チェック時は SVG の線が左から順に描かれ、解除時はすぐに消えます。
+外枠と操作領域は動かさないため、切り替えても周囲のレイアウトは変わりません。
+
+## プレビュー
+
+<CheckboxPreview />
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 表示ラベルと読み上げ名 |
+| `hideLabel` | `boolean` | `false` | 表示ラベルを隠す。読み上げ名は保持 |
+| `checked` | `boolean` | 未指定 | 外側で管理するチェック状態 |
+| `onCheckedChange` | `(checked: boolean) => void` | — | ユーザー操作による変更を通知 |
+| `disabled` | `boolean` | `false` | 操作を無効にする |
+| `required` | `boolean` | `false` | フォーム送信時のチェックを必須にする |
+| `id` | `string` | — | 入力要素の ID |
+| `name` | `string` | — | フォーム送信時のキー |
+| `value` | `string` | `'on'` | チェック済みの場合に送信する値 |
+| `ariaDescribedBy` | `string` | — | 補足説明の要素 ID。複数は空白区切り |
+
+`checked` を省略すると、標準の入力要素が状態を管理します。フォームのリセットでは未選択に戻ります。
+`checked` を渡す場合は `onCheckedChange` でアプリ側の値も更新してください。
+Vue は `:on-checked-change="handler"`、React は `onCheckedChange={handler}` で渡します。
+外側からの値変更やフォームのリセットでは変更通知を呼びません。
+
+## 操作とアニメーション
+
+標準の `input type="checkbox"` を使い、ラベルのクリックと `Space` キーで切り替えます。
+フォーカスは `Tab` で移動し、無効な項目は飛ばします。
+[W3C の Checkbox パターン](https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/)を参照しています。
+
+操作領域は既定で 36px、チェックの枠は 20px です。表示ラベルもクリックできます。
+アニメーションは CSS の `stroke-dashoffset` と共通のモーショントークンで制御し、追加ライブラリを使いません。
+`prefers-reduced-motion: reduce` ではすぐにチェックを表示します。強制カラーモードでも枠とチェック線を表示します。

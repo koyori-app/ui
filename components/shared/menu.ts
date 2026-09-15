@@ -28,6 +28,14 @@ export function positionMenu(root: HTMLElement | null, trigger: HTMLElement | nu
     if (panel.hasAttribute('data-side')) resetMenu(panel, list);
     return;
   }
+  const topLayer = !!root.closest('[data-menu-top-layer]') && typeof panel.showPopover === 'function';
+  if (topLayer) {
+    panel.popover = 'manual';
+    panel.style.position = 'fixed';
+    panel.style.margin = '0';
+    panel.style.bottom = 'auto';
+    if (!panel.matches(':popover-open')) panel.showPopover();
+  }
   const { gap, margin, maximum } = menuLengths(panel);
   const bounds = trigger.getBoundingClientRect();
   const below = Math.max(0, window.innerHeight - bounds.bottom - gap - margin);
@@ -37,7 +45,12 @@ export function positionMenu(root: HTMLElement | null, trigger: HTMLElement | nu
   panel.style.setProperty('--menu-available-height', `${side === 'top' ? above : below}px`);
   panel.setAttribute('data-side', side);
   const left = root.getBoundingClientRect().left;
-  panel.style.left = `${Math.max(margin - left, Math.min(0, window.innerWidth - margin - left - panel.offsetWidth))}px`;
+  if (topLayer) {
+    panel.style.left = `${Math.max(margin, Math.min(left, window.innerWidth - margin - panel.offsetWidth))}px`;
+    panel.style.top = `${side === 'top' ? bounds.top - gap - panel.offsetHeight : bounds.bottom + gap}px`;
+  } else {
+    panel.style.left = `${Math.max(margin - left, Math.min(0, window.innerWidth - margin - left - panel.offsetWidth))}px`;
+  }
   const focused = list.querySelector<HTMLElement>(':focus-visible')
     || (document.activeElement === list ? list.querySelector<HTMLElement>('[data-active="true"]') : null);
   const hovered = list.querySelector<HTMLElement>('[role="menuitem"]:hover, [role="option"]:hover');
@@ -48,6 +61,11 @@ export function resetMenu(panel: HTMLElement | null, list: HTMLElement | null) {
   hideHighlight(list);
   panel?.removeAttribute('data-side');
   if (panel) {
+    if (panel.popover === 'manual') {
+      if (panel.matches(':popover-open')) panel.hidePopover();
+      panel.removeAttribute('popover');
+      for (const property of ['position', 'margin', 'top', 'bottom', 'left']) panel.style.removeProperty(property);
+    }
     menuLengthCache.delete(panel);
     panel.style.removeProperty('--menu-resolved-gap');
     panel.style.removeProperty('--menu-resolved-max-height');
@@ -61,11 +79,16 @@ export function listenToMenu(root: HTMLElement | null, close: () => void, positi
   const blur = (event: FocusEvent) => {
     if (!root?.contains(event.relatedTarget as Node)) close();
   };
+  const toggle = (event: Event) => {
+    if (event.target instanceof HTMLElement && event.target.hasAttribute('popover') && (event as ToggleEvent).newState === 'closed') close();
+  };
+  root?.addEventListener('toggle', toggle, true);
   document.addEventListener('pointerdown', outside);
   root?.addEventListener('focusout', blur);
   window.addEventListener('resize', position);
   window.addEventListener('scroll', position, true);
   return () => {
+    root?.removeEventListener('toggle', toggle, true);
     document.removeEventListener('pointerdown', outside);
     root?.removeEventListener('focusout', blur);
     window.removeEventListener('resize', position);

@@ -183,6 +183,24 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
 
+## Checkbox
+
+`Checkbox` は `label` を必須にし、`hideLabel` で読み上げ名を保ったまま表示ラベルを隠せます。
+`checked` と `onCheckedChange` で状態を管理でき、省略時は標準の入力要素に任せます。
+チェック時は SVG の線を描画し、外枠や操作領域のサイズは変えません。動きを減らす設定にも対応します。
+[使い方とプレビュー](apps/docs/src/content/docs/components/checkbox.mdx)を参照してください。
+Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描画を検証できます。
+
+## DataList
+
+`DataList` と `DataListRow` で、列の揃った一覧を組み立てます。各 DataList が1グループになり、
+見出し・件数・折り畳み、行の選択表示、空・読み込み中・エラー・再試行を扱えます。
+セルは通常の `td` / `th scope="row"` で渡し、Button・Avatar・Picker などを組み合わせます。
+データ取得・更新・ソート・グループ分けは利用側で管理します。
+DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧の枠外にも表示できます。
+仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
+Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
