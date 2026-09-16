@@ -78,6 +78,7 @@ for (const framework of ['vue', 'react']) {
     'ラベルを display:none で消さない（読み上げ名が失われるため）');
   assert.match(css, /\[data-sidebar-rail=['"]?true['"]?\][^{}]*:has\([^)]*badge[^)]*\):after\{/, `${framework}: 隠した badge の代わりに点を出す`);
   assert.match(css, /prefers-reduced-motion[^}]*\[data-sidebar-rail\]/, `${framework}: 動きを減らす設定で幅の遷移も止める`);
+  assert.match(css, /_frame[^{]*\{[^}]*--sidebar-handle-width:/, `${framework}: つまみの幅は clip-path を持つ外枠に定義する`);
   assert.match(css, /\[data-open\][^{]*\{[^}]*clip-path:inset\(0 calc\(-1 \* var\(--sidebar-handle-width\)\)/,
     `${framework}: つまみの側だけカードの外まで見せる`);
   assert.doesNotMatch(css, /\[data-open\][^{]*\{[^}]*overflow:clip/, `${framework}: つまみを切り落とさない`);

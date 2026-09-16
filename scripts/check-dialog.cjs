@@ -65,12 +65,15 @@ const drawerVue = read('packages/vue/src/generated/components/Drawer/Drawer.vue'
 const drawerReact = read('packages/react/src/generated/components/Drawer/Drawer.tsx');
 for (const [name, source] of [['Vue', drawerVue], ['React', drawerReact]]) {
   assert.match(source, /syncDialog/, `${name} 版 Drawer が Dialog と同じ開閉の同期を呼ぶ`);
-  assert.match(source, /addEventListener\(\s*["']close["']/, `${name} 版 Drawer が close イベントを受ける`);
   assert.match(source, /data-placement/, `${name} 版 Drawer が placement を属性で出す`);
   assert.match(source, /aria-label/, `${name} 版 Drawer が名前を持つ`);
   assert.doesNotMatch(source, /<dialog[^>]*\s:?open=/s, `${name} 版 Drawer が open 属性をバインドしない`);
   assert.match(source, /modal\?: boolean/, `${name} 版 Drawer が modal を受け取る`);
   assert.match(source, /modal === false/, `${name} 版 Drawer が非モーダルの分岐を持つ`);
+  assert.match(source, /modal: true/, `${name} 版 Drawer が modal 未指定をモーダルとして扱う`);
+  assert.match(source, /(oncancel|onCancel|@cancel)/i, `${name} 版 Drawer が Escape を cancel で受ける`);
+  assert.doesNotMatch(source, /addEventListener/, `${name} 版 Drawer が古い props を掴むリスナーを持たない`);
+  assert.match(source, /open && (props\.)?modal !== false/, `${name} 版 Drawer が非モーダルでは dialog を開かない`);
   assert.equal(source.match(/<dialog/g).length, 1, `${name} 版 Drawer の dialog は 1 箇所だけ`);
 }
 assert.equal(drawerVue.match(/<slot\s*\/>/g).length, 2, 'Vue 版 Drawer はモーダルと非モーダルの両方で中身を描く');

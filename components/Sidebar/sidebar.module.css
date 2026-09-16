@@ -2,7 +2,6 @@
 
 .root {
   position: relative;
-  --sidebar-handle-width: 24px;
   --koyori-accordion-padding: var(--koyori-space-xs) var(--koyori-space-xs) var(--koyori-space-xs) var(--koyori-space-xl);
   display: flex;
   flex-direction: column;
@@ -26,6 +25,8 @@
 .frame {
   display: contents;
   --sidebar-current-width: var(--koyori-sidebar-width);
+  /* 外枠の clip-path も使うため、カードではなく外枠に置く。 */
+  --sidebar-handle-width: 24px;
 }
 
 /* rail: 中身をアイコンだけにして細くする。ラベルは読み上げに残す。 */

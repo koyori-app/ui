@@ -1,4 +1,4 @@
-import { Show, useRef, useStore, onMount, onUnMount, onUpdate } from '@builder.io/mitosis';
+import { Show, useDefaultProps, useRef, useStore, onMount, onUpdate } from '@builder.io/mitosis';
 import { syncDialog } from '../Dialog/dialog';
 import styles from './drawer.module.css';
 
@@ -12,7 +12,8 @@ export interface DrawerProps {
   /** Screen edge the drawer slides in from. */
   placement?: 'top' | 'bottom' | 'left' | 'right';
   /**
-   * Called on Escape and on a backdrop click. Closing itself is up to the app.
+   * Called on Escape and on a backdrop click. Closing itself is up to the app:
+   * the drawer stays open until open turns false.
    * The argument is unused; it exists because Mitosis wraps callbacks passed between components.
    */
   onClose?: (event?: unknown) => void;
@@ -20,14 +21,17 @@ export interface DrawerProps {
 }
 
 export default function Drawer(props: DrawerProps) {
+  // Preserve the modal default in Vue, where an omitted boolean prop would be false.
+  useDefaultProps({ modal: true });
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const state = useStore({
     sync() {
-      syncDialog(dialogRef, props.open);
+      syncDialog(dialogRef, props.open && props.modal !== false);
     },
-    /* 自分で close() したときは props.open が false なので通知しない。 */
-    notifyClose() {
-      if (props.open) props.onClose?.();
+    /* Escape で閉じるのはアプリの仕事。ここでは知らせるだけで、open が false になるまで開けておく。 */
+    cancel(event: { preventDefault: Function }) {
+      event.preventDefault();
+      props.onClose?.();
     },
     /* panel が内側を覆うため、dialog 自身が target なら背景を押している。 */
     dismiss(event: { target: EventTarget | null }) {
@@ -36,30 +40,27 @@ export default function Drawer(props: DrawerProps) {
   });
 
   onMount(() => {
-    dialogRef?.addEventListener('close', state.notifyClose);
     state.sync();
-  });
-
-  onUnMount(() => {
-    dialogRef?.removeEventListener('close', state.notifyClose);
   });
 
   onUpdate(() => {
     state.sync();
-  }, [props.open]);
+  }, [props.open, props.modal]);
 
   return (
-    /* 非モーダルでは dialog を出さず、子をその場所に描く。広い画面で常時表示にするときに使う。 */
-    <Show when={props.modal === false} else={
+    <div class={styles.host}>
+      {/* 非モーダルでは中身をその場所に描く。dialog は残したまま閉じておき、切り替えても同じ要素を使う。 */}
+      <Show when={props.modal === false}>{props.children}</Show>
       <dialog ref={dialogRef!} class={styles.root}
         data-placement={props.placement ?? 'left'}
         aria-label={props.label}
+        onCancel={(event) => state.cancel(event)}
         onPointerDown={(event) => state.dismiss(event)}
       >
-        <div class={styles.panel}>{props.children}</div>
+        <div class={styles.panel}>
+          <Show when={props.modal !== false}>{props.children}</Show>
+        </div>
       </dialog>
-    }>
-      {props.children}
-    </Show>
+    </div>
   );
 }
