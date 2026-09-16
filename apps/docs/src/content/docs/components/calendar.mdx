@@ -1,0 +1,78 @@
+---
+title: Calendar
+description: 月のカレンダーから 1 日を選ぶコンポーネント。
+---
+
+import CalendarPreview from '../../../components/CalendarPreview.astro';
+
+Calendar は、ページ内に月のカレンダーを表示して 1 日を選びます。
+値は `'YYYY-MM-DD'` の文字列で扱い、端末のタイムゾーンで日付がずれません。
+
+## プレビュー
+
+今日（2026-09-16）より前と、土日は選べません。
+
+<CalendarPreview />
+
+## 使い方
+
+```tsx
+// React
+const [date, setDate] = useState('2026-09-18');
+<Calendar label="配送日" value={date} onValueChange={setDate} locale="ja-JP" min="2026-09-16" />
+```
+
+```vue
+<!-- Vue -->
+<Calendar label="配送日" :value="date" :on-value-change="(value) => (date = value)" locale="ja-JP" min="2026-09-16" />
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | グリッドの読み上げ名 |
+| `value` | `string` | 未指定 | 外側で管理する選択日（`'YYYY-MM-DD'`）。不正な文字列は未選択 |
+| `defaultValue` | `string` | — | `value` を渡さないときの初期の選択日 |
+| `onValueChange` | `(value: string) => void` | — | 日を選んだときに通知。選択済みの日を選び直しても呼ぶ |
+| `min` / `max` | `string` | — | 選べる範囲（両端を含む）。外の日は表示するが、選択もフォーカスもできない |
+| `isDateDisabled` | `(date: string) => boolean` | — | 選べない日（休日など）。フォーカスはできる |
+| `locale` | `string` | ブラウザー既定 | 月名・曜日・読み上げる日付のロケール |
+| `firstDayOfWeek` | `0`〜`6` | `0`（日曜） | 週の始まり |
+| `today` | `string` | 端末の今日 | 今日の印を付ける日。SSR やテストで日付を固定するときに渡す |
+| `previousMonthLabel` / `nextMonthLabel` | `string` | `前の月` / `次の月` | 月送りボタンの読み上げ名 |
+
+`value` を渡す場合は `onValueChange` でアプリ側の値も更新してください。
+`value` を外から変えると、その日の月を表示します。
+
+範囲選択・時刻・ポップオーバーで開く日付入力は扱いません。入力欄には標準の `<input type="date">` を使えます。
+
+## キーボード操作
+
+[W3C の Date Picker Dialog の例](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/)のグリッド部分に合わせています。
+`Tab` で入るとフォーカス中の日（未操作なら選択日か今日）に移ります。
+
+| キー | 動き |
+| --- | --- |
+| `→` / `←` | 翌日 / 前日。月をまたぐと表示する月も変わる |
+| `↓` / `↑` | 翌週 / 前週 |
+| `Home` / `End` | その週の最初 / 最後の日 |
+| `PageUp` / `PageDown` | 前月 / 翌月の同じ日（月末は丸める） |
+| `Shift+PageUp` / `Shift+PageDown` | 前年 / 翌年の同じ日 |
+| `Enter` / `Space` | フォーカス中の日を選ぶ |
+
+`min`・`max` の外へはフォーカスが移りません。
+
+## アクセシビリティ
+
+- `role="grid"` の表で、各日に「2026年9月16日水曜日」のような読み上げ名を付けます。
+- 選択日は `aria-selected="true"`、今日は `aria-current="date"`、選べない日は `aria-disabled="true"` で伝えます。
+- 月の見出しは `aria-live="polite"` で、月送りボタンを押したときに新しい月を読み上げます。
+- 月送りボタンは端の月で `aria-disabled` になります。フォーカスはボタンに残ります。
+- 選択日は塗り、今日は輪郭と太字で示し、色だけに頼りません。強制配色でも区別できます。
+
+## スタイル
+
+- 日のセルは `--koyori-control-height-sm`（36px）の正方形で、角丸は `--koyori-radius-md` です。
+- ホバーの背景は Dropdown と同じく、マウスが入った位置から広がってセル間を移動します。
+- 枠や背景は付けません。カードに入れる場合は外側で囲んでください。

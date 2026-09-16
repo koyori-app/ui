@@ -1,0 +1,92 @@
+@import '../tokens.css';
+
+.root {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--koyori-space-md);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--koyori-space-md);
+}
+
+.month { font-weight: 600; }
+
+.previousIcon, .nextIcon { display: inline-flex; }
+.previousIcon { transform: rotate(90deg); }
+.nextIcon { transform: rotate(-90deg); }
+
+/* フォーカスを失わないよう disabled ではなく aria-disabled で止め、見た目は無効のボタンに揃える。 */
+.nav[aria-disabled='true'] {
+  color: var(--koyori-color-text-disabled);
+  cursor: not-allowed;
+}
+
+.nav[aria-disabled='true'] > span,
+.nav[aria-disabled='true']:hover > span { background: transparent; }
+
+.gridWrap {
+  --highlight-background: var(--koyori-color-surface-active);
+  position: relative;
+}
+
+.grid {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.weekday {
+  width: var(--koyori-control-height-sm);
+  height: var(--koyori-control-height-sm);
+  padding: 0;
+  color: var(--koyori-color-text-secondary);
+  font-weight: 400;
+}
+
+.day {
+  /* 数字と選択の背景をハイライトより前に出す。 */
+  position: relative;
+  width: var(--koyori-control-height-sm);
+  height: var(--koyori-control-height-sm);
+  padding: 0;
+  border-radius: var(--koyori-radius-md);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.day:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-offset));
+}
+
+/* 今日は輪郭と太字、選択は塗りで示し、重なったときは両方出す。 */
+.day[aria-current='date'] {
+  box-shadow: inset 0 0 0 1px var(--koyori-color-selection-indicator);
+  font-weight: 600;
+}
+
+.day[aria-selected='true'] {
+  background: var(--koyori-color-selection);
+  color: var(--koyori-color-selection-indicator);
+  font-weight: 600;
+}
+
+.day[aria-disabled='true'] {
+  color: var(--koyori-color-text-disabled);
+  cursor: not-allowed;
+}
+
+@media (forced-colors: active) {
+  .day[aria-selected='true'] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+  .day[aria-current='date'] { border: 1px solid CanvasText; }
+  .day[aria-disabled='true'] { color: GrayText; }
+  .nav[aria-disabled='true'] { color: GrayText; }
+}
