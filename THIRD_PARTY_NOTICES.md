@@ -8,8 +8,9 @@
 - Icon source: https://github.com/lucide-icons/lucide/blob/a79b2d131dab2bf20cb224bd0937b439a9c4fa99/icons/ellipsis.svg
 - Icon source: https://github.com/lucide-icons/lucide/blob/a79b2d131dab2bf20cb224bd0937b439a9c4fa99/icons/check.svg
 - Icon source: https://github.com/lucide-icons/lucide/blob/a79b2d131dab2bf20cb224bd0937b439a9c4fa99/icons/x.svg
+- Icon source: https://github.com/lucide-icons/lucide/blob/a79b2d131dab2bf20cb224bd0937b439a9c4fa99/icons/menu.svg
 - License source: https://github.com/lucide-icons/lucide/blob/a79b2d131dab2bf20cb224bd0937b439a9c4fa99/LICENSE
-- 対象: `components/ChevronDownIcon/ChevronDownIcon.lite.tsx`、`components/EllipsisIcon/EllipsisIcon.lite.tsx`、`components/CheckIcon/CheckIcon.lite.tsx`、`components/XIcon/XIcon.lite.tsx` とそこから生成する Vue・React コンポーネント
+- 対象: `components/ChevronDownIcon/ChevronDownIcon.lite.tsx`、`components/EllipsisIcon/EllipsisIcon.lite.tsx`、`components/CheckIcon/CheckIcon.lite.tsx`、`components/XIcon/XIcon.lite.tsx`、`components/MenuIcon/MenuIcon.lite.tsx` とそこから生成する Vue・React コンポーネント
 - 変更: サイズ指定、装飾用のアクセシビリティ属性、表示スタイルを追加。
 - License: ISC。Feather 由来の `chevron-down`・`check`・`x` には以下の MIT 表記も適用されます。
 

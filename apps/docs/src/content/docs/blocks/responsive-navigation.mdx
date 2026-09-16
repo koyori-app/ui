@@ -1,0 +1,42 @@
+---
+title: レスポンシブなナビゲーション
+description: 広い画面では常時表示、狭い画面ではハンバーガーで開くモーダルにするナビゲーション。
+---
+
+import ResponsiveNavigationPreview from '../../../components/ResponsiveNavigationPreview.astro';
+
+広い画面ではサイドバーを最初から表示し、狭い画面ではハンバーガーで開くモーダルにします。
+パネル本体は Sidebar です。Drawer は狭い画面のときだけ被せる覆いで、`modal` が `false` のときは何も包まず中身をその場に描きます。
+[Drawer](../../components/drawer/) の `modal` を画面幅で切り替えるだけで、中身の [Sidebar](../../components/sidebar/) は 1 回書けば済みます。
+
+## プレビュー
+
+ブラウザーの幅を 768px より狭くすると、モーダルに切り替わります。
+
+<ResponsiveNavigationPreview />
+
+## 組み方
+
+1. `matchMedia` で画面幅を監視し、狭いかどうかを状態に持ちます。
+2. `modal` にその値を渡します。広い画面では `dialog` を使わず、その場に表示されます。
+3. 表示状態（`open`）は 1 つだけ持ち、狭くなったら閉じ、広くなったら開きます。
+4. ハンバーガーも 1 つだけ置き、`ariaExpanded` と `ariaControls` で状態と対象を伝えます。
+
+広い画面では Sidebar が畳まれ、狭い画面では Drawer が開閉します。どちらも同じ `open` で動きます。
+
+Sidebar に `rail` と `onRailChange` を渡すと、広い画面では端のつまみでアイコンだけの表示に切り替えられます。
+狭い画面ではモーダルが覆うため、つまみは出ません。
+
+## 注意
+
+- **切り替えでサイドバーは作り直されます。** Accordion の開閉状態は初期値に戻ります。保持したい場合は Accordion を `open` で制御してください。
+- **モーダルを開いたまま画面が広くなると、フォーカスは body に戻ります。** 元の要素が消えるためです。
+- **サーバー描画では広い画面として描きます。** 狭い画面では JS が動くまでサイドバーが一瞬見えるので、必要なら次の 1 行をアプリの CSS に入れてください。
+
+  ```css
+  @media (max-width: 768px) {
+    #app-nav:not(dialog *) { display: none; }
+  }
+  ```
+
+- **区切り幅はアプリ側で決めます。** CSS の media query は CSS 変数を参照できないため、ライブラリでは固定しません。

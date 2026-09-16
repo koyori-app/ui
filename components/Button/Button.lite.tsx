@@ -7,6 +7,10 @@ interface ButtonOptions {
   variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger';
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  /** Open state of the region this button toggles, e.g. a collapsible Sidebar. Used with ariaControls. */
+  ariaExpanded?: boolean;
+  /** id of the region this button toggles. */
+  ariaControls?: string;
   onClick?: () => void;
 }
 
@@ -23,6 +27,9 @@ export default function Button(props: ButtonProps) {
       data-icon-only={!props.label}
       type={props.type || 'button'}
       aria-label={props.ariaLabel}
+      /* Vue は未指定の boolean を false にするため、開閉対象があるときだけ出す。 */
+      aria-expanded={props.ariaControls ? props.ariaExpanded : undefined}
+      aria-controls={props.ariaControls}
       disabled={props.disabled}
       onClick={() => props.onClick?.()}
     >

@@ -53,3 +53,12 @@ export function listenToSidebar(root: HTMLElement | null) {
     window.removeEventListener('scroll', schedule, true);
   };
 }
+
+/* 閉じるときに中にあったフォーカスを、aria-controls で指している開閉ボタンへ戻す。 */
+export function restoreFocus(root: HTMLElement | null, id: string | undefined) {
+  const active = root?.ownerDocument.activeElement;
+  if (!root || !id || !active || !root.contains(active)) return;
+  const toggle = Array.from(root.ownerDocument.querySelectorAll<HTMLElement>('[aria-controls]'))
+    .find((element) => element.getAttribute('aria-controls')!.split(/\s+/).includes(id));
+  toggle?.focus();
+}

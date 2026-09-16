@@ -1,6 +1,7 @@
 @import '../tokens.css';
 
 .root {
+  position: relative;
   --koyori-accordion-padding: var(--koyori-space-xs) var(--koyori-space-xs) var(--koyori-space-xs) var(--koyori-space-xl);
   display: flex;
   flex-direction: column;
@@ -10,13 +11,154 @@
   height: 100%;
   min-height: 0;
   padding: var(--koyori-space-md);
-  border: 1px solid var(--koyori-color-border);
-  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-md));
+  /* Drawer など面を持つ親の中では、変数で枠と角丸を外せる。 */
+  border: var(--koyori-sidebar-border, 1px solid var(--koyori-color-border));
+  border-radius: var(--koyori-sidebar-radius, calc(var(--koyori-radius-md) + var(--koyori-space-md)));
   background: var(--koyori-color-surface);
   color: var(--koyori-color-text);
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
+}
+
+/* 開閉しないときの外枠は箱を作らない。 */
+.frame {
+  display: contents;
+  --sidebar-current-width: var(--koyori-sidebar-width);
+  /* 外枠の clip-path も使うため、カードではなく外枠に置く。 */
+  --sidebar-handle-width: 24px;
+}
+
+/* rail: 中身をアイコンだけにして細くする。ラベルは読み上げに残す。 */
+.frame[data-sidebar-rail='true'] { --sidebar-current-width: var(--koyori-sidebar-rail-width); }
+
+.frame[data-sidebar-rail] > .root {
+  width: var(--sidebar-current-width);
+  transition: width var(--koyori-motion-slow) var(--koyori-ease-out);
+}
+
+/* 幅が動く間、中身はカードではなく各領域で切る。つまみはカードの外に出す。 */
+.frame[data-sidebar-rail] .navigation { overflow-x: hidden; }
+
+.frame[data-sidebar-rail] .header, .frame[data-sidebar-rail] .footer { overflow: hidden; }
+
+.frame[data-sidebar-rail='true'] > .root {
+  --koyori-accordion-padding: var(--koyori-space-xs) 0;
+}
+
+.frame[data-sidebar-rail='true'] .header, .frame[data-sidebar-rail='true'] .footer {
+  display: flex;
+  justify-content: center;
+}
+
+/* open を渡したときだけ開閉する。外枠の実寸を畳んで隣の領域を広げ、
+   カードは形を保ったまま端へ滑って隠れる。閉じ終わってから隠す。 */
+.frame[data-open] {
+  display: flex;
+  flex-shrink: 0;
+  /* カードが滑り出す端は切り、つまみのある側だけ枠の外まで見せる。 */
+  clip-path: inset(0 calc(-1 * var(--sidebar-handle-width)) 0 0);
+  transition: width var(--koyori-motion-slow) var(--koyori-ease-out),
+    height var(--koyori-motion-slow) var(--koyori-ease-out),
+    visibility var(--koyori-motion-slow);
+}
+
+.frame[data-open='false'] { visibility: hidden; }
+
+.frame[data-open][data-placement='right'] { clip-path: inset(0 0 0 calc(-1 * var(--sidebar-handle-width))); }
+
+.frame[data-open][data-placement='top'], .frame[data-open][data-placement='bottom'] { clip-path: inset(0); }
+
+.frame[data-open] > .root {
+  flex-shrink: 0;
+  max-width: none;
+}
+
+/* 左右は幅を畳む。カードは画面端の側に寄せ、外枠と一緒に端へ抜ける。 */
+.frame[data-open][data-placement='left'], .frame[data-open][data-placement='right'] {
+  width: var(--sidebar-current-width);
+  height: 100%;
+}
+
+.frame[data-open][data-placement='left'] { justify-content: flex-end; }
+.frame[data-open][data-placement='right'] { justify-content: flex-start; }
+
+.frame[data-open='false'][data-placement='left'], .frame[data-open='false'][data-placement='right'] {
+  width: 0;
+}
+
+/* 上下は高さを畳む。親の高さを奪わないよう、開いたときの高さを変数で持つ。 */
+.frame[data-open][data-placement='top'], .frame[data-open][data-placement='bottom'] {
+  flex-direction: column;
+  width: 100%;
+  height: var(--koyori-sidebar-height);
+}
+
+.frame[data-open][data-placement='top'] { justify-content: flex-end; }
+.frame[data-open][data-placement='bottom'] { justify-content: flex-start; }
+
+.frame[data-open][data-placement='top'] > .root, .frame[data-open][data-placement='bottom'] > .root {
+  height: var(--koyori-sidebar-height);
+}
+
+.frame[data-open='false'][data-placement='top'], .frame[data-open='false'][data-placement='bottom'] {
+  height: 0;
+}
+
+/* 端から張り出すつまみ。カードの枠を覆い、地続きに見せる。
+   Drawer など切り落とす親は --koyori-sidebar-handle-display で消せる。 */
+.handle {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  display: var(--koyori-sidebar-handle-display, flex);
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--sidebar-handle-width);
+  height: var(--koyori-control-height-sm);
+  padding: 0;
+  border: 1px solid var(--koyori-color-border);
+  border-left: 0;
+  border-radius: 0 var(--koyori-radius-md) var(--koyori-radius-md) 0;
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text-secondary);
+  cursor: pointer;
+  transition: opacity var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+.handle:hover { background: var(--koyori-color-surface-hover); }
+
+.handle:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-width));
+}
+
+.frame[data-placement='right'] .handle {
+  left: auto;
+  right: 100%;
+  border-left: 1px solid var(--koyori-color-border);
+  border-right: 0;
+  border-radius: var(--koyori-radius-md) 0 0 var(--koyori-radius-md);
+}
+
+/* 閉じる間はカードだけが滑る。 */
+.frame[data-open='false'] .handle { opacity: 0; }
+
+.handleIcon {
+  display: inline-flex;
+  transform: rotate(90deg);
+  transition: transform var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+.frame[data-sidebar-rail='true'] .handleIcon, .frame[data-placement='right'] .handleIcon { transform: rotate(-90deg); }
+
+.frame[data-placement='right'][data-sidebar-rail='true'] .handleIcon { transform: rotate(90deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .frame[data-open], .frame[data-sidebar-rail] > .root, .handle, .handleIcon { transition: none; }
 }
 
 .header, .footer {

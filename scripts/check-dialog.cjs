@@ -35,15 +35,26 @@ assert.deepEqual(closing.calls, ['close'], '閉じた状態で再同期しても
 
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
+const drawerVue = read('packages/vue/src/generated/components/Drawer/Drawer.vue');
+const drawerReact = read('packages/react/src/generated/components/Drawer/Drawer.tsx');
+
 const vue = read('packages/vue/src/generated/components/Dialog/Dialog.vue');
 assert.match(vue, /syncDialog/, 'Vue 版が開閉の同期を呼ぶ');
-assert.match(vue, /addEventListener\(\s*["']close["']/, 'Vue 版が close イベントを受ける');
+assert.match(vue, /@cancel/, 'Vue 版が Escape を cancel で受ける');
 assert.doesNotMatch(vue, /<dialog[^>]*:open=/s, 'open 属性をバインドしない（非モーダルになるため）');
 assert.match(vue, /<slot name="actions"/, 'actions スロットがある');
 
 const react = read('packages/react/src/generated/components/Dialog/Dialog.tsx');
-assert.match(react, /addEventListener\(\s*["']close["']/, 'React 版が close イベントを受ける');
+assert.match(react, /onCancel=\{/, 'React 版が Escape を cancel で受ける');
 assert.match(react, /onPointerDown=\{/, 'React 版が背景クリックを受ける');
+for (const [name, source] of [['Vue', vue], ['React', react]]) {
+  assert.doesNotMatch(source, /addEventListener/, `${name} 版が古い props を掴むリスナーを持たない`);
+}
+
+/* React の onCancel は祖先へ伝わるため、入れ子のダイアログで親まで閉じないことを確かめる。 */
+for (const [name, source] of [['Vue', vue], ['React', react], ['Vue 版 Drawer', drawerVue], ['React 版 Drawer', drawerReact]]) {
+  assert.match(source, /function cancel[\s\S]*?target !== dialogRef/, `${name} が入れ子の Escape を親で受け取らない`);
+}
 assert.doesNotMatch(react, /<dialog[^>]*\sopen=/s, 'open 属性をバインドしない');
 
 assert.match(vue, /data-plain/, 'Vue 版が plain を属性で出す');
@@ -61,4 +72,30 @@ for (const framework of ['vue', 'react']) {
   assert.match(css, /\[data-plain=/, `${framework}: plain の規則がある`);
 }
 
-console.log('Dialog の開閉同期、生成物の構造、配布 CSS の規則を確認しました。');
+for (const [name, source] of [['Vue', drawerVue], ['React', drawerReact]]) {
+  assert.match(source, /syncDialog/, `${name} 版 Drawer が Dialog と同じ開閉の同期を呼ぶ`);
+  assert.match(source, /data-placement/, `${name} 版 Drawer が placement を属性で出す`);
+  assert.match(source, /aria-label/, `${name} 版 Drawer が名前を持つ`);
+  assert.doesNotMatch(source, /<dialog[^>]*\s:?open=/s, `${name} 版 Drawer が open 属性をバインドしない`);
+  assert.match(source, /modal\?: boolean/, `${name} 版 Drawer が modal を受け取る`);
+  assert.match(source, /modal === false/, `${name} 版 Drawer が非モーダルの分岐を持つ`);
+  assert.match(source, /modal: true/, `${name} 版 Drawer が modal 未指定をモーダルとして扱う`);
+  assert.match(source, /(oncancel|onCancel|@cancel)/i, `${name} 版 Drawer が Escape を cancel で受ける`);
+  assert.doesNotMatch(source, /addEventListener/, `${name} 版 Drawer が古い props を掴むリスナーを持たない`);
+  assert.match(source, /open && (props\.)?modal !== false/, `${name} 版 Drawer が非モーダルでは dialog を開かない`);
+  assert.equal(source.match(/<dialog/g).length, 1, `${name} 版 Drawer の dialog は 1 箇所だけ`);
+}
+assert.equal(drawerVue.match(/<slot\s*\/>/g).length, 2, 'Vue 版 Drawer はモーダルと非モーダルの両方で中身を描く');
+for (const framework of ['vue', 'react']) {
+  const css = read(`packages/${framework}/dist/style.css`);
+  for (const placement of ['top', 'bottom', 'left', 'right']) {
+    assert.match(css, new RegExp(`\\[data-placement=['"]?${placement}['"]?\\]:not\\(\\[open\\]\\)`), `${framework}: Drawer が ${placement} へ閉じる位置を持つ`);
+  }
+  assert.match(css, /allow-discrete/, `${framework}: Drawer が閉じるときも遷移する`);
+  assert.match(css, /--koyori-sidebar-radius/, `${framework}: Sidebar の角丸を親から外せる`);
+  assert.match(css, /--koyori-drawer-width/, `${framework}: Drawer 幅のトークンがある`);
+  assert.match(css, /:has\(\[data-sidebar-rail=['"]?true['"]?\]\)[^{]*\{[^}]*--koyori-drawer-width:\s*var\(--koyori-sidebar-rail-width\)/,
+    `${framework}: 中の Sidebar がアイコンだけなら Drawer も細くなる`);
+}
+
+console.log('Dialog・Drawer の開閉同期、生成物の構造、配布 CSS の規則を確認しました。');
