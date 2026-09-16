@@ -78,6 +78,9 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.doesNotMatch(source, /aria-haspopup|aria-controls/, `${name} 版は対象と紐づけない（トリガーを持たないため）`);
   assert.match(source, /placeContextMenu/, `${name} 版が座標を実際の位置で補正する`);
   assert.match(source, /function select[\s\S]*?onSelect\?\.\([\s\S]*?onClose\?\.\(/, `${name} 版が実行してから閉じる（onSelect の後に onClose）`);
+  // フォーカスを戻すと focusout が同期的に起きるため、その前にリスナーを外していないと onClose が先に割り込む。
+  assert.match(source, /function select[\s\S]*?detach\(\)[\s\S]*?focus\(\)[\s\S]*?onSelect\?\.\(/, `${name} 版が実行時、フォーカスを戻す前に外部イベントを外す`);
+  assert.match(source, /function close[\s\S]*?detach\(\)[\s\S]*?focus\(\)/, `${name} 版が閉じるとき、フォーカスを戻す前に外部イベントを外す`);
   assert.doesNotMatch(source, /:not\(\[aria-disabled="true"\]\)/, `${name} 版が無効な項目も含めて先頭にフォーカスする`);
   assert.match(source, /項目がありません/, `${name} 版が 0 件のときもフォーカスできる項目を出す`);
   assert.doesNotMatch(source, /left: `\$\{(props\.)?x\}px`/, `${name} 版が座標を style で直接渡さない`);

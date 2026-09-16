@@ -43,10 +43,17 @@ export default function ContextMenu(props: ContextMenuProps) {
     select(index: number) {
       const item = props.items[index];
       if (!item || item.disabled) return;
+      state.detach();
       resetMenu(panelRef, listRef);
       returnRef?.focus();
       props.onSelect?.(item.value);
       props.onClose?.();
+    },
+    /* 閉じ始めたら外部イベントを先に外す。フォーカスを戻すと focusout が、
+       popover を閉じると toggle が同期的に起き、閉じる処理へもう一度入ってしまうため。 */
+    detach() {
+      cleanupRef?.();
+      cleanupRef = null;
     },
     /* 開いた時点のフォーカス位置を覚えておき、Escape や実行のあとに戻す。 */
     show() {
@@ -59,6 +66,7 @@ export default function ContextMenu(props: ContextMenuProps) {
       });
     },
     close(restoreFocus: boolean) {
+      state.detach();
       resetMenu(panelRef, listRef);
       if (restoreFocus) returnRef?.focus();
       props.onClose?.();
@@ -66,8 +74,7 @@ export default function ContextMenu(props: ContextMenuProps) {
     /* 外側クリックなどは開いている間だけ受ける。開くたびに登録し直し、その時点の props を使う。 */
     sync() {
       if (!rootRef) return;
-      cleanupRef?.();
-      cleanupRef = null;
+      state.detach();
       if (props.open) {
         cleanupRef = listenToMenu(rootRef, () => state.close(false), state.position);
         state.show();
