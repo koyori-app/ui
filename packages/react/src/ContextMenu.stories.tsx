@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button, ContextMenu, EllipsisIcon, contextMenuPosition, menuButtonPosition, type ContextMenuItem } from './index';
 
 const meta = {
@@ -27,6 +27,8 @@ type Story = StoryObj<typeof meta>;
 function Example(args: { label: string; items: ContextMenuItem[] }) {
   const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
   const [action, setAction] = useState('未実行');
+  /* Docs ページでは同じストーリーが並ぶので、id を重複させない。 */
+  const menuId = useId();
   return (
     <div style={{ display: 'grid', gap: 12, justifyItems: 'start' }}>
       <div tabIndex={0} style={{ display: 'flex', alignItems: 'center', gap: 12, width: 320, padding: 12, border: '1px solid var(--koyori-color-border)', borderRadius: 8 }}
@@ -35,10 +37,10 @@ function Example(args: { label: string; items: ContextMenuItem[] }) {
         <span style={{ flex: 1 }}>請求書を送る</span>
         {/* 右クリックできない場合（スマホなど）の入口。同じメニューをボタンの左下に開く。 */}
         <Button ariaLabel="タスクの操作" variant="ghost" icon={<EllipsisIcon />}
-          ariaHasPopup="menu" ariaExpanded={menu.open} ariaControls="story-task-menu"
+          ariaHasPopup="menu" ariaExpanded={menu.open} ariaControls={menuId}
           onClick={(event) => setMenu(menu.open ? { ...menu, open: false } : { open: true, ...menuButtonPosition(event) })} />
       </div>
-      <ContextMenu {...args} id="story-task-menu" open={menu.open} x={menu.x} y={menu.y}
+      <ContextMenu {...args} id={menuId} open={menu.open} x={menu.x} y={menu.y}
         onSelect={(value) => setAction(value)} onClose={() => setMenu((current) => ({ ...current, open: false }))} />
       <output aria-live="polite">{action}</output>
     </div>

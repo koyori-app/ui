@@ -57,7 +57,7 @@ export default function ContextMenu(props: ContextMenuProps) {
        フォーカスは先に戻し、onSelect がダイアログなどへ移せるようにする。 */
     run(value: string) {
       state.teardown();
-      returnRef?.focus();
+      returnRef?.focus({ preventScroll: true });
       props.onSelect?.(value);
       props.onClose?.();
     },
@@ -86,19 +86,21 @@ export default function ContextMenu(props: ContextMenuProps) {
       state.openIndex = -1;
       resetMenu(panelRef, listRef);
     },
-    /* 開いた時点のフォーカス位置を覚えておき、Escape や実行のあとに戻す。 */
+    /* 開いた時点のフォーカス位置を覚えておき、Escape や実行のあとに戻す。
+       開閉に伴うフォーカス移動は preventScroll にする。iOS はフォーカスのたびにページをスクロールし、
+       ボタン → メニューと続けて移すと背景が揺れるため。矢印キーの移動はリスト内のスクロールが要るので通常どおり。 */
     show() {
       returnRef = document.activeElement as HTMLElement | null;
       requestAnimationFrame(() => {
         if (!panelRef || panelRef.hidden) return;
         state.position();
         /* APG に合わせて無効な項目にもフォーカスを置く。フォーカスがメニューに入らないと Escape で閉じられない。 */
-        listRef?.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus();
+        listRef?.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus({ preventScroll: true });
       });
     },
     close(restoreFocus: boolean) {
       state.teardown();
-      if (restoreFocus) returnRef?.focus();
+      if (restoreFocus) returnRef?.focus({ preventScroll: true });
       props.onClose?.();
     },
     /* 外側クリックなどは開いている間だけ受ける。開くたびに登録し直し、その時点の props を使う。 */
@@ -112,7 +114,7 @@ export default function ContextMenu(props: ContextMenuProps) {
         /* アプリ側で閉じたとき（メニューボタンをもう一度押したなど）も、中のフォーカスを開く前の要素へ戻す。 */
         const focused = !!rootRef.contains(document.activeElement);
         state.teardown();
-        if (focused) returnRef?.focus();
+        if (focused) returnRef?.focus({ preventScroll: true });
       }
     },
     position() {
@@ -137,7 +139,7 @@ export default function ContextMenu(props: ContextMenuProps) {
         state.placeSubmenu(submenu);
         if (focusSubmenuRef) {
           focusSubmenuRef = false;
-          submenu.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus();
+          submenu.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus({ preventScroll: true });
         }
       });
     },
@@ -157,7 +159,7 @@ export default function ContextMenu(props: ContextMenuProps) {
       const submenu = state.openSubmenuPanel();
       if (submenu) {
         const parent = listRef?.querySelector<HTMLElement>(`[data-index="${submenu.getAttribute('data-submenu')}"]`);
-        if (focusParent || submenu.contains(document.activeElement)) parent?.focus();
+        if (focusParent || submenu.contains(document.activeElement)) parent?.focus({ preventScroll: true });
         resetMenu(submenu, submenu.querySelector<HTMLElement>('[role="presentation"]'));
       }
       state.openIndex = -1;

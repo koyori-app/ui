@@ -14,10 +14,10 @@ export function contextMenuPosition(event: { clientX?: number; clientY?: number;
    Safari はクリックでボタンにフォーカスを置かないため、ここでフォーカスする。
    Escape や実行のあとに、フォーカスがボタンへ戻るようにするため。 */
 export function menuButtonPosition(event: { currentTarget?: EventTarget | null }) {
-  const button = event.currentTarget as { getBoundingClientRect?: () => { left: number; bottom: number }; focus?: () => void } | null;
+  const button = event.currentTarget as { getBoundingClientRect?: () => { left: number; bottom: number }; focus?: (options?: { preventScroll?: boolean }) => void } | null;
   const bounds = button?.getBoundingClientRect?.();
   if (!bounds) return { x: 0, y: 0 };
-  button?.focus?.();
+  button?.focus?.({ preventScroll: true });
   return { x: bounds.left, y: bounds.bottom };
 }
 
@@ -26,11 +26,12 @@ export function menuButtonPosition(event: { currentTarget?: EventTarget | null }
    ponytail: 祖先の拡大縮小（scale）は補正しない。必要になれば行列から逆算する。 */
 export function placeContextMenu(root: { style: { left: string; top: string }; getBoundingClientRect(): { left: number; top: number } } | null, x: number, y: number) {
   if (!root) return;
-  root.style.left = `${x}px`;
-  root.style.top = `${y}px`;
+  /* 今の位置からのずれだけ動かす。スクロールのたびに仮の位置へ書き戻すと、揺れて見えるため。 */
   const bounds = root.getBoundingClientRect();
-  root.style.left = `${2 * x - bounds.left}px`;
-  root.style.top = `${2 * y - bounds.top}px`;
+  const dx = x - bounds.left;
+  const dy = y - bounds.top;
+  if (Math.abs(dx) >= 0.5) root.style.left = `${(parseFloat(root.style.left) || 0) + dx}px`;
+  if (Math.abs(dy) >= 0.5) root.style.top = `${(parseFloat(root.style.top) || 0) + dy}px`;
 }
 
 /* ホバーでサブメニューを開閉するまでの待ち時間。斜めに移動する途中で別の項目に触れても閉じないようにする。

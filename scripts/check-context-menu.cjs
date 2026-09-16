@@ -55,6 +55,9 @@ assert.deepEqual(contextMenuPosition({ clientX: 0, clientY: 0, currentTarget: nu
   assert.deepEqual(menuButtonPosition({ currentTarget: button }), { x: 300, y: 48 }, 'ボタンの左下の座標を返す');
   assert.equal(focused, 1, 'ボタンにフォーカスする');
   assert.deepEqual(menuButtonPosition({ currentTarget: null }), { x: 0, y: 0 }, 'ボタンがなければ 0,0');
+  let options;
+  menuButtonPosition({ currentTarget: { getBoundingClientRect: () => ({ left: 0, bottom: 0 }), focus: (value) => { options = value; } } });
+  assert.deepEqual(options, { preventScroll: true }, 'フォーカスでページをスクロールさせない（iOS で背景が揺れるため）');
 }
 
 // transform を持つ祖先があると fixed の基準がずれる。置いたあと実際の位置との差で補正する。
@@ -62,7 +65,7 @@ function shiftedElement(offsetX, offsetY) {
   return {
     style: { left: '', top: '' },
     getBoundingClientRect() {
-      return { left: parseFloat(this.style.left) + offsetX, top: parseFloat(this.style.top) + offsetY };
+      return { left: (parseFloat(this.style.left) || 0) + offsetX, top: (parseFloat(this.style.top) || 0) + offsetY };
     },
   };
 }
@@ -73,6 +76,19 @@ const plain = shiftedElement(0, 0);
 placeContextMenu(plain, 30, 40);
 assert.deepEqual([plain.style.left, plain.style.top], ['30px', '40px'], 'ずれがなければ座標をそのまま使う');
 placeContextMenu(null, 1, 2);
+// 既に置けていれば書き換えない。スクロールのたびに仮の位置へ戻すと揺れて見える。
+{
+  const placed = shiftedElement(156, 509);
+  placeContextMenu(placed, 204, 537);
+  let writes = 0;
+  const style = placed.style;
+  placed.style = new Proxy(style, { set(target, key, value) { writes += 1; target[key] = value; return true; } });
+  placeContextMenu(placed, 204, 537);
+  assert.equal(writes, 0, '位置が合っていれば style を書き換えない');
+  placeContextMenu(placed, 210, 537);
+  assert.deepEqual(placed.getBoundingClientRect(), { left: 210, top: 537 }, 'ずれた分だけ動かす');
+  assert.equal(writes, 1, '動いた軸だけ書き換える');
+}
 
 // サブメニューは親メニューの右に出し、右に入らなければ左へ反転する。縦は親項目に揃え、はみ出したら上へずらす。
 const viewport = { width: 1280, height: 800 };
@@ -164,10 +180,16 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.match(source, /SUBMENU_DELAY/, `${name} 版がホバーで開閉するまで待つ`);
   assert.match(source, /listenToMenu\([\s\S]{0,160}?panelRef/, `${name} 版がルートの popover が閉じたときだけ全体を閉じる`);
   assert.match(source, /placeContextMenu/, `${name} 版が座標を実際の位置で補正する`);
+  // 開閉に伴うフォーカス移動でページをスクロールさせない。矢印キーの移動（リスト内のスクロールが要る）は除く。
+  const calls = [...source.matchAll(/\.focus\(([^)]*)\)/g)].filter((match) => !/nextMenuIndex|typeaheadTarget/.test(source.slice(match.index - 240, match.index)));
+  assert.ok(calls.length >= 5, `${name} 版の開閉のフォーカス移動を検査できている`);
+  for (const call of calls) {
+    assert.match(call[1], /preventScroll:\s*true/, `${name} 版の開閉のフォーカス移動がスクロールを止める: ${call[0].replace(/\s+/g, ' ')}`);
+  }
   assert.match(source, /function run[\s\S]*?onSelect\?\.\([\s\S]*?onClose\?\.\(/, `${name} 版が実行してから閉じる（onSelect の後に onClose）`);
   // フォーカスを戻すと focusout が同期的に起きるため、その前にリスナーを外していないと onClose が先に割り込む。
-  assert.match(source, /function run[\s\S]*?teardown\(\)[\s\S]*?focus\(\)[\s\S]*?onSelect\?\.\(/, `${name} 版が実行時、フォーカスを戻す前に外部イベントを外す`);
-  assert.match(source, /function close[\s\S]*?teardown\(\)[\s\S]*?focus\(\)/, `${name} 版が閉じるとき、フォーカスを戻す前に外部イベントを外す`);
+  assert.match(source, /function run[\s\S]*?teardown\(\)[\s\S]*?focus\([\s\S]*?onSelect\?\.\(/, `${name} 版が実行時、フォーカスを戻す前に外部イベントを外す`);
+  assert.match(source, /function close[\s\S]*?teardown\(\)[\s\S]*?focus\(/, `${name} 版が閉じるとき、フォーカスを戻す前に外部イベントを外す`);
   assert.match(source, /function teardown[\s\S]*?detach\(\)[\s\S]*?resetMenu/, `${name} 版がリスナーを外してからメニューを隠す`);
   assert.doesNotMatch(source, /:not\(\[aria-disabled="true"\]\)/, `${name} 版が無効な項目も含めて先頭にフォーカスする`);
   assert.match(source, /項目がありません/, `${name} 版が 0 件のときもフォーカスできる項目を出す`);

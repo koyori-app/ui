@@ -18,6 +18,8 @@ const meta = {
     components: { Button, ContextMenu, EllipsisIcon },
     setup() {
       const menu = ref({ open: false, x: 0, y: 0 });
+      /* Docs ページでは同じストーリーが並ぶので、id を重複させない。 */
+      const menuId = `story-task-menu-${Math.random().toString(36).slice(2)}`;
       const action = ref('未実行');
       const openMenu = (event: MouseEvent) => {
         event.preventDefault();
@@ -27,7 +29,7 @@ const meta = {
         menu.value = menu.value.open ? { ...menu.value, open: false } : { open: true, ...menuButtonPosition(event) };
       };
       const select = (value: string) => { action.value = value; };
-      return { args, menu, action, openMenu, toggleMenu, select };
+      return { args, menu, menuId, action, openMenu, toggleMenu, select };
     },
     template: `<div style="display: grid; gap: 12px; justify-items: start">
       <div tabindex="0" style="display: flex; align-items: center; gap: 12px; width: 320px; padding: 12px; border: 1px solid var(--koyori-color-border); border-radius: 8px"
@@ -35,10 +37,10 @@ const meta = {
       >
         <span style="flex: 1">請求書を送る</span>
         <!-- 右クリックできない場合（スマホなど）の入口。同じメニューをボタンの左下に開く。 -->
-        <Button ariaLabel="タスクの操作" variant="ghost" ariaHasPopup="menu" :ariaExpanded="menu.open" ariaControls="story-task-menu"
+        <Button ariaLabel="タスクの操作" variant="ghost" ariaHasPopup="menu" :ariaExpanded="menu.open" :ariaControls="menuId"
           :on-click="toggleMenu"><template #icon><EllipsisIcon /></template></Button>
       </div>
-      <ContextMenu v-bind="args" id="story-task-menu" :open="menu.open" :x="menu.x" :y="menu.y"
+      <ContextMenu v-bind="args" :id="menuId" :open="menu.open" :x="menu.x" :y="menu.y"
         :on-select="select" :on-close="() => menu.open = false" />
       <output aria-live="polite">{{ action }}</output>
     </div>`,
