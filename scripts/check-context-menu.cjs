@@ -19,7 +19,7 @@ try {
   rmSync(compiled, { recursive: true, force: true });
 }
 const { nextMenuIndex, typeaheadTarget } = menu;
-const { contextMenuPosition } = contextMenu;
+const { contextMenuPosition, placeContextMenu } = contextMenu;
 
 // 矢印キーは循環し、Home/End は端へ飛ぶ。Dropdown と共有する。
 assert.equal(nextMenuIndex('ArrowDown', 0, 3), 1, '下へ 1 つ進む');
@@ -47,6 +47,23 @@ const row = { getBoundingClientRect: () => ({ left: 16, bottom: 72 }) };
 assert.deepEqual(contextMenuPosition({ clientX: 0, clientY: 0, currentTarget: row }), { x: 16, y: 72 }, 'キーボードでは対象の左下');
 assert.deepEqual(contextMenuPosition({ clientX: 0, clientY: 0, currentTarget: null }), { x: 0, y: 0 }, '対象がなければ 0,0');
 
+// transform を持つ祖先があると fixed の基準がずれる。置いたあと実際の位置との差で補正する。
+function shiftedElement(offsetX, offsetY) {
+  return {
+    style: { left: '', top: '' },
+    getBoundingClientRect() {
+      return { left: parseFloat(this.style.left) + offsetX, top: parseFloat(this.style.top) + offsetY };
+    },
+  };
+}
+const shifted = shiftedElement(156, 509);
+placeContextMenu(shifted, 204, 537);
+assert.deepEqual(shifted.getBoundingClientRect(), { left: 204, top: 537 }, '祖先の transform でずれても、ポインタの位置に起点を置く');
+const plain = shiftedElement(0, 0);
+placeContextMenu(plain, 30, 40);
+assert.deepEqual([plain.style.left, plain.style.top], ['30px', '40px'], 'ずれがなければ座標をそのまま使う');
+placeContextMenu(null, 1, 2);
+
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/ContextMenu/ContextMenu.vue'], ['React', 'packages/react/src/generated/components/ContextMenu/ContextMenu.tsx']]) {
@@ -58,6 +75,8 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.match(source, /data-destructive/, `${name} 版が取り消せない操作を属性で出す`);
   assert.match(source, /[Cc]ontext[Mm]enu[\s\S]{0,120}?preventDefault/, `${name} 版がメニュー内の右クリックを抑止する`);
   assert.doesNotMatch(source, /aria-haspopup|aria-controls/, `${name} 版は対象と紐づけない（トリガーを持たないため）`);
+  assert.match(source, /placeContextMenu/, `${name} 版が座標を実際の位置で補正する`);
+  assert.doesNotMatch(source, /left: `\$\{(props\.)?x\}px`/, `${name} 版が座標を style で直接渡さない`);
   assert.match(source, /if \((props\.)?open\) \{\s*cleanupRef(\.current|\.value)? = listenToMenu/,
     `${name} 版は開いている間だけ外側クリックを受け、開くたびにその時点の props で登録する`);
 }

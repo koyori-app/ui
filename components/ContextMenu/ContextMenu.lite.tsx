@@ -3,6 +3,7 @@ import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlig
 import highlights from '../shared/highlight.module.css';
 import { listenToMenu, nextMenuIndex, positionMenu, resetMenu, typeaheadTarget } from '../shared/menu';
 import menu from '../shared/menu.module.css';
+import { placeContextMenu } from './context-menu';
 import styles from './context-menu.module.css';
 
 export interface ContextMenuItem {
@@ -67,6 +68,7 @@ export default function ContextMenu(props: ContextMenuProps) {
       }
     },
     position() {
+      placeContextMenu(rootRef, props.x, props.y);
       /* 大きさのない root が起点。trigger も同じ点として渡す。 */
       positionMenu(rootRef, rootRef, panelRef, listRef);
     },
@@ -107,9 +109,8 @@ export default function ContextMenu(props: ContextMenuProps) {
   onUnMount(() => cleanupRef?.());
 
   return (
-    <div ref={rootRef!} class={styles.root} data-menu-top-layer=""
-      style={{ left: `${props.x}px`, top: `${props.y}px` }}
-    >
+    /* 座標は描画後に placeContextMenu で置く。style で渡すと祖先の transform でずれる。 */
+    <div ref={rootRef!} class={styles.root} data-menu-top-layer="">
       <div ref={panelRef!} class={menu.panel} role="menu" aria-label={props.label}
         hidden={!props.open} onKeyDown={(event) => state.navigate(event)}
         onContextMenu={(event) => event.preventDefault()}
