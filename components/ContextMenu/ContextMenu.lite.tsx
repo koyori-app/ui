@@ -47,6 +47,7 @@ export default function ContextMenu(props: ContextMenuProps) {
   let returnRef = useRef<HTMLElement | null>(null);
   let timerRef = useRef<number | null>(null);
   let focusSubmenuRef = useRef<boolean | null>(null);
+  let freshSubmenuRef = useRef<boolean | null>(null);
   const state = useStore({
     openIndex: -1,
     /* 開いているサブメニューは DOM から探す。React ではタイマーやリスナーが古い state を掴むため。 */
@@ -95,6 +96,8 @@ export default function ContextMenu(props: ContextMenuProps) {
         if (!panelRef || panelRef.hidden) return;
         state.position();
         /* APG に合わせて無効な項目にもフォーカスを置く。フォーカスがメニューに入らないと Escape で閉じられない。 */
+        /* preventScroll はリスト内のスクロールも止めるため、先頭へ戻してから先頭項目にフォーカスする。 */
+        if (listRef) listRef.scrollTop = 0;
         listRef?.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus({ preventScroll: true });
       });
     },
@@ -137,6 +140,11 @@ export default function ContextMenu(props: ContextMenuProps) {
         const submenu = rootRef?.querySelector<HTMLElement>(`[data-submenu="${index}"]`);
         if (!submenu || submenu.hidden) return;
         state.placeSubmenu(submenu);
+        if (freshSubmenuRef) {
+          freshSubmenuRef = false;
+          const list = submenu.querySelector<HTMLElement>('[role="presentation"]');
+          if (list) list.scrollTop = 0;
+        }
         if (focusSubmenuRef) {
           focusSubmenuRef = false;
           submenu.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus({ preventScroll: true });
@@ -148,6 +156,7 @@ export default function ContextMenu(props: ContextMenuProps) {
       const item = props.items[index];
       if (!item?.items || item.disabled) return;
       const current = state.openSubmenuPanel();
+      if (current?.getAttribute('data-submenu') !== String(index)) freshSubmenuRef = true;
       if (current && current.getAttribute('data-submenu') !== String(index)) state.closeSubmenu(false);
       focusSubmenuRef = focus;
       state.openIndex = index;
@@ -243,6 +252,14 @@ export default function ContextMenu(props: ContextMenuProps) {
   onUpdate(() => {
     requestAnimationFrame(() => state.position());
   }, [props.x, props.y, props.items]);
+
+  /* 開いたまま別の行のボタンなどから開き直された（座標が変わり、フォーカスが外にある）ときは、
+     新しく開いたものとして先頭項目へ移し、戻り先もその要素に更新する。 */
+  onUpdate(() => {
+    if (!props.open || !rootRef || rootRef.contains(document.activeElement)) return;
+    state.closeSubmenu(false);
+    state.show();
+  }, [props.x, props.y]);
 
   onUpdate(() => {
     if (state.openIndex >= 0) state.settleSubmenu(state.openIndex);
