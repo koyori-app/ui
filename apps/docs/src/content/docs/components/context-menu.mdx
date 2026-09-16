@@ -1,0 +1,86 @@
+---
+title: ContextMenu
+description: 右クリックやキーボードで開く、対象に対する操作のメニュー。
+---
+
+import ContextMenuPreview from '../../../components/ContextMenuPreview.astro';
+
+ContextMenu は、行やカードを右クリックしたときに「編集」「削除」などの操作を出すメニューです。
+表示位置と開閉はアプリ側で持ちます。1 つのメニューを複数の対象で使い回せます。
+
+## プレビュー
+
+行を右クリックするか、行にフォーカスして `Shift + F10`（またはメニューキー）を押すと開きます。
+右端の三点ボタンからも同じ操作を選べます。
+
+<ContextMenuPreview />
+
+## 使い方
+
+対象の `contextmenu` を受け、既定のメニューを止めて座標を保存します。座標は `contextMenuPosition` で取れます。
+
+```tsx
+// React
+const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
+
+<div tabIndex={0} onContextMenu={event => {
+  event.preventDefault();
+  setMenu({ open: true, ...contextMenuPosition(event) });
+}}>請求書を送る</div>
+
+<ContextMenu open={menu.open} x={menu.x} y={menu.y} label="タスクの操作"
+  items={[
+    { value: 'edit', label: '編集' },
+    { value: 'delete', label: '削除する', destructive: true },
+  ]}
+  onSelect={run} onClose={() => setMenu(current => ({ ...current, open: false }))} />
+```
+
+```vue
+<!-- Vue -->
+<div tabindex="0" @contextmenu="openMenu">請求書を送る</div>
+<ContextMenu :open="menu.open" :x="menu.x" :y="menu.y" label="タスクの操作" :items="items"
+  :on-select="run" :on-close="() => menu.open = false" />
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `open` | `boolean` | 必須 | 表示状態。アプリ側で管理する |
+| `x` / `y` | `number` | 必須 | 画面内の座標。`contextMenuPosition(event)` の戻り値を渡す |
+| `label` | `string` | 必須 | メニューの読み上げ名。例: 「タスクの操作」 |
+| `items` | `ContextMenuItem[]` | 必須 | `{ value, label, disabled?, destructive? }` |
+| `onSelect` | `(value: string) => void` | — | 項目を実行したときに呼ぶ。実行後は閉じる |
+| `onClose` | `() => void` | — | Escape・Tab・外側クリック・実行後に呼ぶ |
+
+`destructive` は削除などの取り消せない操作に使います。色が変わりますが、色だけに頼らず
+「削除する」のように結果が分かるラベルにしてください。項目が 0 件のときは開かないでください。
+
+## キーボード操作
+
+| キー | 動作 |
+| --- | --- |
+| `Shift + F10` / メニューキー | 対象にフォーカスしている状態で開く（対象に `tabindex="0"` が必要） |
+| `↓` / `↑` | 項目を循環して移動する |
+| `Home` / `End` | 先頭 / 末尾へ移動する |
+| 文字キー | その文字で始まる項目へ移動する |
+| `Enter` / `Space` | 実行して閉じる |
+| `Escape` | 閉じて、開く前の要素にフォーカスを戻す |
+| `Tab` | 閉じて、開く前の位置から通常の移動を続ける |
+
+開くと先頭の項目にフォーカスが移ります。外側をクリックしても閉じます。
+
+## アクセシビリティ
+
+- メニューは `role="menu"`、項目は `role="menuitem"` です。`label` が読み上げ名になります。
+- **右クリックだけの操作にしないでください。** 同じ `items` を三点ボタン（Dropdown）にも渡し、
+  どちらからでも実行できるようにします。ContextMenu は近道として添えるものです。
+- 対象に `tabindex="0"` を付けると、キーボードからも `Shift + F10` で開けます。
+- iOS の Safari は長押しで `contextmenu` が発生しないため、この方法では開けません。三点ボタンを必ず置いてください。
+- 無効な項目は `aria-disabled` を付け、実行できません。
+
+## スタイル
+
+Dropdown と同じ見た目・同じホバーの動きです。メニューの幅・余白・最大高さのトークンも共通です。
+画面からはみ出す場合は、上下が反転し、左右は画面内に収まる位置へ寄ります。

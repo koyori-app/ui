@@ -53,6 +53,9 @@
   overscroll-behavior: contain;
 }
 
+/* 取り消せない操作。色だけに頼らず、ラベルにも結果が分かる語を入れること。 */
+.item[data-destructive='true'] { color: var(--koyori-color-danger); }
+
 .item {
   box-sizing: border-box;
   position: relative;

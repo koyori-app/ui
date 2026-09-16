@@ -12,6 +12,8 @@ export { default as Field, type FieldProps } from './generated/components/Field/
 export { default as Input, type InputProps } from './generated/components/Input/Input.vue';
 export { default as Textarea, type TextareaProps } from './generated/components/Textarea/Textarea.vue';
 export { default as Dropdown, type DropdownProps, type DropdownItem } from './generated/components/Dropdown/Dropdown.vue';
+export { default as ContextMenu, type ContextMenuProps, type ContextMenuItem } from './generated/components/ContextMenu/ContextMenu.vue';
+export { contextMenuPosition } from './generated/components/ContextMenu/context-menu.js';
 export { default as Picker, type PickerProps, type PickerItem } from './generated/components/Picker/Picker.vue';
 export { default as ChevronDownIcon, type ChevronDownIconProps } from './generated/components/ChevronDownIcon/ChevronDownIcon.vue';
 export { default as EllipsisIcon, type EllipsisIconProps } from './generated/components/EllipsisIcon/EllipsisIcon.vue';

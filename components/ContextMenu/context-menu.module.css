@@ -1,0 +1,12 @@
+@import '../tokens.css';
+
+/* ポインタの位置に置く大きさのない点。メニューはここを起点に開く。 */
+.root {
+  position: fixed;
+  width: 0;
+  height: 0;
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}

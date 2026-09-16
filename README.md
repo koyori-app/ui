@@ -220,6 +220,13 @@ ProgressBar は達成率や進捗を横棒で示す表示専用の部品です�
 満たしたときは `data-complete="true"` が付きます。値の計算は `components/ProgressBar/progress.ts` にまとめ、
 `node scripts/check-progress-bar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 
+ContextMenu は右クリック（キーボードは Shift+F10・メニューキー）で開く操作メニューです。`open`・`x`・`y`・`label`・`items`・`onSelect`・`onClose` を受け取り、
+座標と開閉はアプリが持ちます。座標は `contextMenuPosition(event)` で取得し、キーボード起動のときは対象の左下を返します。
+配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
+`nextMenuIndex`・`typeaheadTarget` として共有します。項目の `destructive` は danger の色になります（ラベルにも結果を書くこと）。
+右クリックできない利用者のために、同じ項目を Dropdown にも渡してください。`node scripts/check-context-menu.cjs` で
+ブラウザーなしに移動・座標・生成物・配布 CSS を検証します（`pnpm build` のあとに実行）。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。

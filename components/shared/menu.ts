@@ -4,6 +4,27 @@ export function normalizeMenuText(text: string) {
   return text.normalize('NFKC').toLocaleLowerCase().trim();
 }
 
+/* 矢印・Home/End の移動先。項目がなければ -1。 */
+export function nextMenuIndex(key: string, current: number, length: number) {
+  if (length === 0) return -1;
+  if (key === 'Home') return 0;
+  if (key === 'End') return length - 1;
+  if (key === 'ArrowDown') return (current + 1) % length;
+  if (key === 'ArrowUp') return (current <= 0 ? length : current) - 1;
+  return current;
+}
+
+/* 先頭文字での移動先。現在位置の次から探し、末尾まで来たら先頭へ回る。見つからなければ -1。 */
+export function typeaheadTarget(labels: string[], current: number, key: string) {
+  const needle = normalizeMenuText(key);
+  if (!needle || labels.length === 0) return -1;
+  for (let step = 1; step <= labels.length; step++) {
+    const index = (current + step + labels.length) % labels.length;
+    if (normalizeMenuText(labels[index] || '').startsWith(needle)) return index;
+  }
+  return -1;
+}
+
 const menuLengthCache = new WeakMap<HTMLElement, { gap: number; maximum: number; margin: number }>();
 
 /* Resolve rem/calc once per opening, then reuse the same lengths in CSS and JS. */
