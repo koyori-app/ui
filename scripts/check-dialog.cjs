@@ -37,13 +37,16 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const vue = read('packages/vue/src/generated/components/Dialog/Dialog.vue');
 assert.match(vue, /syncDialog/, 'Vue 版が開閉の同期を呼ぶ');
-assert.match(vue, /addEventListener\(\s*["']close["']/, 'Vue 版が close イベントを受ける');
+assert.match(vue, /@cancel/, 'Vue 版が Escape を cancel で受ける');
 assert.doesNotMatch(vue, /<dialog[^>]*:open=/s, 'open 属性をバインドしない（非モーダルになるため）');
 assert.match(vue, /<slot name="actions"/, 'actions スロットがある');
 
 const react = read('packages/react/src/generated/components/Dialog/Dialog.tsx');
-assert.match(react, /addEventListener\(\s*["']close["']/, 'React 版が close イベントを受ける');
+assert.match(react, /onCancel=\{/, 'React 版が Escape を cancel で受ける');
 assert.match(react, /onPointerDown=\{/, 'React 版が背景クリックを受ける');
+for (const [name, source] of [['Vue', vue], ['React', react]]) {
+  assert.doesNotMatch(source, /addEventListener/, `${name} 版が古い props を掴むリスナーを持たない`);
+}
 assert.doesNotMatch(react, /<dialog[^>]*\sopen=/s, 'open 属性をバインドしない');
 
 assert.match(vue, /data-plain/, 'Vue 版が plain を属性で出す');
