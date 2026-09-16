@@ -23,8 +23,11 @@ export interface ContextMenuProps {
   /** Accessible name of the menu. */
   label: string;
   items: ContextMenuItem[];
+  /** Shown as a disabled item when items is empty, so the menu can still take focus. */
+  emptyMessage?: string;
+  /** Called first when an item runs. Focus has already returned, so it may move focus elsewhere. */
   onSelect?: (value: string) => void;
-  /** Called on Escape, Tab, an outside click and after a selection. */
+  /** Called on Escape, Tab, an outside click, and after onSelect. */
   onClose?: (event?: unknown) => void;
 }
 
@@ -35,11 +38,15 @@ export default function ContextMenu(props: ContextMenuProps) {
   let cleanupRef = useRef<(() => void) | null>(null);
   let returnRef = useRef<HTMLElement | null>(null);
   const state = useStore({
+    /* 実行してから閉じる。onClose で対象を片付けても onSelect には残っているようにする。
+       フォーカスは先に戻し、onSelect がダイアログなどへ移せるようにする。 */
     select(index: number) {
       const item = props.items[index];
       if (!item || item.disabled) return;
-      state.close(true);
+      resetMenu(panelRef, listRef);
+      returnRef?.focus();
       props.onSelect?.(item.value);
+      props.onClose?.();
     },
     /* 開いた時点のフォーカス位置を覚えておき、Escape や実行のあとに戻す。 */
     show() {
@@ -47,7 +54,8 @@ export default function ContextMenu(props: ContextMenuProps) {
       requestAnimationFrame(() => {
         if (!panelRef || panelRef.hidden) return;
         state.position();
-        listRef?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])')?.focus();
+        /* APG に合わせて無効な項目にもフォーカスを置く。フォーカスがメニューに入らないと Escape で閉じられない。 */
+        listRef?.querySelector<HTMLElement>('[role="menuitem"]:not([hidden])')?.focus();
       });
     },
     close(restoreFocus: boolean) {
@@ -82,11 +90,11 @@ export default function ContextMenu(props: ContextMenuProps) {
         state.close(true);
       } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
         event.preventDefault();
-        const items = Array.from(listRef?.querySelectorAll<HTMLElement>('[role="menuitem"]') || []);
+        const items = Array.from(listRef?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([hidden])') || []);
         const current = items.indexOf(document.activeElement as HTMLElement);
         items[nextMenuIndex(event.key, current, items.length)]?.focus();
       } else if (event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        const items = Array.from(listRef?.querySelectorAll<HTMLElement>('[role="menuitem"]') || []);
+        const items = Array.from(listRef?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([hidden])') || []);
         const current = items.indexOf(document.activeElement as HTMLElement);
         const target = typeaheadTarget(items.map((item) => item.textContent || ''), current, event.key);
         items[target]?.focus();
@@ -132,6 +140,7 @@ export default function ContextMenu(props: ContextMenuProps) {
               </button>
             )}
           </For>
+          <span class={menu.empty} role="menuitem" tabIndex={-1} aria-disabled="true" hidden={props.items.length > 0}>{props.emptyMessage ?? '項目がありません'}</span>
         </div>
       </div>
     </div>

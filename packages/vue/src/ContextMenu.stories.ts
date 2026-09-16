@@ -54,3 +54,12 @@ export const WithDisabled: Story = {
     ],
   },
 };
+export const AllDisabled: Story = {
+  args: {
+    items: [
+      { value: 'move', label: '移動', disabled: true },
+      { value: 'delete', label: '削除する', disabled: true, destructive: true },
+    ],
+  },
+};
+export const Empty: Story = { args: { items: [] } };

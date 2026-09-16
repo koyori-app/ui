@@ -51,11 +51,15 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
 | `x` / `y` | `number` | 必須 | 画面内の座標。`contextMenuPosition(event)` の戻り値を渡す |
 | `label` | `string` | 必須 | メニューの読み上げ名。例: 「タスクの操作」 |
 | `items` | `ContextMenuItem[]` | 必須 | `{ value, label, disabled?, destructive? }` |
-| `onSelect` | `(value: string) => void` | — | 項目を実行したときに呼ぶ。実行後は閉じる |
-| `onClose` | `() => void` | — | Escape・Tab・外側クリック・実行後に呼ぶ |
+| `emptyMessage` | `string` | `項目がありません` | `items` が空のときに出す無効な項目 |
+| `onSelect` | `(value: string) => void` | — | 項目を実行したときに先に呼ぶ。このときフォーカスは開く前の要素に戻っている |
+| `onClose` | `() => void` | — | Escape・Tab・外側クリックと、`onSelect` の後に呼ぶ |
 
 `destructive` は削除などの取り消せない操作に使います。色が変わりますが、色だけに頼らず
-「削除する」のように結果が分かるラベルにしてください。項目が 0 件のときは開かないでください。
+「削除する」のように結果が分かるラベルにしてください。
+
+`onSelect` は `onClose` より先に呼ぶので、`onClose` で対象の情報を消しても `onSelect` では参照できます。
+項目を実行するとフォーカスは開く前の要素に戻ってから `onSelect` が呼ばれるため、`onSelect` でダイアログを開くなどしてフォーカスを移せます。
 
 ## キーボード操作
 
@@ -69,7 +73,8 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
 | `Escape` | 閉じて、開く前の要素にフォーカスを戻す |
 | `Tab` | 閉じて、開く前の位置から通常の移動を続ける |
 
-開くと先頭の項目にフォーカスが移ります。外側をクリックしても閉じます。
+開くと先頭の項目にフォーカスが移ります。無効な項目にもフォーカスは止まりますが、実行はできません。
+すべての項目が無効な場合や 0 件の場合もメニューにフォーカスが入るので、Escape で閉じられます。外側をクリックしても閉じます。
 
 ## アクセシビリティ
 

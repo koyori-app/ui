@@ -38,6 +38,7 @@ assert.equal(typeaheadTarget(labels, 2, 'ふ'), 2, '一巡して自分自身に�
 assert.equal(typeaheadTarget(labels, 0, '削'), 3, '現在位置の次から探す');
 assert.equal(typeaheadTarget(labels, 3, '編'), 0, '末尾まで来たら先頭へ回る');
 assert.equal(typeaheadTarget(labels, 0, 'ん'), -1, '一致しなければ移動しない');
+assert.equal(typeaheadTarget(['編集', 'ふりがな', 'ふせん'], 1, 'ふ'), 2, '同じ文字で始まる項目が続くと、今の項目ではなく次へ進む');
 assert.equal(typeaheadTarget(['Edit'], -1, 'ｅ'), 0, '全角と大文字を正規化して比べる');
 assert.equal(typeaheadTarget([], -1, 'a'), -1, '項目がなければ移動しない');
 
@@ -76,6 +77,9 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.match(source, /[Cc]ontext[Mm]enu[\s\S]{0,120}?preventDefault/, `${name} 版がメニュー内の右クリックを抑止する`);
   assert.doesNotMatch(source, /aria-haspopup|aria-controls/, `${name} 版は対象と紐づけない（トリガーを持たないため）`);
   assert.match(source, /placeContextMenu/, `${name} 版が座標を実際の位置で補正する`);
+  assert.match(source, /function select[\s\S]*?onSelect\?\.\([\s\S]*?onClose\?\.\(/, `${name} 版が実行してから閉じる（onSelect の後に onClose）`);
+  assert.doesNotMatch(source, /:not\(\[aria-disabled="true"\]\)/, `${name} 版が無効な項目も含めて先頭にフォーカスする`);
+  assert.match(source, /項目がありません/, `${name} 版が 0 件のときもフォーカスできる項目を出す`);
   assert.doesNotMatch(source, /left: `\$\{(props\.)?x\}px`/, `${name} 版が座標を style で直接渡さない`);
   assert.match(source, /if \((props\.)?open\) \{\s*cleanupRef(\.current|\.value)? = listenToMenu/,
     `${name} 版は開いている間だけ外側クリックを受け、開くたびにその時点の props で登録する`);
