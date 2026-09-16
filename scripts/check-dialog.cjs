@@ -61,4 +61,29 @@ for (const framework of ['vue', 'react']) {
   assert.match(css, /\[data-plain=/, `${framework}: plain の規則がある`);
 }
 
-console.log('Dialog の開閉同期、生成物の構造、配布 CSS の規則を確認しました。');
+const drawerVue = read('packages/vue/src/generated/components/Drawer/Drawer.vue');
+const drawerReact = read('packages/react/src/generated/components/Drawer/Drawer.tsx');
+for (const [name, source] of [['Vue', drawerVue], ['React', drawerReact]]) {
+  assert.match(source, /syncDialog/, `${name} 版 Drawer が Dialog と同じ開閉の同期を呼ぶ`);
+  assert.match(source, /addEventListener\(\s*["']close["']/, `${name} 版 Drawer が close イベントを受ける`);
+  assert.match(source, /data-placement/, `${name} 版 Drawer が placement を属性で出す`);
+  assert.match(source, /aria-label/, `${name} 版 Drawer が名前を持つ`);
+  assert.doesNotMatch(source, /<dialog[^>]*\s:?open=/s, `${name} 版 Drawer が open 属性をバインドしない`);
+  assert.match(source, /modal\?: boolean/, `${name} 版 Drawer が modal を受け取る`);
+  assert.match(source, /modal === false/, `${name} 版 Drawer が非モーダルの分岐を持つ`);
+  assert.equal(source.match(/<dialog/g).length, 1, `${name} 版 Drawer の dialog は 1 箇所だけ`);
+}
+assert.equal(drawerVue.match(/<slot\s*\/>/g).length, 2, 'Vue 版 Drawer はモーダルと非モーダルの両方で中身を描く');
+for (const framework of ['vue', 'react']) {
+  const css = read(`packages/${framework}/dist/style.css`);
+  for (const placement of ['top', 'bottom', 'left', 'right']) {
+    assert.match(css, new RegExp(`\\[data-placement=['"]?${placement}['"]?\\]:not\\(\\[open\\]\\)`), `${framework}: Drawer が ${placement} へ閉じる位置を持つ`);
+  }
+  assert.match(css, /allow-discrete/, `${framework}: Drawer が閉じるときも遷移する`);
+  assert.match(css, /--koyori-sidebar-radius/, `${framework}: Sidebar の角丸を親から外せる`);
+  assert.match(css, /--koyori-drawer-width/, `${framework}: Drawer 幅のトークンがある`);
+  assert.match(css, /:has\(\[data-sidebar-rail=['"]?true['"]?\]\)[^{]*\{[^}]*--koyori-drawer-width:\s*var\(--koyori-sidebar-rail-width\)/,
+    `${framework}: 中の Sidebar がアイコンだけなら Drawer も細くなる`);
+}
+
+console.log('Dialog・Drawer の開閉同期、生成物の構造、配布 CSS の規則を確認しました。');

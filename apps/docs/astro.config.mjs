@@ -34,6 +34,7 @@ export default defineConfig({
             { label: 'Checkbox', slug: 'components/checkbox' },
             { label: 'DataList', slug: 'components/data-list' },
             { label: 'Dialog・ConfirmDialog', slug: 'components/dialog' },
+            { label: 'Drawer', slug: 'components/drawer' },
             { label: 'Dropdown', slug: 'components/dropdown' },
             { label: 'Picker', slug: 'components/picker' },
             { label: 'Sidebar', slug: 'components/sidebar' },
@@ -45,6 +46,7 @@ export default defineConfig({
           items: [
             { label: '担当者の選択', slug: 'blocks/assignees' },
             { label: '2 列のダイアログ', slug: 'blocks/two-column-dialog' },
+            { label: 'レスポンシブなナビゲーション', slug: 'blocks/responsive-navigation' },
           ],
         },
       ],

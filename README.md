@@ -72,6 +72,11 @@ Sidebar は `label` をナビゲーションの名前にし、`header`・`footer
 SidebarLink の `label`・`href` でページ移動、`current` で現在地、`badge` で補足、`disabled` で移動の無効化を指定します。
 アイコンは `icon`（Vue は `#icon`）で渡します。通常のリンクなので新しいタブでも開け、現在地はアプリの URL から渡します。
 本文に Accordion を置くとグループを開閉できます。幅は `--koyori-sidebar-width`（240px）、高さは親要素で指定します。
+`open`（と `id`）を渡すと開閉でき、閉じると幅（`placement` が `top`・`bottom` なら高さ、既定 `--koyori-sidebar-height`）を 0 まで畳んで隣の領域を広げます。
+開閉ボタンは Button の `ariaExpanded`・`ariaControls` で状態と対象を伝え、閉じるときに中にあったフォーカスはそのボタンへ戻します。
+`rail` を渡すと `--koyori-sidebar-rail-width`（64px）まで縮み、アイコンだけの表示になります。ラベルと badge は見た目だけ隠し、読み上げ名は保ちます。
+`open` と組み合わせると、展開・アイコンだけ・完全に閉じるの 3 状態になります。レールで使うリンクには `icon` を渡してください。
+`onRailChange` を渡すと端から張り出すつまみが出て、押すと rail を反転します。状態は `aria-pressed`、名前は `railLabel` です。
 項目が多い場合はナビゲーション部分だけがスクロールします。Accordion 本文の余白は `--koyori-accordion-padding` で変更できます。
 
 Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
@@ -90,6 +95,12 @@ Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダ
 幅は `--koyori-dialog-width`、覆いの色は `--koyori-color-backdrop`、角丸は内側のボタンの角丸 + `--koyori-space-xl` です。
 中身が自前でレイアウトを持つ場合は `plain` を使います。見出しと説明は読み上げにだけ残し、内側の余白を外して本文が全面に広がります。
 幅と高さ（`--koyori-dialog-height`、既定 `auto`）はダイアログを囲む要素で指定します。2 列の組み方は Web ドキュメントのブロックに載せています。
+
+Drawer は画面端から滑り出るモーダルで、ハンバーガーボタン（Button + `MenuIcon`）で開閉するナビゲーションなどに使います。
+`open`・`label`・`placement`（`left` 既定、`right`・`top`・`bottom`）・`onClose` を受け取り、開閉は Dialog と同じ `syncDialog` で同期します。
+画面端に付き、内側の角だけが丸くなります。開閉とも弾まないスライドで、閉じるアニメーションは `transition-behavior: allow-discrete` 対応ブラウザーだけで動きます。
+幅は `--koyori-drawer-width`（280px）、上下の高さは `--koyori-drawer-height`（60vh）です。中の Sidebar が `rail` のときは `--koyori-sidebar-rail-width` に縮みます。
+`modal` に `false` を渡すと `dialog` を使わず中身をその場所に描くため、広い画面では常時表示、狭い画面ではモーダル、という出し分けを同じ記述でできます。中の Sidebar は `--koyori-sidebar-border`・`--koyori-sidebar-radius` で枠と角丸を外します。
 
 ConfirmDialog は Dialog と Button を組み合わせた二択の確認です。`title`・`message`・`confirmLabel` は必須で、
 `destructive` で実行ボタンを danger にします。キャンセルを先頭に置くため、初期フォーカスは常に取り消し側です。
@@ -164,8 +175,8 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 ブラウザー検証は Storybook のビルド後に `node scripts/check-picker.cjs` で実行します（Dropdown と同じ実行環境）。
 
 アイコンは [Lucide](https://lucide.dev/) の必要な SVG を Mitosis の共通コンポーネントとして取り込みます。
-`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
-`XIcon` はダイアログの閉じるボタンなどに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
+`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon`・`MenuIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
+`XIcon` はダイアログの閉じるボタンなどに使います。`MenuIcon` は Drawer を開くボタンに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
 `size` で縦横のサイズを指定できます（既定値: 16px）。色は親の `color` を引き継ぎます。
 装飾用として読み上げから除外するため、アイコンだけのボタンにはボタン側で `aria-label` を付けてください。
 アイコンを追加するときは出典・コミット・ライセンスを `THIRD_PARTY_NOTICES.md` に記録します。
@@ -177,6 +188,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 
 ブラウザー検証は Storybook のビルド後に `node scripts/check-dropdown.cjs` で実行します。
 `node scripts/check-picker-logic.cjs` はブラウザーなしで選択計算を検証します。
+`node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
 `node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロールを両フレームワークのブラウザーで検証します。
@@ -204,7 +216,7 @@ Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とア�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Button・ButtonGroup・Dialog・Dropdown・Picker・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Button・ButtonGroup・Dialog・Drawer・Dropdown・Picker・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

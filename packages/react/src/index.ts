@@ -7,6 +7,7 @@ export { default as Avatar, type AvatarProps } from './generated/components/Avat
 export { default as AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './generated/components/AvatarGroup/AvatarGroup.js';
 export { default as Dialog, type DialogProps } from './generated/components/Dialog/Dialog.js';
 export { default as ConfirmDialog, type ConfirmDialogProps } from './generated/components/ConfirmDialog/ConfirmDialog.js';
+export { default as Drawer, type DrawerProps } from './generated/components/Drawer/Drawer.js';
 export { default as Field, type FieldProps } from './generated/components/Field/Field.js';
 export { default as Input, type InputProps } from './generated/components/Input/Input.js';
 export { default as Textarea, type TextareaProps } from './generated/components/Textarea/Textarea.js';
@@ -16,6 +17,7 @@ export { default as ChevronDownIcon, type ChevronDownIconProps } from './generat
 export { default as EllipsisIcon, type EllipsisIconProps } from './generated/components/EllipsisIcon/EllipsisIcon.js';
 export { default as CheckIcon, type CheckIconProps } from './generated/components/CheckIcon/CheckIcon.js';
 export { default as XIcon, type XIconProps } from './generated/components/XIcon/XIcon.js';
+export { default as MenuIcon, type MenuIconProps } from './generated/components/MenuIcon/MenuIcon.js';
 export { default as DataList, type DataListProps, type DataListColumn } from './generated/components/DataList/DataList.js';
 export { default as DataListRow, type DataListRowProps } from './generated/components/DataListRow/DataListRow.js';
 export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.js';

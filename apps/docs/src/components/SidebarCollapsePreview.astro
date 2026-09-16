@@ -1,0 +1,18 @@
+---
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import VueDemo from '../examples/SidebarCollapseDemo.vue';
+import ReactDemo from '../examples/SidebarCollapseDemo.tsx';
+import vueSource from '../examples/SidebarCollapseDemo.vue?raw';
+import reactSource from '../examples/SidebarCollapseDemo.tsx?raw';
+---
+
+<Tabs syncKey="framework">
+  <TabItem label="Vue">
+    <div class="component-preview not-content"><VueDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={vueSource} lang="vue" title="SidebarCollapseDemo.vue" /></details>
+  </TabItem>
+  <TabItem label="React">
+    <div class="component-preview not-content"><ReactDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={reactSource} lang="tsx" title="SidebarCollapseDemo.tsx" /></details>
+  </TabItem>
+</Tabs>

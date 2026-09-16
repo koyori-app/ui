@@ -7,6 +7,7 @@ export { default as Avatar, type AvatarProps } from './generated/components/Avat
 export { default as AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './generated/components/AvatarGroup/AvatarGroup.vue';
 export { default as Dialog, type DialogProps } from './generated/components/Dialog/Dialog.vue';
 export { default as ConfirmDialog, type ConfirmDialogProps } from './generated/components/ConfirmDialog/ConfirmDialog.vue';
+export { default as Drawer, type DrawerProps } from './generated/components/Drawer/Drawer.vue';
 export { default as Field, type FieldProps } from './generated/components/Field/Field.vue';
 export { default as Input, type InputProps } from './generated/components/Input/Input.vue';
 export { default as Textarea, type TextareaProps } from './generated/components/Textarea/Textarea.vue';
@@ -16,6 +17,7 @@ export { default as ChevronDownIcon, type ChevronDownIconProps } from './generat
 export { default as EllipsisIcon, type EllipsisIconProps } from './generated/components/EllipsisIcon/EllipsisIcon.vue';
 export { default as CheckIcon, type CheckIconProps } from './generated/components/CheckIcon/CheckIcon.vue';
 export { default as XIcon, type XIconProps } from './generated/components/XIcon/XIcon.vue';
+export { default as MenuIcon, type MenuIconProps } from './generated/components/MenuIcon/MenuIcon.vue';
 export { default as DataList, type DataListProps, type DataListColumn } from './generated/components/DataList/DataList.vue';
 export { default as DataListRow, type DataListRowProps } from './generated/components/DataListRow/DataListRow.vue';
 export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.vue';

@@ -37,6 +37,26 @@
 
 .trigger[aria-expanded='true'] .chevron { transform: none; }
 
+/* rail: Sidebar がアイコンだけの表示のとき、見出しもアイコンだけにする。
+   Accordion 単体では属性が付かないため影響しない。 */
+[data-sidebar-rail] .label { overflow: hidden; overflow-wrap: normal; white-space: nowrap; text-overflow: ellipsis; }
+
+[data-sidebar-rail='true'] .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+[data-sidebar-rail='true'] .chevron { display: none; }
+
+[data-sidebar-rail='true'] .surface {
+  padding-inline: 0;
+  justify-content: center;
+}
+
 .panel {
   padding: var(--koyori-accordion-padding, var(--koyori-space-md) var(--koyori-space-lg) var(--koyori-space-xl));
 }

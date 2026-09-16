@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import { Accordion, Avatar, CheckIcon, Dropdown, EllipsisIcon, Picker, Sidebar, SidebarLink } from './index';
+import { useState, type CSSProperties } from 'react';
+import { Accordion, Avatar, Button, CheckIcon, Dropdown, EllipsisIcon, MenuIcon, Picker, Sidebar, SidebarLink, type SidebarProps } from './index';
 
 const meta = {
   title: 'Components/Sidebar', component: Sidebar,
@@ -47,3 +47,51 @@ export const WithMenus: Story = {
     </>;
   },
 };
+
+/* 最初から表示し、ハンバーガーで畳む。placement を Controls で切り替える。 */
+function CollapsibleExample(args: SidebarProps) {
+  const [open, setOpen] = useState(true);
+  const vertical = args.placement === 'top' || args.placement === 'bottom';
+  const sidebar = <Sidebar {...args} id="story-collapsible-sidebar" open={open}>
+    <SidebarLink label="概要" href="#overview" current />
+    <SidebarLink label="受信トレイ" href="#inbox" badge="4" />
+    <SidebarLink label="自分のタスク" href="#tasks" />
+  </Sidebar>;
+  const after = args.placement === 'right' || args.placement === 'bottom';
+  return <div style={{ display: 'flex', flexDirection: vertical ? 'column' : 'row', gap: 12, height: 460, ...(vertical ? { '--koyori-sidebar-width': '100%' } : {}) } as CSSProperties}>
+    {!after && sidebar}
+    <main style={{ flex: 1, minWidth: 0, minHeight: 0, padding: 12, border: '1px dashed var(--koyori-color-border)', borderRadius: 8 }}>
+      <Button ariaLabel="メニュー" variant="ghost" icon={<MenuIcon />} ariaExpanded={open} ariaControls="story-collapsible-sidebar" onClick={() => setOpen(!open)} />
+      <p>メイン領域。サイドバーを閉じると広がります。</p>
+    </main>
+    {after && sidebar}
+  </div>;
+}
+
+export const Collapsible: Story = {
+  args: { placement: 'left' },
+  argTypes: { placement: { control: 'select', options: ['left', 'right', 'top', 'bottom'] } },
+  render: args => <CollapsibleExample {...args} />,
+};
+
+/* 展開・アイコンだけ・完全に閉じるの 3 状態。 */
+function RailExample(args: SidebarProps) {
+  const [open, setOpen] = useState(true);
+  const [rail, setRail] = useState(false);
+  return <div style={{ display: 'flex', gap: 12, height: 460 }}>
+    <Sidebar {...args} id="story-rail-sidebar" open={open} rail={rail} onRailChange={setRail}
+      header={rail ? <Avatar name="Koyori" /> : <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><Avatar name="Koyori" /><strong>Koyori workspace</strong></div>}>
+      <SidebarLink label="自分のタスク" href="#tasks" icon={<CheckIcon />} current />
+      <SidebarLink label="受信トレイ" href="#inbox" icon={<EllipsisIcon />} badge="4" />
+      <Accordion id="story-rail-projects" label="プロジェクト" headingLevel={2} defaultOpen>
+        <SidebarLink label="Koyori UI" href="#ui" icon={<CheckIcon />} />
+      </Accordion>
+    </Sidebar>
+    <main style={{ flex: 1, minWidth: 0, padding: 12, border: '1px dashed var(--koyori-color-border)', borderRadius: 8 }}>
+      <Button ariaLabel="メニュー" variant="ghost" icon={<MenuIcon />} ariaExpanded={open} ariaControls="story-rail-sidebar" onClick={() => setOpen(!open)} />
+      <p>{open ? (rail ? 'アイコンだけ' : '展開') : '閉じている'}</p>
+    </main>
+  </div>;
+}
+
+export const Rail: Story = { render: args => <RailExample {...args} /> };

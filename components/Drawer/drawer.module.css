@@ -1,0 +1,118 @@
+@import '../tokens.css';
+
+/* 面と角丸は Drawer が持つ。中の Sidebar は変数で枠と角丸を外し、二重にしない。
+   display は上書きしない。閉じた dialog を隠すブラウザーの既定を壊さないため。 */
+.root {
+  --koyori-sidebar-border: 0;
+  --koyori-sidebar-radius: 0;
+  --koyori-sidebar-width: 100%;
+  /* 覆っている間は畳む意味がなく、張り出したつまみは切り落とされる。 */
+  --koyori-sidebar-handle-display: none;
+  --drawer-radius: calc(var(--koyori-radius-md) + var(--koyori-space-md));
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--koyori-color-border);
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  box-shadow: var(--koyori-shadow-panel);
+  /* overlay と display を離散的に遷移させ、閉じるときも滑って消える。非対応ブラウザーは即時に消える。 */
+  transition: transform var(--koyori-motion-slow) var(--koyori-ease-out),
+    width var(--koyori-motion-slow) var(--koyori-ease-out),
+    overlay var(--koyori-motion-slow) allow-discrete,
+    display var(--koyori-motion-slow) allow-discrete;
+}
+
+/* 中の Sidebar がアイコンだけの表示なら、Drawer の幅もそれに合わせる。 */
+.root:has([data-sidebar-rail='true']) { --koyori-drawer-width: var(--koyori-sidebar-rail-width); }
+
+/* 画面端に付け、端側の枠線を消して内側の角だけを丸める。 */
+.root[data-placement='left'] {
+  width: var(--koyori-drawer-width);
+  height: 100%;
+  margin-right: auto;
+  border-left: 0;
+  border-radius: 0 var(--drawer-radius) var(--drawer-radius) 0;
+}
+
+.root[data-placement='right'] {
+  width: var(--koyori-drawer-width);
+  height: 100%;
+  margin-left: auto;
+  border-right: 0;
+  border-radius: var(--drawer-radius) 0 0 var(--drawer-radius);
+}
+
+.root[data-placement='top'] {
+  width: 100%;
+  height: var(--koyori-drawer-height);
+  margin-bottom: auto;
+  border-top: 0;
+  border-radius: 0 0 var(--drawer-radius) var(--drawer-radius);
+}
+
+.root[data-placement='bottom'] {
+  width: 100%;
+  height: var(--koyori-drawer-height);
+  margin-top: auto;
+  border-bottom: 0;
+  border-radius: var(--drawer-radius) var(--drawer-radius) 0 0;
+}
+
+/* 閉じている位置。開くときはここから、閉じるときはここへ滑る。 */
+.root[data-placement='left']:not([open]) { transform: translateX(-100%); }
+.root[data-placement='right']:not([open]) { transform: translateX(100%); }
+.root[data-placement='top']:not([open]) { transform: translateY(-100%); }
+.root[data-placement='bottom']:not([open]) { transform: translateY(100%); }
+
+@starting-style {
+  .root[open][data-placement='left'] { transform: translateX(-100%); }
+  .root[open][data-placement='right'] { transform: translateX(100%); }
+  .root[open][data-placement='top'] { transform: translateY(-100%); }
+  .root[open][data-placement='bottom'] { transform: translateY(100%); }
+
+  .root[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* ::backdrop はトップレイヤーにあり、DOM の祖先からトークンを継承しないブラウザーがある。 */
+.root::backdrop {
+  background: var(--koyori-color-backdrop, #38344080);
+  transition: opacity var(--koyori-motion-slow) var(--koyori-ease-out),
+    overlay var(--koyori-motion-slow) allow-discrete,
+    display var(--koyori-motion-slow) allow-discrete;
+}
+
+.root:not([open])::backdrop {
+  opacity: 0;
+}
+
+.root:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-width));
+}
+
+/* 背景クリックの判定のため、panel が dialog の内側を埋める。 */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 開いている間は背景をスクロールさせない。閉じれば自動で戻る。 */
+:global(body:has(dialog:modal)) {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root, .root::backdrop {
+    transition: none;
+  }
+}

@@ -4,6 +4,7 @@ description: 現在地を示すリンクと折りたたみグループを組み�
 ---
 
 import SidebarPreview from '../../../components/SidebarPreview.astro';
+import SidebarCollapsePreview from '../../../components/SidebarCollapsePreview.astro';
 
 Sidebar はヘッダー・ナビゲーション・フッターを縦に並べます。
 ページ移動には SidebarLink、グループの開閉には [Accordion](../accordion/) を組み合わせます。
@@ -33,11 +34,82 @@ Vue は `#header`・`#footer` スロット、リンクと Accordion は既定ス
 | `label` | `string` | 必須。ナビゲーション領域の読み上げ名 |
 | `header` | React の要素 | 上部の内容。Vue は `#header` |
 | `footer` | React の要素 | 下部の内容。Vue は `#footer` |
+| `open` | `boolean` | 開閉状態。指定すると開閉できるようになる。未指定なら常に表示 |
+| `placement` | `'left' \| 'right' \| 'top' \| 'bottom'` | 畳む方向。既定は `left`。`open` を指定したときだけ使う |
+| `rail` | `boolean` | 中身をアイコンだけの細い表示にする。`placement` が `left`・`right` のときに使う |
+| `onRailChange` | `(rail: boolean) => void` | 渡すと端につまみが出る。押すと反転した値で呼ぶ |
+| `railLabel` | `string` | つまみの読み上げ名。既定は「アイコンだけの表示」 |
+| `id` | `string` | ルートの `id`。`open` を使うときは必須。開閉ボタンの `ariaControls` に渡す |
 
 ヘッダーとフッターは未指定なら余白ごと消えます。
 高さは親要素に合わせ、収まらない場合はナビゲーション部分だけがスクロールします。
 幅は `--koyori-sidebar-width`（既定 `240px`）で変更でき、親要素より広くなりません。
-ページ内での配置や、小画面でサイドバー全体を表示・非表示にする操作は利用側のレイアウトで組みます。
+ページ内での配置は利用側のレイアウトで組みます。
+
+## 開閉
+
+画面に最初から表示しておき、ハンバーガーボタンで閉じる場合は `open` を渡します。
+閉じると幅（上下に置く場合は高さ）が 0 まで畳まれ、隣の領域が広がります。表示状態はアプリ側で持ちます。
+
+<SidebarCollapsePreview />
+
+```tsx
+// React
+const [open, setOpen] = useState(true);
+
+<div style={{ display: 'flex', height: '100%' }}>
+  <Sidebar id="app-nav" label="メインナビゲーション" open={open}>…</Sidebar>
+  <main style={{ flex: 1, minWidth: 0 }}>
+    <Button ariaLabel="メニュー" variant="ghost" icon={<MenuIcon />}
+      ariaExpanded={open} ariaControls="app-nav" onClick={() => setOpen(!open)} />
+  </main>
+</div>
+```
+
+```vue
+<!-- Vue -->
+<Sidebar id="app-nav" label="メインナビゲーション" :open="open">…</Sidebar>
+<Button ariaLabel="メニュー" variant="ghost" :aria-expanded="open" aria-controls="app-nav" :on-click="() => open = !open">
+  <template #icon><MenuIcon /></template>
+</Button>
+```
+
+- 開閉ボタンには `ariaExpanded` と `ariaControls` を渡し、開閉状態と対象を読み上げで伝えます。
+- 閉じたサイドバーは Tab 移動と読み上げの対象から外れます。中にフォーカスがある状態で閉じると、開閉ボタンにフォーカスが戻ります。
+- 開いてもフォーカスは移動しません。Escape では閉じません（背景を覆わないため）。
+- 右や下に置く場合は、レイアウト上でメイン領域の後ろに並べ、`placement` を `right`・`bottom` にします。
+- 上下に置く場合は親を `flex-direction: column` にし、`--koyori-sidebar-width: 100%` を指定します。開いたときの高さは `--koyori-sidebar-height`（240px）です。
+- 閉じるときは、カードの形を保ったまま画面端の側へ滑って隠れます。左右に置く場合、親要素は `--koyori-sidebar-width` 以上の幅を確保してください。
+- 開閉は弾まないスライドで動き、「動きを減らす」設定では止まります。
+- 画面が狭いときは、アプリ側で [Drawer](../drawer/) に切り替えてください。Drawer の中の Sidebar には `open` を渡しません。
+
+## アイコンだけの表示
+
+`rail` を渡すと、幅が `--koyori-sidebar-rail-width`（64px）まで縮み、アイコンだけの表示になります。
+`open` と組み合わせると、展開・アイコンだけ・完全に閉じるの 3 状態を作れます。
+
+```tsx
+// React
+<Sidebar id="app-nav" label="メインナビゲーション" open={open} rail={rail} onRailChange={setRail}
+  header={rail ? <Avatar name="Koyori" /> : <><Avatar name="Koyori" /><strong>Koyori</strong></>}>
+  <SidebarLink label="自分のタスク" href="/tasks" icon={<CheckIcon />} current />
+</Sidebar>
+```
+
+`onRailChange` を渡すと、サイドバーの端から外へ張り出すつまみが出ます。
+押すとアイコンだけの表示に切り替わり、中の山括弧が反転します。切り替え用のボタンを自分で置く必要はありません。
+
+- リンクと Accordion の見出しのラベルは、見た目だけ隠します。読み上げ名は変わらず、`aria-current` もそのままです。
+- **`rail` を使うときは、すべての SidebarLink に `icon` を渡してください。** アイコンのないリンクは、ラベルの先頭 1 文字だけが出ます。
+- `badge` の数字は隠し、代わりにアイコンの右上へ点を出します。読み上げには数字が残ります。
+- ヘッダーとフッターは中央寄せになります。中身の差し替えはアプリ側で行ってください（上の例の `header`）。
+- ラベルは折り返さず、幅が足りなければ省略記号になります。
+- 説明文は出しません（ツールチップなし）。名前が必要なときは展開してください。
+- `placement` が `top`・`bottom` のときは使えません。
+- つまみは `placement` が `left`・`right` のときだけ出ます。完全に閉じている間は消えるので、再表示はハンバーガーで行います。
+- モーダルの [Drawer](../drawer/) の中では出ません。覆っている間は畳む意味がないためです。`onRailChange` は渡したままで構いません。
+- つまみの読み上げ名は固定で、状態は `aria-pressed` で伝えます。フォーカスはリンクの後ろ、サイドバーの最後に来ます。
+- [Drawer](../drawer/) の中でも使えます。Drawer の幅も自動でレールの幅に縮みます。
 
 ## SidebarLink の Props
 

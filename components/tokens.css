@@ -29,6 +29,10 @@
   /* plain のときだけ効く。max-height の範囲で高さを固定する。 */
   --koyori-dialog-height: auto;
   --koyori-sidebar-width: 240px;
+  --koyori-sidebar-rail-width: 64px;
+  --koyori-sidebar-height: 240px;
+  --koyori-drawer-width: 280px;
+  --koyori-drawer-height: 60vh;
   --koyori-menu-width: 200px;
   --koyori-menu-max-height: 360px;
   --koyori-menu-gap: 8px;
