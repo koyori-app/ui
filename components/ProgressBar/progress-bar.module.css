@@ -1,0 +1,52 @@
+@import '../tokens.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--koyori-space-xs);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--koyori-space-md);
+}
+
+.label { min-width: 0; overflow-wrap: anywhere; }
+
+.value {
+  flex-shrink: 0;
+  color: var(--koyori-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 色はここで変えられる。溝と塗りのコントラストは 3:1 以上を保つこと。 */
+.track {
+  --progress-track: var(--koyori-color-accent-subtle);
+  --progress-fill: var(--koyori-color-selection-indicator);
+  height: var(--koyori-progress-height);
+  overflow: hidden;
+  border-radius: calc(var(--koyori-progress-height) / 2);
+  background: var(--progress-track);
+}
+
+/* 端の角丸が潰れないよう、scaleX ではなく width を動かす。 */
+.fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--progress-fill);
+  transition: width var(--koyori-motion-base) var(--koyori-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .track { border: 1px solid CanvasText; }
+  .fill { forced-color-adjust: none; background: Highlight; }
+}

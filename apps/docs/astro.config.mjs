@@ -37,6 +37,7 @@ export default defineConfig({
             { label: 'Drawer', slug: 'components/drawer' },
             { label: 'Dropdown', slug: 'components/dropdown' },
             { label: 'Picker', slug: 'components/picker' },
+            { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
           ],

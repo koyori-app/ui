@@ -1,0 +1,61 @@
+---
+title: ProgressBar
+description: 達成率や進捗を横棒で示す表示専用のコンポーネント。
+---
+
+import ProgressBarPreview from '../../../components/ProgressBarPreview.astro';
+
+ProgressBar は、チェックリストの達成率やアップロードの進捗を横棒で示します。
+値はアプリ側で持ちます。コンポーネントは表示だけを行います。
+
+## プレビュー
+
+チェックを入れると達成率が変わります。
+
+<ProgressBarPreview />
+
+## 使い方
+
+`value` と `max` をそのまま渡します。割合や百分率に換算する必要はありません。
+
+```tsx
+// React
+<ProgressBar label="チェックリストの達成率" value={done.length} max={items.length}
+  valueText={`${done.length} / ${items.length} 件`} />
+```
+
+```vue
+<!-- Vue -->
+<ProgressBar label="チェックリストの達成率" :value="done.length" :max="items.length"
+  :value-text="`${done.length} / ${items.length} 件`" />
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 読み上げ名。`hideLabel` を付けなければ左側に表示する |
+| `value` | `number` | 必須 | 現在値。`0` から `max` の間に収める |
+| `max` | `number` | `100` | 最大値。0 以下を渡すと 100 として扱う |
+| `valueText` | `string` | — | 右側の表示と読み上げる値。例: `3 / 5 件` |
+| `hideLabel` | `boolean` | `false` | ラベルを表示せず、読み上げ名としてだけ使う |
+| `hideValue` | `boolean` | `false` | 右側の数値を表示しない |
+
+`valueText` を省略すると `60%` のような百分率を表示します。
+満たしていないうちは `100%` になりません（`199 / 200` は `99%`）。
+
+## アクセシビリティ
+
+- `role="progressbar"` と `aria-valuenow`・`aria-valuemax` で値を伝えます。`valueText` は `aria-valuetext` にも入ります。
+- 進捗は色だけでなく数値でも示します。`hideValue` で消す場合は、近くに値が分かる表示を置いてください。
+- 値が変わったことは読み上げません。自分の操作で変わる場合は、操作した要素の読み上げで伝わります。
+  完了などを知らせたい場合は、アプリ側で `role="status"` の文言を出してください。
+- 棒の伸び縮みは「動きを減らす」設定で止まります。
+- 強制配色では、溝に枠線が付き、塗りはシステムの強調色になります。
+
+## スタイル
+
+- 高さは `--koyori-progress-height`（8px）で、角丸は高さの半分です。
+- 色は棒の要素で `--progress-fill`（塗り）と `--progress-track`（溝）を上書きできます。溝との明度差は 3:1 以上を保ってください。
+- 満たしたときは棒の外側の要素に `data-complete="true"` が付きます。色を変える場合の目印に使えます。
+- 幅は親要素いっぱいに広がります。狭くしたい場合は親で幅を指定してください。

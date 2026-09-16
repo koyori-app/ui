@@ -213,10 +213,17 @@ DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧
 仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
 Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。
 
+ProgressBar は達成率や進捗を横棒で示す表示専用の部品です。`label`・`value`・`max`（既定 100）を受け取り、
+`valueText` で「3 / 5 件」のような表示と読み上げに差し替えられます。`hideLabel`・`hideValue` で表示を省けます。
+`role="progressbar"` と `aria-valuenow`・`aria-valuemax`・`aria-valuetext` で値を伝え、値の変化は読み上げません。
+高さは `--koyori-progress-height`（8px）、色は棒の要素で `--progress-fill`・`--progress-track` を上書きします。
+満たしたときは `data-complete="true"` が付きます。値の計算は `components/ProgressBar/progress.ts` にまとめ、
+`node scripts/check-progress-bar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Button・ButtonGroup・Dialog・Drawer・Dropdown・Picker・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Button・ButtonGroup・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
