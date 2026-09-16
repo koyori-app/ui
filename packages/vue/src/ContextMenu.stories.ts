@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { ref } from 'vue';
-import { ContextMenu, Dropdown, EllipsisIcon, contextMenuPosition, type ContextMenuItem } from './index';
+import { Button, ContextMenu, EllipsisIcon, contextMenuPosition, menuButtonPosition, type ContextMenuItem } from './index';
 
 const items: ContextMenuItem[] = [
   { value: 'edit', label: '編集' },
@@ -8,18 +8,14 @@ const items: ContextMenuItem[] = [
   { value: 'delete', label: '削除する', destructive: true },
 ];
 
-/* Dropdown は階層を持たないので、代替のボタンには子を平らにして渡す。 */
-const flatten = (items: ContextMenuItem[]): ContextMenuItem[] =>
-  items.flatMap((item) => item.items ? item.items.map((child) => ({ ...child, label: `${item.label}: ${child.label}` })) : [item]);
-
 const meta = {
   title: 'Components/ContextMenu',
   component: ContextMenu,
   parameters: { layout: 'padded' },
   args: { open: false, x: 0, y: 0, label: 'タスクの操作', items },
-  /* 右クリックのほか、行にフォーカスして Shift+F10 でも開く。 */
+  /* 右クリック、行にフォーカスして Shift+F10、三点ボタンのどれからでも同じメニューが開く。 */
   render: (args) => ({
-    components: { ContextMenu, Dropdown, EllipsisIcon },
+    components: { Button, ContextMenu, EllipsisIcon },
     setup() {
       const menu = ref({ open: false, x: 0, y: 0 });
       const action = ref('未実行');
@@ -27,18 +23,22 @@ const meta = {
         event.preventDefault();
         menu.value = { open: true, ...contextMenuPosition(event) };
       };
+      const toggleMenu = (event: { currentTarget: EventTarget | null }) => {
+        menu.value = menu.value.open ? { ...menu.value, open: false } : { open: true, ...menuButtonPosition(event) };
+      };
       const select = (value: string) => { action.value = value; };
-      return { args, menu, action, openMenu, select, flatten };
+      return { args, menu, action, openMenu, toggleMenu, select };
     },
     template: `<div style="display: grid; gap: 12px; justify-items: start">
       <div tabindex="0" style="display: flex; align-items: center; gap: 12px; width: 320px; padding: 12px; border: 1px solid var(--koyori-color-border); border-radius: 8px"
         @contextmenu="openMenu"
       >
         <span style="flex: 1">請求書を送る</span>
-        <!-- 右クリックできない場合の代替。同じ項目を渡す。 -->
-        <Dropdown label="操作" :items="flatten(args.items)" :on-select="select"><template #icon><EllipsisIcon /></template></Dropdown>
+        <!-- 右クリックできない場合（スマホなど）の入口。同じメニューをボタンの左下に開く。 -->
+        <Button ariaLabel="タスクの操作" variant="ghost" ariaHasPopup="menu" :ariaExpanded="menu.open" ariaControls="story-task-menu"
+          :on-click="toggleMenu"><template #icon><EllipsisIcon /></template></Button>
       </div>
-      <ContextMenu v-bind="args" :open="menu.open" :x="menu.x" :y="menu.y"
+      <ContextMenu v-bind="args" id="story-task-menu" :open="menu.open" :x="menu.x" :y="menu.y"
         :on-select="select" :on-close="() => menu.open = false" />
       <output aria-live="polite">{{ action }}</output>
     </div>`,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ContextMenu, Dropdown, EllipsisIcon, contextMenuPosition, type ContextMenuItem } from '@koyori-app/ui-react';
+import { Button, ContextMenu, EllipsisIcon, contextMenuPosition, menuButtonPosition, type ContextMenuItem } from '@koyori-app/ui-react';
 import '@koyori-app/ui-react/style.css';
 
 const items: ContextMenuItem[] = [
@@ -14,10 +14,8 @@ const items: ContextMenuItem[] = [
 ];
 
 const rows = ['請求書を送る', 'デザインを確認する'];
-
-/* Dropdown は階層を持たないので、代替のボタンには子を平らにして渡す。 */
-const flat = items.flatMap(item => item.items ? item.items.map(child => ({ ...child, label: `${item.label}: ${child.label}` })) : [item]);
-const labelOf = (value: string) => flat.find(item => item.value === value)?.label;
+const labelOf = (value: string) =>
+  items.flatMap(item => [item, ...(item.items ?? [])]).find(item => item.value === value)?.label;
 
 export default function ContextMenuDemo() {
   const [menu, setMenu] = useState({ open: false, x: 0, y: 0, row: rows[0] });
@@ -31,10 +29,15 @@ export default function ContextMenuDemo() {
         onContextMenu={event => { event.preventDefault(); setMenu({ open: true, ...contextMenuPosition(event), row }); }}
       >
         <span style={{ flex: 1 }}>{row}</span>
-        <Dropdown label="操作" icon={<EllipsisIcon />} items={flat} onSelect={value => run(value, row)} />
+        {/* 右クリックできない場合（スマホなど）の入口。同じメニューをボタンの左下に開く。 */}
+        <Button ariaLabel={`${row}の操作`} variant="ghost" icon={<EllipsisIcon />}
+          ariaHasPopup="menu" ariaExpanded={menu.open && menu.row === row} ariaControls="react-task-menu"
+          onClick={event => setMenu(menu.open && menu.row === row
+            ? { ...menu, open: false }
+            : { open: true, ...menuButtonPosition(event), row })} />
       </div>
     ))}
-    <ContextMenu open={menu.open} x={menu.x} y={menu.y} label="タスクの操作" items={items}
+    <ContextMenu id="react-task-menu" open={menu.open} x={menu.x} y={menu.y} label="タスクの操作" items={items}
       onSelect={value => run(value, menu.row)} onClose={() => setMenu(current => ({ ...current, open: false }))} />
     <p role="status">{action}</p>
   </div>;

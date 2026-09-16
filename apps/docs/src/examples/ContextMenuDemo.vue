@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ContextMenu, Dropdown, EllipsisIcon, contextMenuPosition, type ContextMenuItem } from '@koyori-app/ui-vue';
+import { Button, ContextMenu, EllipsisIcon, contextMenuPosition, menuButtonPosition, type ContextMenuItem } from '@koyori-app/ui-vue';
 import '@koyori-app/ui-vue/style.css';
 
 const items: ContextMenuItem[] = [
@@ -14,16 +14,21 @@ const items: ContextMenuItem[] = [
   { value: 'delete', label: '削除する', destructive: true },
 ];
 const rows = ['請求書を送る', 'デザインを確認する'];
-
-// Dropdown は階層を持たないので、代替のボタンには子を平らにして渡す。
-const flat = items.flatMap(item => item.items ? item.items.map(child => ({ ...child, label: `${item.label}: ${child.label}` })) : [item]);
-const labelOf = (value: string) => flat.find(item => item.value === value)?.label;
+const labelOf = (value: string) =>
+  items.flatMap(item => [item, ...(item.items ?? [])]).find(item => item.value === value)?.label;
 const menu = ref({ open: false, x: 0, y: 0, row: rows[0] });
 const action = ref('未実行');
 
 function openMenu(event: MouseEvent, row: string) {
   event.preventDefault();
   menu.value = { open: true, ...contextMenuPosition(event), row };
+}
+
+// 右クリックできない場合（スマホなど）の入口。同じメニューをボタンの左下に開く。
+function toggleMenu(event: { currentTarget: EventTarget | null }, row: string) {
+  menu.value = menu.value.open && menu.value.row === row
+    ? { ...menu.value, open: false }
+    : { open: true, ...menuButtonPosition(event), row };
 }
 
 function run(value: string, row: string) {
@@ -38,9 +43,11 @@ function run(value: string, row: string) {
       @contextmenu="(event) => openMenu(event, row)"
     >
       <span style="flex: 1">{{ row }}</span>
-      <Dropdown label="操作" :items="flat" :on-select="(value) => run(value, row)"><template #icon><EllipsisIcon /></template></Dropdown>
+      <Button :ariaLabel="`${row}の操作`" variant="ghost" ariaHasPopup="menu"
+        :ariaExpanded="menu.open && menu.row === row" ariaControls="vue-task-menu"
+        :on-click="(event) => toggleMenu(event, row)"><template #icon><EllipsisIcon /></template></Button>
     </div>
-    <ContextMenu :open="menu.open" :x="menu.x" :y="menu.y" label="タスクの操作" :items="items"
+    <ContextMenu id="vue-task-menu" :open="menu.open" :x="menu.x" :y="menu.y" label="タスクの操作" :items="items"
       :on-select="(value) => run(value, menu.row)" :on-close="() => menu.open = false" />
     <p role="status">{{ action }}</p>
   </div>

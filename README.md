@@ -225,7 +225,8 @@ ContextMenu は右クリック（キーボードは Shift+F10・メニューキ�
 配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
 `nextMenuIndex`・`typeaheadTarget` として共有します。項目の `destructive` は danger の色になります（ラベルにも結果を書くこと）。
 項目に `items` を渡すと 1 階層だけサブメニューを持てます。サブメニューは右に入らなければ左へ反転し、下にはみ出せば上へずれます。
-右クリックできない利用者のために、同じ項目を Dropdown にも渡してください（階層は平らにする）。`node scripts/check-context-menu.cjs` で
+右クリックできない利用者（スマホなど）のために、三点ボタンからも同じ ContextMenu を開いてください。`menuButtonPosition(event)` がボタンの左下の座標を返し、
+ボタンの `ariaControls` と ContextMenu の `id` を揃えると、開いている間のボタンの押下で閉じます。Button には `ariaHasPopup` を足しました。`node scripts/check-context-menu.cjs` で
 ブラウザーなしに移動・座標・生成物・配布 CSS を検証します（`pnpm build` のあとに実行）。
 
 ## Web ドキュメント

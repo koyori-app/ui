@@ -11,7 +11,7 @@ ContextMenu は、行やカードを右クリックしたときに「編集」�
 ## プレビュー
 
 行を右クリックするか、行にフォーカスして `Shift + F10`（またはメニューキー）を押すと開きます。
-右端の三点ボタンからも同じ操作を選べます。
+右端の三点ボタンからも同じメニューが開きます（スマホではこちらを使います）。
 
 <ContextMenuPreview />
 
@@ -43,6 +43,23 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
   :on-select="run" :on-close="() => menu.open = false" />
 ```
 
+## 三点ボタンから開く
+
+右クリックできない環境（スマホ、iOS の Safari など）のために、同じ ContextMenu を三点ボタンからも開きます。
+`menuButtonPosition(event)` はボタンの左下の座標を返し、ボタンにフォーカスします（Escape などのあとにボタンへ戻すため）。
+
+```tsx
+// React
+<Button ariaLabel="タスクの操作" variant="ghost" icon={<EllipsisIcon />}
+  ariaHasPopup="menu" ariaExpanded={menu.open} ariaControls="task-menu"
+  onClick={event => setMenu(menu.open ? { ...menu, open: false } : { open: true, ...menuButtonPosition(event) })} />
+<ContextMenu id="task-menu" open={menu.open} x={menu.x} y={menu.y} … />
+```
+
+- ボタンの `ariaControls` と ContextMenu の `id` に同じ値を渡します。開いている間にボタンを押すと閉じます（外側クリックとしては扱いません）。
+- 画面端で足りない場合は、右クリックと同じく左や上へ寄ります。サブメニューもそのまま使えます。
+- 複数の行で 1 つのメニューを共用する場合は、開いた行のボタンだけ `ariaExpanded` を `true` にしてください。
+
 ## Props
 
 | 名前 | 型 | 既定値 | 説明 |
@@ -50,6 +67,7 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
 | `open` | `boolean` | 必須 | 表示状態。アプリ側で管理する |
 | `x` / `y` | `number` | 必須 | 画面内の座標。`contextMenuPosition(event)` の戻り値を渡す |
 | `label` | `string` | 必須 | メニューの読み上げ名。例: 「タスクの操作」 |
+| `id` | `string` | — | メニューの `id`。三点ボタンの `ariaControls` に同じ値を渡す |
 | `items` | `ContextMenuItem[]` | 必須 | `{ value, label, disabled?, destructive?, items? }`。`items` で 1 階層だけサブメニューを持てる |
 | `emptyMessage` | `string` | `項目がありません` | `items` が空のときに出す無効な項目 |
 | `onSelect` | `(value: string) => void` | — | 項目を実行したときに先に呼ぶ。このときフォーカスは開く前の要素に戻っている |
@@ -80,7 +98,6 @@ items={[
 - サブメニューは親メニューの右に出ます。右に入らなければ左へ反転し、下にはみ出す場合は上へずれます。
   画面より高い場合は高さを制限し、中をスクロールします。ルートのメニューは、右に入らなければ左へずれます。
 - マウスを乗せてから少し待つと開き、別の項目へ移ると少し待ってから閉じます。
-- 右クリックできない利用者向けの Dropdown は階層を持てないため、子を平らにして渡してください（デモでは「移動: 完了」のようにしています）。
 
 ## キーボード操作
 
@@ -102,10 +119,10 @@ items={[
 ## アクセシビリティ
 
 - メニューは `role="menu"`、項目は `role="menuitem"` です。`label` が読み上げ名になります。
-- **右クリックだけの操作にしないでください。** 同じ `items` を三点ボタン（Dropdown）にも渡し、
+- **右クリックだけの操作にしないでください。** 三点ボタンからも同じ ContextMenu を開けるようにし、
   どちらからでも実行できるようにします。ContextMenu は近道として添えるものです。
 - 対象に `tabindex="0"` を付けると、キーボードからも `Shift + F10` で開けます。
-- iOS の Safari は長押しで `contextmenu` が発生しないため、この方法では開けません。三点ボタンを必ず置いてください。
+- iOS の Safari は長押しで `contextmenu` が発生しないため、右クリックの方法では開けません。三点ボタンを必ず置いてください。
 - 無効な項目は `aria-disabled` を付け、実行できません。
 
 ## スタイル

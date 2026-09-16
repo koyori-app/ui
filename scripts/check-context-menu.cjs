@@ -19,7 +19,7 @@ try {
   rmSync(compiled, { recursive: true, force: true });
 }
 const { nextMenuIndex, typeaheadTarget, listenToMenu } = menu;
-const { contextMenuPosition, placeContextMenu, submenuPlacement, submenuKeyAction, SUBMENU_DELAY } = contextMenu;
+const { contextMenuPosition, menuButtonPosition, placeContextMenu, submenuPlacement, submenuKeyAction, SUBMENU_DELAY } = contextMenu;
 
 // 矢印キーは循環し、Home/End は端へ飛ぶ。Dropdown と共有する。
 assert.equal(nextMenuIndex('ArrowDown', 0, 3), 1, '下へ 1 つ進む');
@@ -47,6 +47,15 @@ assert.deepEqual(contextMenuPosition({ clientX: 120, clientY: 40 }), { x: 120, y
 const row = { getBoundingClientRect: () => ({ left: 16, bottom: 72 }) };
 assert.deepEqual(contextMenuPosition({ clientX: 0, clientY: 0, currentTarget: row }), { x: 16, y: 72 }, 'キーボードでは対象の左下');
 assert.deepEqual(contextMenuPosition({ clientX: 0, clientY: 0, currentTarget: null }), { x: 0, y: 0 }, '対象がなければ 0,0');
+
+// メニューボタンから開くときはボタンの左下に出し、ボタンにフォーカスする（Safari はクリックでフォーカスしないため）。
+{
+  let focused = 0;
+  const button = { getBoundingClientRect: () => ({ left: 300, bottom: 48 }), focus: () => { focused += 1; } };
+  assert.deepEqual(menuButtonPosition({ currentTarget: button }), { x: 300, y: 48 }, 'ボタンの左下の座標を返す');
+  assert.equal(focused, 1, 'ボタンにフォーカスする');
+  assert.deepEqual(menuButtonPosition({ currentTarget: null }), { x: 0, y: 0 }, 'ボタンがなければ 0,0');
+}
 
 // transform を持つ祖先があると fixed の基準がずれる。置いたあと実際の位置との差で補正する。
 function shiftedElement(offsetX, offsetY) {
@@ -101,9 +110,10 @@ assert.ok(SUBMENU_DELAY > 0, 'ホバーで開閉するまで待つ');
 {
   const listeners = {};
   const target = () => ({ addEventListener(type, handler) { listeners[type] = handler; }, removeEventListener() {} });
-  const saved = { document: globalThis.document, window: globalThis.window, HTMLElement: globalThis.HTMLElement };
+  const saved = { document: globalThis.document, window: globalThis.window, HTMLElement: globalThis.HTMLElement, Element: globalThis.Element };
   class FakeElement { hasAttribute(name) { return name === 'popover'; } }
   globalThis.HTMLElement = FakeElement;
+  globalThis.Element = FakeElement;
   globalThis.document = target();
   globalThis.window = target();
   const rootElement = { ...target(), contains: () => true };
@@ -115,6 +125,20 @@ assert.ok(SUBMENU_DELAY > 0, 'ホバーで開閉するまで待つ');
   assert.equal(closed, 0, 'サブメニューが閉じても全体は閉じない');
   listeners.toggle({ target: panel, newState: 'closed' });
   assert.equal(closed, 1, 'ルートの popover が閉じたら全体を閉じる');
+  // メニューを aria-controls で指すボタンの押下とフォーカス移動は、外側として扱わない（トグルにするため）。
+  class FakeTarget extends FakeElement {
+    constructor(controls) { super(); this.controls = controls; }
+    closest(selector) { return this.controls && selector === `[aria-controls~="${this.controls}"]` ? this : null; }
+  }
+  panel.id = 'task-menu';
+  rootElement.contains = () => false;
+  closed = 0;
+  listeners.pointerdown({ target: new FakeTarget('task-menu') });
+  listeners.focusout({ relatedTarget: new FakeTarget('task-menu') });
+  assert.equal(closed, 0, 'メニューボタンを押しても外側クリックとして閉じない');
+  listeners.pointerdown({ target: new FakeTarget('other-menu') });
+  assert.equal(closed, 1, '別のボタンを押したら閉じる');
+  globalThis.Element = FakeElement;
   let dropdownClosed = 0;
   listenToMenu(rootElement, () => { dropdownClosed += 1; }, () => {});
   listeners.toggle({ target: submenu, newState: 'closed' });
@@ -134,6 +158,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.match(source, /[Cc]ontext[Mm]enu[\s\S]{0,120}?preventDefault/, `${name} 版がメニュー内の右クリックを抑止する`);
   assert.doesNotMatch(source, /aria-controls/, `${name} 版は対象と紐づけない（トリガーを持たないため）`);
   assert.match(source, /aria-haspopup/, `${name} 版がサブメニューを持つ項目を伝える`);
+  assert.match(source, /role="menu"[\s\S]{0,120}?(:?id=\{?"?(props\.)?id)|(:?id=\{?"?(props\.)?id)[\s\S]{0,120}?role="menu"/, `${name} 版がメニューボタンから指せる id を持つ`);
   assert.match(source, /aria-expanded/, `${name} 版がサブメニューの開閉を伝える`);
   assert.match(source, /data-submenu/, `${name} 版がサブメニューをルートの兄弟として置く`);
   assert.match(source, /SUBMENU_DELAY/, `${name} 版がホバーで開閉するまで待つ`);
@@ -155,6 +180,19 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Dropd
   const source = read(path);
   assert.match(source, /nextMenuIndex/, `${name} 版 Dropdown が共有の移動計算を使う`);
   assert.match(source, /typeaheadTarget/, `${name} 版 Dropdown が共有の先頭文字検索を使う`);
+}
+
+for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Button/Button.vue'], ['React', 'packages/react/src/generated/components/Button/Button.tsx']]) {
+  const source = read(path);
+  assert.match(source, /aria-haspopup/, `${name} 版 Button がメニューボタンになれる`);
+  assert.match(source, /onClick\?\.\(event\)/, `${name} 版 Button が click イベントを渡す（menuButtonPosition 用）`);
+}
+
+// 右クリックできない環境でも階層が見えるよう、代替は Dropdown ではなく同じ ContextMenu を開くボタンにする。
+for (const path of ['packages/react/src/ContextMenu.stories.tsx', 'packages/vue/src/ContextMenu.stories.ts', 'apps/docs/src/examples/ContextMenuDemo.tsx', 'apps/docs/src/examples/ContextMenuDemo.vue']) {
+  const source = read(path);
+  assert.doesNotMatch(source, /Dropdown|flatten/, `${path}: 階層を平らにした Dropdown を代替にしない`);
+  assert.match(source, /menuButtonPosition/, `${path}: 三点ボタンから同じメニューを開く`);
 }
 
 for (const framework of ['vue', 'react']) {

@@ -96,11 +96,15 @@ export function resetMenu(panel: HTMLElement | null, list: HTMLElement | null) {
 /* panel を渡すと、その popover が閉じたときだけ全体を閉じる。サブメニューを閉じたときの toggle で
    全体まで閉じないようにするため。Dropdown・Picker は渡さない。 */
 export function listenToMenu(root: HTMLElement | null, close: () => void, position: () => void, panel?: HTMLElement | null) {
+  /* panel の id を aria-controls で指すボタン（メニューボタン）は外側として扱わない。
+     押した瞬間に閉じると、続く click でアプリがまた開いてしまい、トグルにならないため。 */
+  const controls = (target: EventTarget | null) =>
+    !!panel?.id && target instanceof Element && !!target.closest(`[aria-controls~="${panel.id}"]`);
   const outside = (event: PointerEvent) => {
-    if (!root?.contains(event.target as Node)) close();
+    if (!root?.contains(event.target as Node) && !controls(event.target)) close();
   };
   const blur = (event: FocusEvent) => {
-    if (!root?.contains(event.relatedTarget as Node)) close();
+    if (!root?.contains(event.relatedTarget as Node) && !controls(event.relatedTarget)) close();
   };
   const toggle = (event: Event) => {
     if (panel && event.target !== panel) return;

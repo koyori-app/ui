@@ -28,6 +28,8 @@ export interface ContextMenuProps {
   y: number;
   /** Accessible name of the menu. */
   label: string;
+  /** id of the menu. Pass the same value to ariaControls of a menu button so it can toggle the menu. */
+  id?: string;
   items: ContextMenuItem[];
   /** Shown as a disabled item when a menu is empty, so it can still take focus. */
   emptyMessage?: string;
@@ -107,7 +109,10 @@ export default function ContextMenu(props: ContextMenuProps) {
         cleanupRef = listenToMenu(rootRef, () => state.close(false), state.position, panelRef);
         state.show();
       } else {
+        /* アプリ側で閉じたとき（メニューボタンをもう一度押したなど）も、中のフォーカスを開く前の要素へ戻す。 */
+        const focused = !!rootRef.contains(document.activeElement);
         state.teardown();
+        if (focused) returnRef?.focus();
       }
     },
     position() {
@@ -246,7 +251,7 @@ export default function ContextMenu(props: ContextMenuProps) {
   return (
     /* 座標は描画後に placeContextMenu で置く。style で渡すと祖先の transform でずれる。 */
     <div ref={rootRef!} class={styles.root} data-menu-top-layer="">
-      <div ref={panelRef!} class={menu.panel} role="menu" aria-label={props.label}
+      <div ref={panelRef!} id={props.id} class={menu.panel} role="menu" aria-label={props.label}
         hidden={!props.open} onKeyDown={(event) => state.navigate(event, -1)}
         onContextMenu={(event) => event.preventDefault()}
       >

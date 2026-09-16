@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { ContextMenu, Dropdown, EllipsisIcon, contextMenuPosition, type ContextMenuItem } from './index';
+import { Button, ContextMenu, EllipsisIcon, contextMenuPosition, menuButtonPosition, type ContextMenuItem } from './index';
 
 const meta = {
   title: 'Components/ContextMenu',
@@ -20,14 +20,10 @@ const meta = {
   render: (args) => <Example {...args} />,
 } satisfies Meta<typeof ContextMenu>;
 
-/* Dropdown は階層を持たないので、代替のボタンには子を平らにして渡す。 */
-const flatten = (items: ContextMenuItem[]): ContextMenuItem[] =>
-  items.flatMap((item) => item.items ? item.items.map((child) => ({ ...child, label: `${item.label}: ${child.label}` })) : [item]);
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/* 右クリックのほか、行にフォーカスして Shift+F10 でも開く。 */
+/* 右クリック、行にフォーカスして Shift+F10、三点ボタンのどれからでも同じメニューが開く。 */
 function Example(args: { label: string; items: ContextMenuItem[] }) {
   const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
   const [action, setAction] = useState('未実行');
@@ -37,10 +33,12 @@ function Example(args: { label: string; items: ContextMenuItem[] }) {
         onContextMenu={(event) => { event.preventDefault(); setMenu({ open: true, ...contextMenuPosition(event) }); }}
       >
         <span style={{ flex: 1 }}>請求書を送る</span>
-        {/* 右クリックできない場合の代替。同じ項目を渡す。 */}
-        <Dropdown label="操作" icon={<EllipsisIcon />} items={flatten(args.items)} onSelect={setAction} />
+        {/* 右クリックできない場合（スマホなど）の入口。同じメニューをボタンの左下に開く。 */}
+        <Button ariaLabel="タスクの操作" variant="ghost" icon={<EllipsisIcon />}
+          ariaHasPopup="menu" ariaExpanded={menu.open} ariaControls="story-task-menu"
+          onClick={(event) => setMenu(menu.open ? { ...menu, open: false } : { open: true, ...menuButtonPosition(event) })} />
       </div>
-      <ContextMenu {...args} open={menu.open} x={menu.x} y={menu.y}
+      <ContextMenu {...args} id="story-task-menu" open={menu.open} x={menu.x} y={menu.y}
         onSelect={(value) => setAction(value)} onClose={() => setMenu((current) => ({ ...current, open: false }))} />
       <output aria-live="polite">{action}</output>
     </div>

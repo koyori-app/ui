@@ -10,6 +10,17 @@ export function contextMenuPosition(event: { clientX?: number; clientY?: number;
   return bounds ? { x: bounds.left, y: bounds.bottom } : { x: 0, y: 0 };
 }
 
+/* メニューボタン（三点ボタンなど）から開くときの座標。ボタンの左下に出す。
+   Safari はクリックでボタンにフォーカスを置かないため、ここでフォーカスする。
+   Escape や実行のあとに、フォーカスがボタンへ戻るようにするため。 */
+export function menuButtonPosition(event: { currentTarget?: EventTarget | null }) {
+  const button = event.currentTarget as { getBoundingClientRect?: () => { left: number; bottom: number }; focus?: () => void } | null;
+  const bounds = button?.getBoundingClientRect?.();
+  if (!bounds) return { x: 0, y: 0 };
+  button?.focus?.();
+  return { x: bounds.left, y: bounds.bottom };
+}
+
 /* ポインタの座標に起点を置く。transform などを持つ祖先があると fixed の基準がその要素になるため、
    一度置いてから実際の位置との差で補正する。
    ponytail: 祖先の拡大縮小（scale）は補正しない。必要になれば行列から逆算する。 */
