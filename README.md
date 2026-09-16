@@ -155,7 +155,7 @@ Field 内の Picker は Input と同じ枠線・背景・エラー色を持ち�
 
 Dropdown と Picker のパネル・項目は `components/shared/menu.module.css`、
 配置・検索文字の正規化・外側クリック等のリスナーは `components/shared/menu.ts` にまとめています。
-Dropdown・Picker・Sidebar は `components/shared/highlight.ts` と `highlight.module.css` を共有し、マウスの入った位置から背景が広がって項目間を移動します。Sidebar 内の Accordion の見出しと入れ子のリンクも同じ動きになり、現在地の色は保ちます。
+Dropdown・Picker・Sidebar は `components/shared/highlight.ts` と `highlight.module.css` を共有し、マウスの入った位置から背景が広がって項目間を移動します。ホバーできない端末（スマホなど）では、タップの瞬間に動いて見えないよう、背景を動かさずその場に表示します。Sidebar 内の Accordion の見出しと入れ子のリンクも同じ動きになり、現在地の色は保ちます。
 `--koyori-menu-width`（200px）・`--koyori-menu-max-height`（360px）・`--koyori-menu-gap`（8px）・
 `--koyori-menu-viewport-margin`（8px）・`--koyori-z-menu`（10）で配置を調整できます。
 配置計算に使う最大高・間隔・画面端の余白は、ブラウザーで長さを解決するため `rem`・`calc()` でも指定できます。長さの計測は開くときだけ行い、スクロール・リサイズ時は再利用します。開いている間にこれらの値を変更した場合は、開き直すと反映されます。

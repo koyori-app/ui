@@ -222,6 +222,8 @@ for (const framework of ['vue', 'react']) {
   assert.match(css, /\[data-destructive=['"]?true['"]?\][^{]*\{[^}]*--koyori-color-danger/, `${framework}: 取り消せない操作の色がある`);
   assert.match(css, /position:fixed[^}]*width:0|width:0[^}]*position:fixed/, `${framework}: 座標に置く起点の規則がある`);
   assert.match(css, /_chevron_[^{]*\{[^}]*rotate\(-90deg\)/, `${framework}: サブメニューを持つ項目に › の目印を出す`);
+  // メニュー・Dropdown・Picker・Sidebar で共通のハイライト。ホバーできない端末ではタップで動かさない。
+  assert.match(css, /@media[^{]*\(hover:\s*none\)[^{]*\{[^@]*?_highlight_[^{]*\{[^}]*transition:\s*none/, `${framework}: スマホではハイライトを動かさない`);
 }
 
 console.log('ContextMenu の移動・座標・生成物・配布 CSS の規則を確認しました。');
