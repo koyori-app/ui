@@ -224,7 +224,8 @@ ContextMenu は右クリック（キーボードは Shift+F10・メニューキ�
 座標と開閉はアプリが持ちます。座標は `contextMenuPosition(event)` で取得し、キーボード起動のときは対象の左下を返します。
 配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
 `nextMenuIndex`・`typeaheadTarget` として共有します。項目の `destructive` は danger の色になります（ラベルにも結果を書くこと）。
-右クリックできない利用者のために、同じ項目を Dropdown にも渡してください。`node scripts/check-context-menu.cjs` で
+項目に `items` を渡すと 1 階層だけサブメニューを持てます。サブメニューは右に入らなければ左へ反転し、下にはみ出せば上へずれます。
+右クリックできない利用者のために、同じ項目を Dropdown にも渡してください（階層は平らにする）。`node scripts/check-context-menu.cjs` で
 ブラウザーなしに移動・座標・生成物・配布 CSS を検証します（`pnpm build` のあとに実行）。
 
 ## Web ドキュメント

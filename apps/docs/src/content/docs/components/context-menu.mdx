@@ -50,7 +50,7 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
 | `open` | `boolean` | 必須 | 表示状態。アプリ側で管理する |
 | `x` / `y` | `number` | 必須 | 画面内の座標。`contextMenuPosition(event)` の戻り値を渡す |
 | `label` | `string` | 必須 | メニューの読み上げ名。例: 「タスクの操作」 |
-| `items` | `ContextMenuItem[]` | 必須 | `{ value, label, disabled?, destructive? }` |
+| `items` | `ContextMenuItem[]` | 必須 | `{ value, label, disabled?, destructive?, items? }`。`items` で 1 階層だけサブメニューを持てる |
 | `emptyMessage` | `string` | `項目がありません` | `items` が空のときに出す無効な項目 |
 | `onSelect` | `(value: string) => void` | — | 項目を実行したときに先に呼ぶ。このときフォーカスは開く前の要素に戻っている |
 | `onClose` | `() => void` | — | Escape・Tab・外側クリックと、`onSelect` の後に呼ぶ |
@@ -61,6 +61,27 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
 `onSelect` は `onClose` より先に呼ぶので、`onClose` で対象の情報を消しても `onSelect` では参照できます。
 項目を実行するとフォーカスは開く前の要素に戻ってから `onSelect` が呼ばれるため、`onSelect` でダイアログを開くなどしてフォーカスを移せます。
 
+## サブメニュー
+
+項目に `items` を渡すと、その項目は実行されず、右側にサブメニューを開きます。階層は 1 段までです。
+
+```tsx
+items={[
+  { value: 'edit', label: '編集' },
+  { value: 'move', label: '移動', items: [
+    { value: 'move-todo', label: '未着手' },
+    { value: 'move-done', label: '完了' },
+  ] },
+]}
+```
+
+- `onSelect` には選んだ子の `value` だけが渡ります。**`value` はサブメニューも含めて重複しないようにしてください。**
+- サブメニューを持つ項目には `›` が付きます。`destructive` は子の項目に付けてください。
+- サブメニューは親メニューの右に出ます。右に入らなければ左へ反転し、下にはみ出す場合は上へずれます。
+  画面より高い場合は高さを制限し、中をスクロールします。ルートのメニューは、右に入らなければ左へずれます。
+- マウスを乗せてから少し待つと開き、別の項目へ移ると少し待ってから閉じます。
+- 右クリックできない利用者向けの Dropdown は階層を持てないため、子を平らにして渡してください（デモでは「移動: 完了」のようにしています）。
+
 ## キーボード操作
 
 | キー | 動作 |
@@ -69,8 +90,10 @@ const [menu, setMenu] = useState({ open: false, x: 0, y: 0 });
 | `↓` / `↑` | 項目を循環して移動する |
 | `Home` / `End` | 先頭 / 末尾へ移動する |
 | 文字キー | その文字で始まる項目へ移動する |
-| `Enter` / `Space` | 実行して閉じる |
-| `Escape` | 閉じて、開く前の要素にフォーカスを戻す |
+| `Enter` / `Space` | 実行して閉じる。サブメニューを持つ項目では開く |
+| `→` | サブメニューを開き、先頭の項目へ移る |
+| `←` | サブメニューを閉じて、親の項目へ戻る |
+| `Escape` | サブメニューにいれば親の項目へ戻る。ルートでは閉じて、開く前の要素にフォーカスを戻す |
 | `Tab` | 閉じて、開く前の位置から通常の移動を続ける |
 
 開くと先頭の項目にフォーカスが移ります。無効な項目にもフォーカスは止まりますが、実行はできません。

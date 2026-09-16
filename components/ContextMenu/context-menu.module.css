@@ -10,3 +10,12 @@
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
 }
+
+/* サブメニューを持つ項目の目印（›）。下向きの矢印を回して使う。 */
+.chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-inline-start: var(--koyori-space-md);
+  color: var(--koyori-color-text-secondary);
+  transform: rotate(-90deg);
+}

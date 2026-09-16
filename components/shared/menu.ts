@@ -28,7 +28,7 @@ export function typeaheadTarget(labels: string[], current: number, key: string) 
 const menuLengthCache = new WeakMap<HTMLElement, { gap: number; maximum: number; margin: number }>();
 
 /* Resolve rem/calc once per opening, then reuse the same lengths in CSS and JS. */
-function menuLengths(panel: HTMLElement) {
+export function menuLengths(panel: HTMLElement) {
   const cached = menuLengthCache.get(panel);
   if (cached) return cached;
   const probe = document.createElement('div');
@@ -93,7 +93,9 @@ export function resetMenu(panel: HTMLElement | null, list: HTMLElement | null) {
   }
 }
 
-export function listenToMenu(root: HTMLElement | null, close: () => void, position: () => void) {
+/* panel を渡すと、その popover が閉じたときだけ全体を閉じる。サブメニューを閉じたときの toggle で
+   全体まで閉じないようにするため。Dropdown・Picker は渡さない。 */
+export function listenToMenu(root: HTMLElement | null, close: () => void, position: () => void, panel?: HTMLElement | null) {
   const outside = (event: PointerEvent) => {
     if (!root?.contains(event.target as Node)) close();
   };
@@ -101,6 +103,7 @@ export function listenToMenu(root: HTMLElement | null, close: () => void, positi
     if (!root?.contains(event.relatedTarget as Node)) close();
   };
   const toggle = (event: Event) => {
+    if (panel && event.target !== panel) return;
     if (event.target instanceof HTMLElement && event.target.hasAttribute('popover') && (event as ToggleEvent).newState === 'closed') close();
   };
   root?.addEventListener('toggle', toggle, true);

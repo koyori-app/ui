@@ -18,8 +18,8 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { nextMenuIndex, typeaheadTarget } = menu;
-const { contextMenuPosition, placeContextMenu } = contextMenu;
+const { nextMenuIndex, typeaheadTarget, listenToMenu } = menu;
+const { contextMenuPosition, placeContextMenu, submenuPlacement, submenuKeyAction, SUBMENU_DELAY } = contextMenu;
 
 // 矢印キーは循環し、Home/End は端へ飛ぶ。Dropdown と共有する。
 assert.equal(nextMenuIndex('ArrowDown', 0, 3), 1, '下へ 1 つ進む');
@@ -65,6 +65,63 @@ placeContextMenu(plain, 30, 40);
 assert.deepEqual([plain.style.left, plain.style.top], ['30px', '40px'], 'ずれがなければ座標をそのまま使う');
 placeContextMenu(null, 1, 2);
 
+// サブメニューは親メニューの右に出し、右に入らなければ左へ反転する。縦は親項目に揃え、はみ出したら上へずらす。
+const viewport = { width: 1280, height: 800 };
+const size = { width: 200, height: 120 };
+const right = submenuPlacement({ panel: { left: 100, right: 300 }, itemTop: 150, inset: 5, size, viewport, margin: 8 });
+assert.deepEqual([right.side, right.left, right.top], ['right', 300, 145], '右に入れば親の右辺に接し、項目の上端に揃える');
+const flipped = submenuPlacement({ panel: { left: 1000, right: 1200 }, itemTop: 150, inset: 5, size, viewport, margin: 8 });
+assert.deepEqual([flipped.side, flipped.left], ['left', 800], '右に入らなければ左へ反転する');
+const edgeRight = submenuPlacement({ panel: { left: 900, right: 1072 }, itemTop: 150, inset: 5, size, viewport, margin: 8 });
+assert.deepEqual([edgeRight.side, edgeRight.left], ['right', 1072], '右端ちょうどに収まるなら反転しない');
+const low = submenuPlacement({ panel: { left: 100, right: 300 }, itemTop: 760, inset: 5, size, viewport, margin: 8 });
+assert.equal(low.top, 800 - 8 - 120, '下にはみ出すなら上へずらす');
+const tall = submenuPlacement({ panel: { left: 100, right: 300 }, itemTop: 300, inset: 5, size: { width: 200, height: 2000 }, viewport, margin: 8 });
+assert.deepEqual([tall.top, tall.maxHeight], [8, 784], '画面より高ければ上端から置き、高さを画面内に制限する');
+const narrow = submenuPlacement({ panel: { left: 40, right: 240 }, itemTop: 100, inset: 5, size: { width: 200, height: 120 }, viewport: { width: 400, height: 800 }, margin: 8 });
+assert.deepEqual([narrow.side, narrow.left], ['right', 192], '左右どちらにも入らなければ広い側に出し、画面内へ寄せる');
+
+// サブメニューのキー操作（APG Menu）。
+const at = (inSubmenu, isParent = false, disabled = false) => ({ inSubmenu, isParent, disabled });
+assert.equal(submenuKeyAction('ArrowRight', at(false, true)), 'open', '親の項目で → は開く');
+assert.equal(submenuKeyAction('Enter', at(false, true)), 'open', '親の項目で Enter は開く');
+assert.equal(submenuKeyAction(' ', at(false, true)), 'open', '親の項目で Space は開く');
+assert.equal(submenuKeyAction('ArrowRight', at(false, true, true)), 'none', '無効な親は開かない');
+assert.equal(submenuKeyAction('ArrowRight', at(false, false)), 'none', '親でない項目で → は何もしない');
+assert.equal(submenuKeyAction('Enter', at(false, false)), 'none', '親でない項目の Enter は通常の実行に任せる');
+assert.equal(submenuKeyAction('ArrowRight', at(true)), 'none', 'サブメニュー内の → は何もしない');
+assert.equal(submenuKeyAction('ArrowLeft', at(true)), 'closeSubmenu', 'サブメニュー内の ← は親へ戻る');
+assert.equal(submenuKeyAction('Escape', at(true)), 'closeSubmenu', 'サブメニュー内の Escape は親へ戻る');
+assert.equal(submenuKeyAction('ArrowLeft', at(false)), 'none', 'ルートの ← は何もしない');
+assert.equal(submenuKeyAction('Escape', at(false)), 'closeAll', 'ルートの Escape は全体を閉じる');
+assert.equal(submenuKeyAction('Tab', at(true)), 'closeAll', 'Tab はどこでも全体を閉じる');
+assert.ok(SUBMENU_DELAY > 0, 'ホバーで開閉するまで待つ');
+
+// サブメニューの popover が閉じたときの toggle で、全体まで閉じない。
+{
+  const listeners = {};
+  const target = () => ({ addEventListener(type, handler) { listeners[type] = handler; }, removeEventListener() {} });
+  const saved = { document: globalThis.document, window: globalThis.window, HTMLElement: globalThis.HTMLElement };
+  class FakeElement { hasAttribute(name) { return name === 'popover'; } }
+  globalThis.HTMLElement = FakeElement;
+  globalThis.document = target();
+  globalThis.window = target();
+  const rootElement = { ...target(), contains: () => true };
+  const panel = new FakeElement();
+  const submenu = new FakeElement();
+  let closed = 0;
+  listenToMenu(rootElement, () => { closed += 1; }, () => {}, panel);
+  listeners.toggle({ target: submenu, newState: 'closed' });
+  assert.equal(closed, 0, 'サブメニューが閉じても全体は閉じない');
+  listeners.toggle({ target: panel, newState: 'closed' });
+  assert.equal(closed, 1, 'ルートの popover が閉じたら全体を閉じる');
+  let dropdownClosed = 0;
+  listenToMenu(rootElement, () => { dropdownClosed += 1; }, () => {});
+  listeners.toggle({ target: submenu, newState: 'closed' });
+  assert.equal(dropdownClosed, 1, 'panel を渡さない Dropdown・Picker は従来どおりどの popover でも閉じる');
+  Object.assign(globalThis, saved);
+}
+
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/ContextMenu/ContextMenu.vue'], ['React', 'packages/react/src/generated/components/ContextMenu/ContextMenu.tsx']]) {
@@ -75,16 +132,22 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.match(source, /data-menu-top-layer/, `${name} 版が最前面に出る`);
   assert.match(source, /data-destructive/, `${name} 版が取り消せない操作を属性で出す`);
   assert.match(source, /[Cc]ontext[Mm]enu[\s\S]{0,120}?preventDefault/, `${name} 版がメニュー内の右クリックを抑止する`);
-  assert.doesNotMatch(source, /aria-haspopup|aria-controls/, `${name} 版は対象と紐づけない（トリガーを持たないため）`);
+  assert.doesNotMatch(source, /aria-controls/, `${name} 版は対象と紐づけない（トリガーを持たないため）`);
+  assert.match(source, /aria-haspopup/, `${name} 版がサブメニューを持つ項目を伝える`);
+  assert.match(source, /aria-expanded/, `${name} 版がサブメニューの開閉を伝える`);
+  assert.match(source, /data-submenu/, `${name} 版がサブメニューをルートの兄弟として置く`);
+  assert.match(source, /SUBMENU_DELAY/, `${name} 版がホバーで開閉するまで待つ`);
+  assert.match(source, /listenToMenu\([\s\S]{0,160}?panelRef/, `${name} 版がルートの popover が閉じたときだけ全体を閉じる`);
   assert.match(source, /placeContextMenu/, `${name} 版が座標を実際の位置で補正する`);
-  assert.match(source, /function select[\s\S]*?onSelect\?\.\([\s\S]*?onClose\?\.\(/, `${name} 版が実行してから閉じる（onSelect の後に onClose）`);
+  assert.match(source, /function run[\s\S]*?onSelect\?\.\([\s\S]*?onClose\?\.\(/, `${name} 版が実行してから閉じる（onSelect の後に onClose）`);
   // フォーカスを戻すと focusout が同期的に起きるため、その前にリスナーを外していないと onClose が先に割り込む。
-  assert.match(source, /function select[\s\S]*?detach\(\)[\s\S]*?focus\(\)[\s\S]*?onSelect\?\.\(/, `${name} 版が実行時、フォーカスを戻す前に外部イベントを外す`);
-  assert.match(source, /function close[\s\S]*?detach\(\)[\s\S]*?focus\(\)/, `${name} 版が閉じるとき、フォーカスを戻す前に外部イベントを外す`);
+  assert.match(source, /function run[\s\S]*?teardown\(\)[\s\S]*?focus\(\)[\s\S]*?onSelect\?\.\(/, `${name} 版が実行時、フォーカスを戻す前に外部イベントを外す`);
+  assert.match(source, /function close[\s\S]*?teardown\(\)[\s\S]*?focus\(\)/, `${name} 版が閉じるとき、フォーカスを戻す前に外部イベントを外す`);
+  assert.match(source, /function teardown[\s\S]*?detach\(\)[\s\S]*?resetMenu/, `${name} 版がリスナーを外してからメニューを隠す`);
   assert.doesNotMatch(source, /:not\(\[aria-disabled="true"\]\)/, `${name} 版が無効な項目も含めて先頭にフォーカスする`);
   assert.match(source, /項目がありません/, `${name} 版が 0 件のときもフォーカスできる項目を出す`);
   assert.doesNotMatch(source, /left: `\$\{(props\.)?x\}px`/, `${name} 版が座標を style で直接渡さない`);
-  assert.match(source, /if \((props\.)?open\) \{\s*cleanupRef(\.current|\.value)? = listenToMenu/,
+  assert.match(source, /if \((props\.)?open\) \{[\s\S]{0,40}?cleanupRef(\.current|\.value)? = listenToMenu/,
     `${name} 版は開いている間だけ外側クリックを受け、開くたびにその時点の props で登録する`);
 }
 
@@ -98,6 +161,7 @@ for (const framework of ['vue', 'react']) {
   const css = read(`packages/${framework}/dist/style.css`);
   assert.match(css, /\[data-destructive=['"]?true['"]?\][^{]*\{[^}]*--koyori-color-danger/, `${framework}: 取り消せない操作の色がある`);
   assert.match(css, /position:fixed[^}]*width:0|width:0[^}]*position:fixed/, `${framework}: 座標に置く起点の規則がある`);
+  assert.match(css, /_chevron_[^{]*\{[^}]*rotate\(-90deg\)/, `${framework}: サブメニューを持つ項目に › の目印を出す`);
 }
 
 console.log('ContextMenu の移動・座標・生成物・配布 CSS の規則を確認しました。');
