@@ -29,7 +29,9 @@ export default function Drawer(props: DrawerProps) {
       syncDialog(dialogRef, props.open && props.modal !== false);
     },
     /* Escape で閉じるのはアプリの仕事。ここでは知らせるだけで、open が false になるまで開けておく。 */
-    cancel(event: { preventDefault: Function }) {
+    /* React の onCancel は合成イベントで祖先へ伝わるため、入れ子の子が出したものは無視する。 */
+    cancel(event: { target: EventTarget | null; preventDefault: Function }) {
+      if (event.target !== dialogRef) return;
       event.preventDefault();
       props.onClose?.();
     },

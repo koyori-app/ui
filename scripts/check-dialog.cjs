@@ -35,6 +35,9 @@ assert.deepEqual(closing.calls, ['close'], '閉じた状態で再同期しても
 
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
+const drawerVue = read('packages/vue/src/generated/components/Drawer/Drawer.vue');
+const drawerReact = read('packages/react/src/generated/components/Drawer/Drawer.tsx');
+
 const vue = read('packages/vue/src/generated/components/Dialog/Dialog.vue');
 assert.match(vue, /syncDialog/, 'Vue 版が開閉の同期を呼ぶ');
 assert.match(vue, /@cancel/, 'Vue 版が Escape を cancel で受ける');
@@ -46,6 +49,11 @@ assert.match(react, /onCancel=\{/, 'React 版が Escape を cancel で受ける'
 assert.match(react, /onPointerDown=\{/, 'React 版が背景クリックを受ける');
 for (const [name, source] of [['Vue', vue], ['React', react]]) {
   assert.doesNotMatch(source, /addEventListener/, `${name} 版が古い props を掴むリスナーを持たない`);
+}
+
+/* React の onCancel は祖先へ伝わるため、入れ子のダイアログで親まで閉じないことを確かめる。 */
+for (const [name, source] of [['Vue', vue], ['React', react], ['Vue 版 Drawer', drawerVue], ['React 版 Drawer', drawerReact]]) {
+  assert.match(source, /function cancel[\s\S]*?target !== dialogRef/, `${name} が入れ子の Escape を親で受け取らない`);
 }
 assert.doesNotMatch(react, /<dialog[^>]*\sopen=/s, 'open 属性をバインドしない');
 
@@ -64,8 +72,6 @@ for (const framework of ['vue', 'react']) {
   assert.match(css, /\[data-plain=/, `${framework}: plain の規則がある`);
 }
 
-const drawerVue = read('packages/vue/src/generated/components/Drawer/Drawer.vue');
-const drawerReact = read('packages/react/src/generated/components/Drawer/Drawer.tsx');
 for (const [name, source] of [['Vue', drawerVue], ['React', drawerReact]]) {
   assert.match(source, /syncDialog/, `${name} 版 Drawer が Dialog と同じ開閉の同期を呼ぶ`);
   assert.match(source, /data-placement/, `${name} 版 Drawer が placement を属性で出す`);
