@@ -36,7 +36,7 @@ ProgressBar は、チェックリストの達成率やアップロードの進�
 | --- | --- | --- | --- |
 | `label` | `string` | 必須 | 読み上げ名。`hideLabel` を付けなければ左側に表示する |
 | `value` | `number` | 必須 | 現在値。`0` から `max` の間に収める |
-| `max` | `number` | `100` | 最大値。0 以下を渡すと 100 として扱う |
+| `max` | `number` | `100` | 最大値。0 以下や `Infinity` などを渡すと 100 として扱う |
 | `valueText` | `string` | — | 右側の表示と読み上げる値。例: `3 / 5 件` |
 | `hideLabel` | `boolean` | `false` | ラベルを表示せず、読み上げ名としてだけ使う |
 | `hideValue` | `boolean` | `false` | 右側の数値を表示しない |

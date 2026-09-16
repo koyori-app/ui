@@ -1,5 +1,5 @@
 import { Show, useStore } from '@builder.io/mitosis';
-import { formatPercent, progressRatio } from './progress';
+import { formatPercent, progressMax, progressRatio } from './progress';
 import styles from './progress-bar.module.css';
 
 export interface ProgressBarProps {
@@ -18,12 +18,12 @@ export interface ProgressBarProps {
 
 export default function ProgressBar(props: ProgressBarProps) {
   const state = useStore({
+    /* getter 同士を参照すると Vue の生成物で ref のまま渡るため、どちらも props から計算する。 */
     get limit() {
-      return props.max !== undefined && props.max > 0 ? props.max : 100;
+      return progressMax(props.max);
     },
-    /* getter 同士を参照すると Vue の生成物で ref のまま渡るため、props から計算する。 */
     get ratio() {
-      return progressRatio(props.value, props.max ?? 100);
+      return progressRatio(props.value, props.max);
     },
   });
 

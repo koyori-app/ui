@@ -16,7 +16,15 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { progressRatio, formatPercent } = progress;
+const { progressMax, progressRatio, formatPercent } = progress;
+
+// 表示と読み上げで同じ最大値を使う。ARIA の値が Infinity や NaN にならないようにする。
+assert.equal(progressMax(5), 5, '正の有限な最大値はそのまま使う');
+assert.equal(progressMax(undefined), 100, '未指定は 100');
+assert.equal(progressMax(0), 100, '0 は 100');
+assert.equal(progressMax(-3), 100, '負の値は 100');
+assert.equal(progressMax(Number.NaN), 100, '数値でない値は 100');
+assert.equal(progressMax(Number.POSITIVE_INFINITY), 100, 'Infinity は 100');
 
 assert.equal(progressRatio(3, 5), 0.6, '値と最大値の割合を返す');
 assert.equal(progressRatio(7, 5), 1, '最大値を超えても満たした扱いにする');
@@ -24,6 +32,8 @@ assert.equal(progressRatio(-1, 5), 0, '負の値は 0 にする');
 assert.equal(progressRatio(Number.NaN, 5), 0, '数値でない値は 0 にする');
 assert.equal(progressRatio(50, 0), 0.5, '最大値が 0 以下なら 100 として扱う');
 assert.equal(progressRatio(50, Number.NaN), 0.5, '最大値が数値でなければ 100 として扱う');
+assert.equal(progressRatio(50, Number.POSITIVE_INFINITY), 0.5, '最大値が Infinity でも 100 として扱う');
+assert.equal(progressRatio(50, undefined), 0.5, '最大値の未指定も 100 として扱う');
 assert.equal(formatPercent(0), '0%', '0 は 0%');
 assert.equal(formatPercent(0.6), '60%', '割合を百分率にする');
 assert.equal(formatPercent(199 / 200), '99%', '満たしていないうちは 100% と言わない');
@@ -40,6 +50,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Progr
   assert.match(source, /aria-label/, `${name} 版が読み上げ名を持つ`);
   assert.doesNotMatch(source, /aria-live/, `${name} 版が値の変化を読み上げない`);
   assert.match(source, /data-complete/, `${name} 版が満たした状態を属性で出す`);
+  assert.match(source, /progressMax/, `${name} 版が読み上げ用の最大値も同じ補正を通す`);
 }
 
 for (const framework of ['vue', 'react']) {

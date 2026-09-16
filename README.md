@@ -213,7 +213,7 @@ DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧
 仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
 Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。
 
-ProgressBar は達成率や進捗を横棒で示す表示専用の部品です。`label`・`value`・`max`（既定 100）を受け取り、
+ProgressBar は達成率や進捗を横棒で示す表示専用の部品です。`label`・`value`・`max`（既定 100。0 以下や非有限な値は 100 扱い）を受け取り、
 `valueText` で「3 / 5 件」のような表示と読み上げに差し替えられます。`hideLabel`・`hideValue` で表示を省けます。
 `role="progressbar"` と `aria-valuenow`・`aria-valuemax`・`aria-valuetext` で値を伝え、値の変化は読み上げません。
 高さは `--koyori-progress-height`（8px）、色は棒の要素で `--progress-fill`・`--progress-track` を上書きします。
