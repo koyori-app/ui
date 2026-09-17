@@ -140,7 +140,9 @@ export default function ContextMenu(props: ContextMenuProps) {
         const submenu = rootRef?.querySelector<HTMLElement>(`[data-submenu="${index}"]`);
         if (!submenu || submenu.hidden) return;
         state.placeSubmenu(submenu);
-        if (freshSubmenuRef) {
+        /* 新しく開いたとき、または先頭項目へフォーカスするとき（表示中のサブメニューへ親から入り直す場合も含む）は
+           リストを先頭へ戻す。preventScroll はリスト内のスクロールも止めるため、戻さないと見えない項目にフォーカスする。 */
+        if (freshSubmenuRef || focusSubmenuRef) {
           freshSubmenuRef = false;
           const list = submenu.querySelector<HTMLElement>('[role="presentation"]');
           if (list) list.scrollTop = 0;

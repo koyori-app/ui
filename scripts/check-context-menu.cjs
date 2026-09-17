@@ -181,7 +181,8 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Conte
   assert.match(source, /listenToMenu\([\s\S]{0,160}?panelRef/, `${name} 版がルートの popover が閉じたときだけ全体を閉じる`);
   assert.match(source, /placeContextMenu/, `${name} 版が座標を実際の位置で補正する`);
   assert.match(source, /function show[\s\S]*?scrollTop = 0[\s\S]*?focus\(/, `${name} 版が開くときリストを先頭へ戻してからフォーカスする（見えない項目にフォーカスしない）`);
-  assert.match(source, /function settleSubmenu[\s\S]*?scrollTop = 0/, `${name} 版がサブメニューを開くときリストを先頭へ戻す`);
+  assert.match(source, /function settleSubmenu[\s\S]*?if \((freshSubmenuRef|focusSubmenuRef)(\.current|\.value)? \|\| (freshSubmenuRef|focusSubmenuRef)(\.current|\.value)?\)[\s\S]*?scrollTop = 0/,
+    `${name} 版がサブメニューを開くとき、表示中へ入り直す場合も含めてリストを先頭へ戻す`);
   assert.match(source, /contains\(document\.activeElement\)\s*\)?\s*return;\s*closeSubmenu\(false\);\s*show\(\)/, `${name} 版が開いたまま座標が変わったら開き直す（別の行のボタン）`);
   // 開閉に伴うフォーカス移動でページをスクロールさせない。矢印キーの移動（リスト内のスクロールが要る）は除く。
   const calls = [...source.matchAll(/\.focus\(([^)]*)\)/g)].filter((match) => !/nextMenuIndex|typeaheadTarget/.test(source.slice(match.index - 240, match.index)));
