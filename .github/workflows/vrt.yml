@@ -86,4 +86,7 @@ jobs:
           mode: storybook
           dir: packages/${{ matrix.framework }}/storybook-static
           wait: true
+          # 差分は人の承認待ちであって壊れてはいない。チェックの赤は
+          # 失敗したビルド (failed / rejected) だけに絞る。
+          exit-zero-on-changes: 'true'
           cli-version: cli-v0.1.2
