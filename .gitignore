@@ -8,3 +8,7 @@ packages/*/LICENSE
 packages/*/THIRD_PARTY_NOTICES.md
 packages/*/src/generated/
 .astro/
+
+# レビュー記録と作業用ワークツリー。コミットしない。
+.claude/
+docs/reviews/
