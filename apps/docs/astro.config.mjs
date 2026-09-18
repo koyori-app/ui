@@ -32,6 +32,7 @@ export default defineConfig({
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
             { label: 'Checkbox', slug: 'components/checkbox' },
+            { label: 'ContextMenu', slug: 'components/context-menu' },
             { label: 'DataList', slug: 'components/data-list' },
             { label: 'Dialog・ConfirmDialog', slug: 'components/dialog' },
             { label: 'Drawer', slug: 'components/drawer' },

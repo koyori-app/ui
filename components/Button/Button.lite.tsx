@@ -11,7 +11,10 @@ interface ButtonOptions {
   ariaExpanded?: boolean;
   /** id of the region this button toggles. */
   ariaControls?: string;
-  onClick?: () => void;
+  /** Kind of popup this button opens, e.g. 'menu' for a menu button. */
+  ariaHasPopup?: 'menu' | 'listbox' | 'dialog' | 'true';
+  /** Receives the click event, e.g. for menuButtonPosition(event). */
+  onClick?: (event: { currentTarget: EventTarget | null }) => void;
 }
 
 /** A visible label or an accessible name is required. */
@@ -30,8 +33,9 @@ export default function Button(props: ButtonProps) {
       /* Vue は未指定の boolean を false にするため、開閉対象があるときだけ出す。 */
       aria-expanded={props.ariaControls ? props.ariaExpanded : undefined}
       aria-controls={props.ariaControls}
+      aria-haspopup={props.ariaHasPopup}
       disabled={props.disabled}
-      onClick={() => props.onClick?.()}
+      onClick={(event) => props.onClick?.(event)}
     >
       <span class={styles.surface}>
         <span class={styles.icon} aria-hidden="true"><Slot name="icon" /></span>

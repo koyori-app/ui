@@ -4,10 +4,31 @@ export function normalizeMenuText(text: string) {
   return text.normalize('NFKC').toLocaleLowerCase().trim();
 }
 
+/* 矢印・Home/End の移動先。項目がなければ -1。 */
+export function nextMenuIndex(key: string, current: number, length: number) {
+  if (length === 0) return -1;
+  if (key === 'Home') return 0;
+  if (key === 'End') return length - 1;
+  if (key === 'ArrowDown') return (current + 1) % length;
+  if (key === 'ArrowUp') return (current <= 0 ? length : current) - 1;
+  return current;
+}
+
+/* 先頭文字での移動先。現在位置の次から探し、末尾まで来たら先頭へ回る。見つからなければ -1。 */
+export function typeaheadTarget(labels: string[], current: number, key: string) {
+  const needle = normalizeMenuText(key);
+  if (!needle || labels.length === 0) return -1;
+  for (let step = 1; step <= labels.length; step++) {
+    const index = (current + step + labels.length) % labels.length;
+    if (normalizeMenuText(labels[index] || '').startsWith(needle)) return index;
+  }
+  return -1;
+}
+
 const menuLengthCache = new WeakMap<HTMLElement, { gap: number; maximum: number; margin: number }>();
 
 /* Resolve rem/calc once per opening, then reuse the same lengths in CSS and JS. */
-function menuLengths(panel: HTMLElement) {
+export function menuLengths(panel: HTMLElement) {
   const cached = menuLengthCache.get(panel);
   if (cached) return cached;
   const probe = document.createElement('div');
@@ -72,14 +93,21 @@ export function resetMenu(panel: HTMLElement | null, list: HTMLElement | null) {
   }
 }
 
-export function listenToMenu(root: HTMLElement | null, close: () => void, position: () => void) {
+/* panel を渡すと、その popover が閉じたときだけ全体を閉じる。サブメニューを閉じたときの toggle で
+   全体まで閉じないようにするため。Dropdown・Picker は渡さない。 */
+export function listenToMenu(root: HTMLElement | null, close: () => void, position: () => void, panel?: HTMLElement | null) {
+  /* panel の id を aria-controls で指すボタン（メニューボタン）は外側として扱わない。
+     押した瞬間に閉じると、続く click でアプリがまた開いてしまい、トグルにならないため。 */
+  const controls = (target: EventTarget | null) =>
+    !!panel?.id && target instanceof Element && !!target.closest(`[aria-controls~="${panel.id}"]`);
   const outside = (event: PointerEvent) => {
-    if (!root?.contains(event.target as Node)) close();
+    if (!root?.contains(event.target as Node) && !controls(event.target)) close();
   };
   const blur = (event: FocusEvent) => {
-    if (!root?.contains(event.relatedTarget as Node)) close();
+    if (!root?.contains(event.relatedTarget as Node) && !controls(event.relatedTarget)) close();
   };
   const toggle = (event: Event) => {
+    if (panel && event.target !== panel) return;
     if (event.target instanceof HTMLElement && event.target.hasAttribute('popover') && (event as ToggleEvent).newState === 'closed') close();
   };
   root?.addEventListener('toggle', toggle, true);

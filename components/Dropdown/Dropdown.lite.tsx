@@ -2,7 +2,7 @@ import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlig
 import highlights from '../shared/highlight.module.css';
 import { For, Show, Slot, useRef, useStore, onMount, onUnMount, onUpdate } from '@builder.io/mitosis';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
-import { listenToMenu, normalizeMenuText, positionMenu, resetMenu } from '../shared/menu';
+import { listenToMenu, nextMenuIndex, positionMenu, resetMenu, typeaheadTarget } from '../shared/menu';
 import styles from '../shared/menu.module.css';
 import controls from '../shared/control.module.css';
 
@@ -72,15 +72,12 @@ export default function Dropdown(props: DropdownProps) {
         }
         const items = Array.from(listRef?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([hidden])') || []);
         const current = items.indexOf(document.activeElement as HTMLElement);
-        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
-          : event.key === 'ArrowDown' ? (current + 1) % items.length
-          : (current <= 0 ? items.length : current) - 1;
-        items[next]?.focus();
+        items[nextMenuIndex(event.key, current, items.length)]?.focus();
       } else if (event.target !== triggerRef && event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) {
         const items = Array.from(listRef?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([hidden])') || []);
         const current = items.indexOf(document.activeElement as HTMLElement);
-        const ordered = [...items.slice(current + 1), ...items.slice(0, current + 1)];
-        ordered.find((item) => normalizeMenuText(item.textContent || '').startsWith(normalizeMenuText(event.key)))?.focus();
+        const target = typeaheadTarget(items.map((item) => item.textContent || ''), current, event.key);
+        items[target]?.focus();
       }
     },
   });

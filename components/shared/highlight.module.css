@@ -16,6 +16,8 @@
     height var(--koyori-motion-slow) var(--koyori-ease-out), opacity var(--koyori-motion-fast) var(--koyori-ease-out));
 }
 
-@media (prefers-reduced-motion: reduce) {
+/* ホバーできない端末（スマホなど）では、タップした瞬間に背景が広がったり滑ったりして見えるため、
+   動かさずにその場で表示する。 */
+@media (prefers-reduced-motion: reduce), (hover: none) {
   .highlight { transition: none; }
 }

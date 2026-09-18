@@ -155,7 +155,7 @@ Field 内の Picker は Input と同じ枠線・背景・エラー色を持ち�
 
 Dropdown と Picker のパネル・項目は `components/shared/menu.module.css`、
 配置・検索文字の正規化・外側クリック等のリスナーは `components/shared/menu.ts` にまとめています。
-Dropdown・Picker・Sidebar は `components/shared/highlight.ts` と `highlight.module.css` を共有し、マウスの入った位置から背景が広がって項目間を移動します。Sidebar 内の Accordion の見出しと入れ子のリンクも同じ動きになり、現在地の色は保ちます。
+Dropdown・Picker・Sidebar は `components/shared/highlight.ts` と `highlight.module.css` を共有し、マウスの入った位置から背景が広がって項目間を移動します。ホバーできない端末（スマホなど）では、タップの瞬間に動いて見えないよう、背景を動かさずその場に表示します。Sidebar 内の Accordion の見出しと入れ子のリンクも同じ動きになり、現在地の色は保ちます。
 `--koyori-menu-width`（200px）・`--koyori-menu-max-height`（360px）・`--koyori-menu-gap`（8px）・
 `--koyori-menu-viewport-margin`（8px）・`--koyori-z-menu`（10）で配置を調整できます。
 配置計算に使う最大高・間隔・画面端の余白は、ブラウザーで長さを解決するため `rem`・`calc()` でも指定できます。長さの計測は開くときだけ行い、スクロール・リサイズ時は再利用します。開いている間にこれらの値を変更した場合は、開き直すと反映されます。
@@ -219,6 +219,15 @@ ProgressBar は達成率や進捗を横棒で示す表示専用の部品です�
 高さは `--koyori-progress-height`（8px）、色は棒の要素で `--progress-fill`・`--progress-track` を上書きします。
 満たしたときは `data-complete="true"` が付きます。値の計算は `components/ProgressBar/progress.ts` にまとめ、
 `node scripts/check-progress-bar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+
+ContextMenu は右クリック（キーボードは Shift+F10・メニューキー）で開く操作メニューです。`open`・`x`・`y`・`label`・`items`・`onSelect`・`onClose` を受け取り、
+座標と開閉はアプリが持ちます。座標は `contextMenuPosition(event)` で取得し、キーボード起動のときは対象の左下を返します。
+配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
+`nextMenuIndex`・`typeaheadTarget` として共有します。項目の `destructive` は danger の色になります（ラベルにも結果を書くこと）。
+項目に `items` を渡すと 1 階層だけサブメニューを持てます。サブメニューは右に入らなければ左へ反転し、下にはみ出せば上へずれます。
+右クリックできない利用者（スマホなど）のために、三点ボタンからも同じ ContextMenu を開いてください。`menuButtonPosition(event)` がボタンの左下の座標を返し、
+ボタンの `ariaControls` と ContextMenu の `id` を揃えると、開いている間のボタンの押下で閉じます。Button には `ariaHasPopup` を足しました。`node scripts/check-context-menu.cjs` で
+ブラウザーなしに移動・座標・生成物・配布 CSS を検証します（`pnpm build` のあとに実行）。
 
 ## Web ドキュメント
 
