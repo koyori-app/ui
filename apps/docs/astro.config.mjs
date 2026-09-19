@@ -31,6 +31,7 @@ export default defineConfig({
             { label: 'Avatar・AvatarGroup', slug: 'components/avatar' },
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
+            { label: 'Calendar', slug: 'components/calendar' },
             { label: 'Checkbox', slug: 'components/checkbox' },
             { label: 'ContextMenu', slug: 'components/context-menu' },
             { label: 'DataList', slug: 'components/data-list' },
