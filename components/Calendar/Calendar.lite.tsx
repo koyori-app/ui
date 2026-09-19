@@ -88,9 +88,11 @@ export default function Calendar(props: CalendarProps) {
     },
   });
 
+  /* min・max が変わるとフォーカス日が範囲外に取り残され、tabindex="0" のセルがなくなるため合わせて補正する。 */
   onUpdate(() => {
-    if (parseDate(props.value)) state.focusedDate = clampDate(props.value!, props.min, props.max);
-  }, [props.value]);
+    const base = parseDate(props.value) ? props.value! : state.focusedDate;
+    state.focusedDate = clampDate(base, props.min, props.max);
+  }, [props.value, props.min, props.max]);
 
   return (
     <div class={styles.root}>
