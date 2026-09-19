@@ -50,12 +50,16 @@
   font-weight: 400;
 }
 
-.day {
-  /* 数字と選択の背景をハイライトより前に出す。 */
-  position: relative;
+/* 日のない空セルにも同じ大きさを与え、空の週が潰れて月ごとに高さが変わらないようにする。 */
+.grid td {
   width: var(--koyori-control-height-sm);
   height: var(--koyori-control-height-sm);
   padding: 0;
+}
+
+.day {
+  /* 数字と選択の背景をハイライトより前に出す。 */
+  position: relative;
   border-radius: var(--koyori-radius-md);
   text-align: center;
   font-variant-numeric: tabular-nums;
