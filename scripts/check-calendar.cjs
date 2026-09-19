@@ -87,6 +87,9 @@ assert.equal(weekdayLabels('en-US', 6)[6].short, 'Fri', '土曜始まりの末�
 assert.equal(formatMonth('2026-09-16', 'ja-JP'), '2026年9月', '月見出し（日本語）');
 assert.equal(formatMonth('2026-09-16', 'en-US'), 'September 2026', '月見出し（英語）');
 assert.equal(formatFullDate('2026-09-16', 'ja-JP'), '2026年9月16日水曜日', 'セルの読み上げ名');
+/* セルの数字はグレゴリオ暦なので、既定が別の暦のロケールでも読み上げと食い違わせない。 */
+assert.match(formatFullDate('2026-09-18', 'th-TH'), /18.*2026/, '既定が仏暦のロケールでもグレゴリオ暦で読み上げる');
+assert.match(formatMonth('2026-09-18', 'th-TH'), /2026/, '既定が仏暦のロケールでも月見出しはグレゴリオ暦');
 const now = new Date();
 assert.equal(today(), formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate()), '今日は端末のローカル日付');
 

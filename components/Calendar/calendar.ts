@@ -90,7 +90,8 @@ export function moveFocus(date: CalendarDate, key: string, shift: boolean, first
 }
 
 function format(date: CalendarDate, locale: string | undefined, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(toUTC(date));
+  /* 値はグレゴリオ暦の暦日なので、ロケール既定の暦（fa-IR のペルシャ暦など）に振り替えさせない。 */
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC', calendar: 'gregory' }).format(toUTC(date));
 }
 
 /* 2026-09-06 は日曜日。そこから週の始まりの曜日を数える。 */
