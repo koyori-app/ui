@@ -29,6 +29,7 @@ export default defineConfig({
           items: [
             { label: 'Accordion', slug: 'components/accordion' },
             { label: 'Avatar・AvatarGroup', slug: 'components/avatar' },
+            { label: 'Breadcrumb', slug: 'components/breadcrumb' },
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
             { label: 'Checkbox', slug: 'components/checkbox' },
