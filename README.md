@@ -237,10 +237,17 @@ ContextMenu は右クリック（キーボードは Shift+F10・メニューキ�
 ボタンの `ariaControls` と ContextMenu の `id` を揃えると、開いている間のボタンの押下で閉じます。Button には `ariaHasPopup` を足しました。`node scripts/check-context-menu.cjs` で
 ブラウザーなしに移動・座標・生成物・配布 CSS を検証します（`pnpm build` のあとに実行）。
 
+Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる表示専用の部品です。`items` を上の階層から順に渡し、
+最後の項目が現在地になります（`aria-current="page"`）。`href` を省いた項目はリンクではなく文字列になります。
+`nav` のランドマークと `ol` で階層を伝え、区切り記号は CSS で描いて読み上げから外します。狭い幅では項目単位で折り返します。
+遷移は持たないため、クライアント側で遷移する場合は親でクリックを受けてルーターへ渡してください。
+[使い方とプレビュー](apps/docs/src/content/docs/components/breadcrumb.mdx)を参照してください。
+`node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Button・ButtonGroup・Calendar・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
