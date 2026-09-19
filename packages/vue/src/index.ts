@@ -24,3 +24,4 @@ export { default as DataList, type DataListProps, type DataListColumn } from './
 export { default as DataListRow, type DataListRowProps } from './generated/components/DataListRow/DataListRow.vue';
 export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.vue';
 export { default as ProgressBar, type ProgressBarProps } from './generated/components/ProgressBar/ProgressBar.vue';
+export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.vue';
