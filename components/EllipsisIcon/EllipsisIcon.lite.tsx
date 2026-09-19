@@ -1,4 +1,5 @@
 // Lucide ellipsis; ISC / Feather MIT. See THIRD_PARTY_NOTICES.md.
+// インライン SVG に xmlns は不要。付けると Starlight の Tabs が HTML を組み直すときに :xmlns へ変わり、hydration がずれる。
 export interface EllipsisIconProps {
   size?: number;
 }
@@ -6,7 +7,6 @@ export interface EllipsisIconProps {
 export default function EllipsisIcon(props: EllipsisIconProps) {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       width={props.size ?? 16}
       height={props.size ?? 16}
       viewBox="0 0 24 24"
