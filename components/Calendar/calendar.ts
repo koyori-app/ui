@@ -17,6 +17,10 @@ export function daysInMonth(year: number, month: number) {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
+/* 'YYYY-MM-DD' と Intl で表せる年の範囲。これを越える移動は端で止める。 */
+const FIRST_DATE: CalendarDate = '0001-01-01';
+const LAST_DATE: CalendarDate = '9999-12-31';
+
 function toUTC(date: CalendarDate) {
   const { year, month, day } = parseDate(date)!;
   const utc = new Date(Date.UTC(year, month - 1, day));
@@ -25,7 +29,10 @@ function toUTC(date: CalendarDate) {
 }
 
 function fromUTC(utc: Date) {
-  return formatDate(utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate());
+  const year = utc.getUTCFullYear();
+  if (year < 1) return FIRST_DATE;
+  if (year > 9999) return LAST_DATE;
+  return formatDate(year, utc.getUTCMonth() + 1, utc.getUTCDate());
 }
 
 export function addDays(date: CalendarDate, days: number) {
@@ -40,6 +47,8 @@ export function addMonths(date: CalendarDate, months: number) {
   const index = year * 12 + month - 1 + months;
   const nextYear = Math.floor(index / 12);
   const nextMonth = index - nextYear * 12 + 1;
+  if (nextYear < 1) return FIRST_DATE;
+  if (nextYear > 9999) return LAST_DATE;
   return formatDate(nextYear, nextMonth, Math.min(day, daysInMonth(nextYear, nextMonth)));
 }
 

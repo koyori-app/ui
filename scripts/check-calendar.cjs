@@ -40,6 +40,10 @@ assert.equal(addMonths('2023-01-31', 1), '2023-02-28', '月末は移動先の月
 assert.equal(addMonths('2024-12-15', 1), '2025-01-15', '翌年の 1 月へ進む');
 assert.equal(addMonths('2024-01-15', -1), '2023-12-15', '前年の 12 月へ戻る');
 assert.equal(addMonths('2024-02-29', 12), '2025-02-28', '閏日の翌年は 2/28');
+assert.equal(addDays('9999-12-31', 1), '9999-12-31', '扱える最後の日より先へは進まない');
+assert.equal(addDays('0001-01-01', -1), '0001-01-01', '扱える最初の日より前へは戻らない');
+assert.equal(addMonths('9999-12-31', 1), '9999-12-31', '扱える最後の月より先へは進まない');
+assert.equal(addMonths('0001-01-15', -12), '0001-01-01', '扱える最初の月より前へは戻らない');
 
 const september = monthGrid('2026-09-16', 0);
 assert.equal(september.length, 6, '常に 6 週');
@@ -74,6 +78,8 @@ assert.equal(moveFocus('2026-09-01', 'ArrowLeft', false, 0, '2026-09-01'), '2026
 assert.equal(moveFocus('2026-09-02', 'ArrowLeft', false, 0, '2026-09-01'), '2026-09-01', 'min ちょうどには入れる');
 assert.equal(moveFocus('2026-12-20', 'PageDown', false, 0, undefined, '2026-12-31'), '2026-12-31', 'max を越える月送りは max で止まる');
 assert.equal(moveFocus('2026-09-16', 'Enter', false, 0), null, '移動しないキーは null');
+assert.equal(moveFocus('9999-12-31', 'ArrowRight', false, 0, undefined, '9999-12-31'), '9999-12-31', '最終日から先へは動かない');
+assert.equal(moveFocus('0001-01-01', 'ArrowUp', false, 0, '0001-01-01'), '0001-01-01', '最初の日より前へは動かない');
 
 assert.deepEqual(weekdayLabels('ja-JP', 1)[0], { short: '月', long: '月曜日' }, '月曜始まりの曜日');
 assert.equal(weekdayLabels('en-US', 0)[0].short, 'Sun', '日曜始まりの曜日');
