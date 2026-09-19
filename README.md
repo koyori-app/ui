@@ -191,7 +191,8 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
-`node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロールを両フレームワークのブラウザーで検証します。
+`node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロール、
+Breadcrumb の構造・現在地・区切り・折り返しを両フレームワークのブラウザーで検証します。
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
 
@@ -243,6 +244,7 @@ Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる
 遷移は持たないため、クライアント側で遷移する場合は親でクリックを受けてルーターへ渡してください。
 [使い方とプレビュー](apps/docs/src/content/docs/components/breadcrumb.mdx)を参照してください。
 `node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
+ブラウザーでの構造・キーボード操作・axe の検証は `node scripts/check-navigation.cjs` に含みます（Storybook のビルド後に実行）。
 
 ## Web ドキュメント
 
