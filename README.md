@@ -195,6 +195,14 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
 
+## Calendar
+
+`Calendar` は月のカレンダーをページ内に表示し、1 日を選びます。値は `'YYYY-MM-DD'` の文字列で、
+`value`・`defaultValue`・`onValueChange` で扱います。`min`・`max`・`isDateDisabled` で選べる日を絞り、
+`locale`・`firstDayOfWeek` で表示を合わせます。キーボード操作は W3C の Date Picker の例に合わせています。
+[使い方とプレビュー](apps/docs/src/content/docs/components/calendar.mdx)を参照してください。
+日付の計算は `components/Calendar/calendar.ts` にまとめ、`node scripts/check-calendar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+
 ## Checkbox
 
 `Checkbox` は `label` を必須にし、`hideLabel` で読み上げ名を保ったまま表示ラベルを隠せます。
@@ -232,7 +240,7 @@ ContextMenu は右クリック（キーボードは Shift+F10・メニューキ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Button・ButtonGroup・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Button・ButtonGroup・Calendar・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
