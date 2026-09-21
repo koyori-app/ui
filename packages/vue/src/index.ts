@@ -26,3 +26,5 @@ export { default as Checkbox, type CheckboxProps } from './generated/components/
 export { default as ProgressBar, type ProgressBarProps } from './generated/components/ProgressBar/ProgressBar.vue';
 export { default as Calendar, type CalendarProps } from './generated/components/Calendar/Calendar.vue';
 export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.vue';
+export { default as Tag, type TagProps } from './generated/components/Tag/Tag.vue';
+export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.vue';

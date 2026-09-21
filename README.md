@@ -246,6 +246,14 @@ Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる
 `node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
 ブラウザーでの構造・キーボード操作・axe の検証は `node scripts/check-navigation.cjs` に含みます（Storybook のビルド後に実行）。
 
+## Tag・Badge
+
+`Tag`・`Badge` はラベル・ステータス・件数を表示し、`size` と `dotColor` を共有します。
+`Tag` は `onRemove` の指定時だけ削除ボタンを表示し、削除操作を外側へ通知します。
+色の意味、データの更新、削除後のフォーカスは利用側で管理します。
+[使い方と Vue／React の例](apps/docs/src/content/docs/components/tag-badge.mdx)を参照してください。
+型検査・Storybook・docs のビルド後に `TAG_BADGE_TEST_PORT=16308 node scripts/check-tag-badge.cjs` でブラウザー検証できます。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。

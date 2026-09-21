@@ -26,3 +26,5 @@ export { default as Checkbox, type CheckboxProps } from './generated/components/
 export { default as ProgressBar, type ProgressBarProps } from './generated/components/ProgressBar/ProgressBar.js';
 export { default as Calendar, type CalendarProps } from './generated/components/Calendar/Calendar.js';
 export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.js';
+export { default as Tag, type TagProps } from './generated/components/Tag/Tag.js';
+export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.js';
