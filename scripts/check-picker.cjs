@@ -7,14 +7,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = resolve(__dirname, '..');
 const port = process.env.PICKER_TEST_PORT || '6237';
 const base = `http://127.0.0.1:${port}`;
-const server = spawn('python3', ['-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' });
+const server = spawn('python3', ['-u', '-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'ignore'] });
 let browser;
 (async () => {
   try {
-    for (let i = 0; i < 40; i++) {
-      try { if ((await fetch(base)).ok) break; } catch {}
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+    await new Promise((resolve, reject) => {
+      server.stdout.once('data', resolve);
+      server.once('error', reject);
+      server.once('exit', code => reject(new Error(`Picker test server exited (${code}); check port ${port}`)));
+    });
     browser = await chromium.launch({ headless: true });
     for (const framework of ['react', 'vue']) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
@@ -147,7 +148,7 @@ let browser;
       assert.equal(await list.getByRole('option', { selected: true }).count(), 0);
 
       await story('empty');
-      await page.waitForTimeout(350);
+      await page.getByRole('status').filter({ hasText: '項目がありません' }).waitFor();
       assert.equal(await page.getByRole('status').innerText(), '項目がありません');
       await search.press('Enter');
       assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
@@ -396,6 +397,50 @@ let browser;
       assert.equal(await message.innerText(), 'Loading teams…');
       await announced('再試行も失敗しました');
       assert(await localizedRetry.isVisible());
+      for (const searchable of [true, false]) {
+        await page.setViewportSize({ width: 320, height: 240 });
+        await story(searchable ? 'async-retry-long-error' : 'async-retry-long-error-without-search');
+        const retry = panel.getByRole('button', { name: '再試行', exact: true });
+        assert((await list.boundingBox()).height >= 36, `${framework}: retained options remain reachable below a wrapped error`);
+        await options.last().click();
+        assert.equal(await trigger.innerText(), 'Frontend、Backend', 'retained options are selectable while the long error is displayed');
+        const focus = searchable ? search : list;
+        await focus.press(searchable ? 'Tab' : 'Shift+Tab');
+        assert(await retry.evaluate(el => el === document.activeElement), 'keyboard reaches retry with the long error');
+        await panel.locator('[id$="-message"]').evaluate(el => { el.parentElement.scrollTop = 0; });
+        const inputTop = searchable ? (await search.boundingBox()).y : null;
+        const bounds = await panel.boundingBox();
+        const messageBounds = await panel.locator('[id$="-message"]').boundingBox();
+        await page.mouse.move(bounds.x + bounds.width / 2, Math.max(bounds.y + 10, messageBounds.y + 10));
+        await page.mouse.wheel(0, 1000);
+        await page.waitForFunction(() => {
+          const panel = document.querySelector('[role="group"]');
+          const retry = panel.querySelector('button');
+          const r = retry.getBoundingClientRect();
+          return retry.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+        }, null, { timeout: 2000 });
+        if (searchable) assert.equal((await search.boundingBox()).y, inputTop, 'search stays fixed while the error scrolls');
+        const retryBounds = await retry.boundingBox();
+        if (searchable) await page.mouse.click(retryBounds.x + retryBounds.width / 2, retryBounds.y + retryBounds.height / 2);
+        else {
+          const touchSession = await page.context().newCDPSession(page);
+          await touchSession.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+          await touchSession.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: retryBounds.x + retryBounds.width / 2, y: retryBounds.y + retryBounds.height / 2 }] });
+          await touchSession.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+          await touchSession.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+          await touchSession.detach();
+        }
+        assert(await focus.evaluate(el => el === document.activeElement), 'retry restores focus');
+        await page.waitForFunction(() => document.querySelector('[role="group"] [id$="-message"]')?.textContent.trim() === '再試行も失敗しました');
+        await focus.press(searchable ? 'Tab' : 'Shift+Tab');
+        assert(await retry.evaluate(el => el === document.activeElement));
+        await retry.press('Enter');
+        assert(await focus.evaluate(el => el === document.activeElement));
+        await page.waitForFunction(() => !document.querySelector('[role="listbox"]').hasAttribute('aria-busy'));
+        assert.equal(await trigger.innerText(), 'Frontend、Backend', 'retries preserve selections');
+      }
+      console.log(`${framework}: wrapped errors, retained options, pointer/touch retry and keyboard focus passed at 320x240`);
+
       assert.deepEqual(errors, []);
       await page.close();
       console.log(`${framework}: Picker with/without search, IME, selection/merging, keyboard, focus, sizing, placement, scrolling and accessibility passed`);

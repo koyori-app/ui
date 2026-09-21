@@ -68,6 +68,13 @@ export const AsyncRetry: Story = {
 export const AsyncRetryWithoutSearch: Story = {
   ...AsyncRetry, args: { ...AsyncRetry.args, searchable: false },
 };
+export const AsyncRetryLongError: Story = {
+  ...AsyncRetry,
+  args: { ...AsyncRetry.args, items: [{ value: 'frontend', label: 'Frontend' }, { value: 'backend', label: 'Backend' }], error: 'Could not load the teams. Check your network connection and try again. If the problem continues, please contact your workspace administrator.' },
+};
+export const AsyncRetryLongErrorWithoutSearch: Story = {
+  ...AsyncRetryLongError, args: { ...AsyncRetryLongError.args, searchable: false },
+};
 export const AsyncRetryEmptyWithoutSearch: Story = {
   ...AsyncRetryWithoutSearch,
   render: args => <AsyncExample {...args} initiallyEmpty />,

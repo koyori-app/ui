@@ -27,6 +27,17 @@
   outline: none;
 }
 
+.list:has(.option) {
+  min-height: var(--koyori-control-height-sm);
+}
+
+/* Keep feedback scrollable while reserving one row for retained options. */
+.feedback {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .message {
   display: block;
   overflow-wrap: anywhere;

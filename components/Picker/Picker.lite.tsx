@@ -305,7 +305,7 @@ export default function Picker(props: PickerProps) {
             aria-controls={state.id ? `${state.id}-list` : undefined} autoComplete="off"
             onInput={(event) => state.input(event)} onChange={(event) => state.input(event)} />
         </Show>
-        <div class={menu.empty} hidden={!props.loading && !props.error && state.view.items.length > 0}>
+        <div class={`${menu.empty} ${styles.feedback}`} hidden={!props.loading && !props.error && state.view.items.length > 0}>
           <span id={state.id ? `${state.id}-message` : undefined} class={styles.message} data-error={!props.loading && !!props.error}>{state.view.message}</span>
           <Show when={!props.loading && props.error && props.onRetry}>
             <button class={`${controls.button} ${styles.retry}`} data-variant="tertiary" type="button"
