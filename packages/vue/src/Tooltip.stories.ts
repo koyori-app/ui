@@ -56,9 +56,23 @@ export const InDialog: Story = {
     template: '<dialog id="tooltip-dialog" style="padding: 48px"><Tooltip v-bind="args"><Button label="補足" /></Tooltip><button style="margin-left: 24px">次へ</button></dialog>',
   }),
 };
+const ChangingTrigger = {
+  setup() {
+    const description = ref('existing-description');
+    return { description, change() {
+      description.value = description.value === 'existing-description' ? 'updated-description' : description.value === 'updated-description' ? '' : 'existing-description';
+    } };
+  },
+  template: '<button :aria-describedby="description || undefined" @click="change">補足</button>',
+};
 export const Dynamic: Story = {
   render: () => ({
-    components: { Tooltip }, setup: () => ({ content: ref('最初の説明'), disabled: ref(false) }),
-    template: `<div style="padding: 64px"><Tooltip id="changing-help" :content="content" :disabled="disabled"><button>補足</button></Tooltip><button @click="content = '変更した説明'">内容を変更</button><button @click="disabled = !disabled">無効を切り替え</button></div>`,
+    components: { Tooltip, ChangingTrigger }, setup: () => ({ content: ref('最初の説明'), disabled: ref(false), mounted: ref(true) }),
+    template: `<div style="padding: 64px">
+      <p id="existing-description">操作は取り消せます。</p><p id="updated-description">操作を変更しました。</p>
+      <Tooltip v-if="mounted" id="changing-help" :content="content" :disabled="disabled"><ChangingTrigger /></Tooltip>
+      <button @click="content = '変更した説明'">内容を変更</button><button @click="disabled = !disabled">無効を切り替え</button>
+      <button @click="mounted = false">Tooltipを破棄</button>
+    </div>`,
   }),
 };

@@ -110,6 +110,9 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
   const resize = new ResizeObserver(position);
   resize.observe(root);
   resize.observe(panel);
+  // Child components can replace their description without updating Tooltip itself.
+  const descriptions = new MutationObserver(update);
+  descriptions.observe(root, { attributes: true, attributeFilter: ['aria-describedby'], subtree: true });
   update();
   // Hydration can finish after a pointer or autofocus has already reached the trigger.
   hovered = root.matches(':hover');
@@ -118,6 +121,7 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
   return {
     update,
     destroy() {
+      descriptions.disconnect();
       hide();
       removeDescription();
       resize.disconnect();

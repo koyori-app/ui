@@ -58,13 +58,22 @@ export const InDialog: Story = {
     <button style={{ marginLeft: 24 }}>次へ</button>
   </dialog>,
 };
+function ChangingTrigger() {
+  const [description, setDescription] = useState('existing-description');
+  return <button aria-describedby={description || undefined} onClick={() => setDescription(current =>
+    current === 'existing-description' ? 'updated-description' : current === 'updated-description' ? '' : 'existing-description')}>補足</button>;
+}
 function ChangingTooltip() {
   const [content, setContent] = useState('最初の説明');
   const [disabled, setDisabled] = useState(false);
+  const [mounted, setMounted] = useState(true);
   return <div style={{ padding: 64 }}>
-    <Tooltip id="changing-help" content={content} disabled={disabled}><button>補足</button></Tooltip>
+    <p id="existing-description">操作は取り消せます。</p>
+    <p id="updated-description">操作を変更しました。</p>
+    {mounted && <Tooltip id="changing-help" content={content} disabled={disabled}><ChangingTrigger /></Tooltip>}
     <button onClick={() => setContent('変更した説明')}>内容を変更</button>
     <button onClick={() => setDisabled(!disabled)}>無効を切り替え</button>
+    <button onClick={() => setMounted(false)}>Tooltipを破棄</button>
   </div>;
 }
 export const Dynamic: Story = { render: () => <ChangingTooltip /> };
