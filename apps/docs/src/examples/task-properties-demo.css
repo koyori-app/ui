@@ -1,0 +1,25 @@
+.task-properties-demo {
+  max-width: 32rem;
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  color: var(--koyori-color-text);
+}
+
+.task-properties-demo h3 { margin: 0 0 var(--koyori-space-xl); }
+.task-properties-list { display: grid; gap: var(--koyori-space-md); margin: 0; }
+.task-properties-list > div { display: grid; grid-template-columns: 4rem minmax(0, 1fr); align-items: start; gap: var(--koyori-space-md); }
+.task-properties-list dt { padding-block: var(--koyori-space-sm); }
+.task-properties-list dd { min-width: 0; margin: 0; }
+.task-property-value { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--koyori-space-sm); }
+/* Match the closed Picker height so the mounted control does not move other rows. */
+.task-property-readonly {
+  display: flex;
+  box-sizing: border-box;
+  min-height: var(--koyori-control-height-sm);
+  align-items: center;
+  padding: var(--koyori-space-sm) var(--koyori-space-xl);
+  border: 1px solid transparent;
+}
+.task-property-message:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.task-property-scenarios { display: grid; gap: var(--koyori-space-md); margin: var(--koyori-space-xl) 0 0; padding: var(--koyori-space-md); border: 1px solid var(--koyori-color-border); }

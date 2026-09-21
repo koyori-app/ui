@@ -1,0 +1,132 @@
+---
+title: タスクのプロパティとSSR境界
+description: 既存部品を組み合わせ、現在値のサーバー描画と選択操作のクライアント描画を分ける。
+---
+
+import TaskPropertiesPreview from '../../../components/TaskPropertiesPreview.astro';
+
+担当者は Picker + AvatarGroup、状態は検索なしの Picker、進捗は ProgressBar を、通常の `dl` / `dt` / `dd` に並べます。
+行のレイアウトとアプリの状態を組み合わせる例です。共通 UI に専用のプロパティ行や担当者部品を増やしません。
+
+## プレビュー
+
+<TaskPropertiesPreview />
+
+「候補取得」で読み込み中・取得失敗・候補なしを、「編集を許可」で権限の表示を試せます。
+失敗時の「候補を再取得」は300ms後に取得済みへ戻すデモです。通信や永続化は行わず、ページを再読み込みすると初期値に戻ります。
+候補を取得できない間も、現在の担当者・状態・進捗は残ります。
+
+## 描画する範囲
+
+| 領域 | Vue のこの例 | React のこの例 |
+| --- | --- | --- |
+| タイトル、項目名、現在の担当者・状態、進捗 | SSR する | SSR する |
+| Picker | 親の `onMounted` 後、`v-if` で初めて作る | 閉じた状態を SSR して hydration する |
+| 初回操作 | マウント後に利用可能 | hydration 後に利用可能 |
+| 候補取得・権限・再試行 | 利用側で判断して描画する | 利用側で判断して描画する |
+
+両デモとも Astro 側は `<VueDemo client:load />` / `<ReactDemo client:load />` です。
+Vue の親はサーバーで実行できますが、現行 Picker はサーバーで初期化しません。
+SSR とブラウザーの最初の描画を同じ値にしてから、マウント後に操作部品へ置き換えます。
+Vue の `onMounted` はサーバーで呼ばれないので、この境界に使えます。
+[Vue の SSR 指針](https://vuejs.org/guide/scaling-up/ssr.html#component-lifecycle-hooks) を参照してください。
+
+```vue
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import { Picker } from '@koyori-app/ui-vue';
+const props = defineProps<{ items: { value: string; label: string }[]; initialValues: string[]; currentLabel: string }>();
+const mounted = ref(false);
+const values = ref([...props.initialValues]);
+onMounted(() => { mounted.value = true; });
+</script>
+
+<template>
+  <Picker v-if="mounted" label="担当者" :items="items" selection-mode="multiple"
+    :selected-values="values" :on-selection-change="next => values = next" />
+  <span v-else>{{ currentLabel }}</span>
+</template>
+```
+
+`v-show` や CSS で隠すだけでは Picker の初期化を止められません。
+この例は現在値の行に最低36pxの高さを確保し、マウントで後続の行が動くのを抑えます。
+現在値が長い場合は幅や折り返しに合わせて、利用先のレイアウトでも確認してください。
+
+## Astro のページ全体をクライアント描画する場合
+
+現在値を初回 HTML に含めなくてよい独立したデモは、以下のようにまとめられます。
+`client:only` はサーバーでその部品を実行せず、代わりに fallback を出します。
+`client:load` / `client:visible` は SSR を省略しません。
+[Astro のクライアントディレクティブ](https://docs.astro.build/en/reference/directives-reference/#clientonly) に従います。
+
+```astro
+<VueDemo client:only="vue">
+  <p slot="fallback">デモを読み込んでいます…</p>
+</VueDemo>
+```
+
+このサイトの Vue の Picker・担当者選択・Dropdown・2列ダイアログはこの形です。
+ContextMenu と Picker を含む DataList のデモも同じ境界に揃えています。
+これはそれぞれのデモの構成に対する判断であり、DataList 本体全体を SSR 非対応とする意味ではありません。
+JavaScript が無効、または取得に失敗した場合、`client:only` 部分は fallback のままです。
+業務上必要な現在値は、このプロパティ行のように SSR する領域に残してください。
+
+## 初期化時の制約
+
+現行の Mitosis の Vue 生成方式は `onUpdate` を即時実行する `watch` に変換します。
+Picker / Dropdown / ContextMenu の監視処理がブラウザーの `requestAnimationFrame` を呼ぶため、
+閉じた状態や `disabled` でも直接 SSR するとエラーが記録されます。
+サーバーにダミーの `window` / `requestAnimationFrame` を追加する方法は取りません。
+
+React のこの例はサーバーとブラウザーで同じ props・状態から開始します。
+`localStorage`、ブラウザーの幅、現在時刻などを初期値に混ぜず、必要な変更はマウント後に行ってください。
+[React の hydration 契約](https://react.dev/reference/react-dom/client/hydrateRoot#caveats) に従い、
+不一致の警告を抑制することで済ませません。`defaultOpen` による自動オープンはこの例の対象外です。
+
+## task に残す責務
+
+| task 側で持つもの | ui へ渡すもの・受け取るもの |
+| --- | --- |
+| API 呼び出し、取得状態の判定、再試行、リクエストの競合処理 | 候補 `items`、表示文、操作を許可するか |
+| 権限、担当者を選べる条件、状態遷移などの業務ルール | 許可済み候補、`disabled`、または編集部品を描画しない判断 |
+| 現在の担当者と人物情報、候補の取得結果 | `selectedValues`、AvatarGroup の `items` |
+| ID 配列の差分、検証、API 更新、失敗時の復元 | `onSelectionChange` の次の ID 配列 |
+| URL と絞り込み条件の同期、保存先、キャッシュ | 表示に必要な確定済みの値 |
+
+この例の取得中・失敗・空のメッセージと再試行ボタンは、Picker の外に利用側が置きます。
+取得中・取得失敗を「候補が0件」と混ぜず、取得済みの候補に対する検索0件とも区別します。
+候補取得が失敗しても、選択済みの人物情報から現在値を表示します。候補にいない担当者を外すかどうかも task の判断です。
+「編集不可」はUI上の表示であり、API側の権限検証を置き換えません。
+
+複数の利用先で同じ構造・契約が必要と分かるまでは、この組み合わせをアプリ内に置きます。
+型は既存の `PickerItem` / `AvatarGroupItem` などを利用でき、ui の追加公開 API は不要です。
+
+## キーボードと状態の確認
+
+- 担当者の最初の操作で検索欄へ、状態の最初の操作で選択済みの候補へ移動します。
+- Escape で閉じると、それぞれの表示ボタンに戻ります。複数選択は選択後も開いたままです。
+- 取得失敗後の再試行では、利用側が描画を更新してから担当者のボタンへ戻します。
+- 取得中・失敗・空・編集不可を往復しても、現在の担当者と状態を失いません。
+- 操作と読み上げは [Picker](../../components/picker/) の Listbox パターン、フォーカス表示、動きを減らす設定を引き継ぎます。
+
+## 再現できる検証
+
+```sh
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm build:docs
+# playwright が通常のモジュール検索パスにない場合、インストール済みのパスを指定する。
+PLAYWRIGHT_MODULE=/path/to/playwright MIGRATION_TEST_PORT=16318 node scripts/check-migration.cjs
+```
+
+チェックは docs をローカルで配信し、JavaScriptを実行しない初回HTMLと、実行後の画面を確認します。
+タイトル・現在値・進捗の維持、Vue Picker が初回HTMLにないこと、ReactのSSR、hydration時の警告、
+初回のフォーカス・選択・Escape、取得中・エラー・再試行・空・編集不可を対象にします。
+同じスクリプトで既存の Picker・担当者選択・ContextMenu・DataList の Astro 描画境界も確認します。
+
+UI-14 の確認基準は `f531dd97b58527c8f6e59908c41ebdfeb8221988` の main です。
+この基準では docs build が終了コード0でも、ContextMenu / DataList の Vue デモで
+`requestAnimationFrame is not defined` が記録されました。上記の `client:only` 境界で回避し、
+ビルドの終了コードに加えてログ・初回HTML・ブラウザーのコンソールを確認します。
+ここで検証するのは Astro の静的ビルドと Chromium です。task への実装移植、Nuxt 等のSSRホスト、
+実スクリーンリーダーでの読み上げは利用先で別途確認してください。
