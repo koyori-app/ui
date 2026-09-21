@@ -282,6 +282,15 @@ Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレ�
 [使い方と Vue／React の例](apps/docs/src/content/docs/components/tag-badge.mdx)を参照してください。
 型検査・Storybook・docs のビルド後に `TAG_BADGE_TEST_PORT=16308 node scripts/check-tag-badge.cjs` でブラウザー検証できます。
 
+## Tabs
+
+Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表示を切り替えます。
+矢印・Home/End でフォーカスを移し、Enter/Space・クリックで `onValueChange` に選択を通知します。
+非表示パネルの DOM・入力値は保持します。URL 同期・永続化は利用側で管理します。
+[API と Vue／React の例](apps/docs/src/content/docs/components/tabs.mdx)を参照してください。
+Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
+`TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
