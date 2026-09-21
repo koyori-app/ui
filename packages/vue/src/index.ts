@@ -1,4 +1,5 @@
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.vue';
+export { default as Tooltip, type TooltipProps } from './generated/components/Tooltip/Tooltip.vue';
 export { default as ButtonGroup, type ButtonGroupProps } from './generated/components/ButtonGroup/ButtonGroup.vue';
 export { default as Accordion, type AccordionProps } from './generated/components/Accordion/Accordion.vue';
 export { default as Sidebar, type SidebarProps } from './generated/components/Sidebar/Sidebar.vue';

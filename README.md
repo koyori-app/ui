@@ -196,6 +196,12 @@ Breadcrumb の構造・現在地・区切り・折り返しを両フレームワ
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
 
+## Tooltip
+
+`Tooltip` は1つのボタン・リンクに短い補足を関連付け、ホバー・フォーカスで表示します。
+`id`・`content`・`placement` を指定します。[使い方・無効トリガーの扱い](apps/docs/src/content/docs/components/tooltip.mdx)を参照してください。
+Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレームワークの操作・配置・アクセシビリティを検証できます（`TOOLTIP_TEST_PORT` でポート変更可能）。
+
 ## Calendar
 
 `Calendar` は月のカレンダーをページ内に表示し、1 日を選びます。値は `'YYYY-MM-DD'` の文字列で、

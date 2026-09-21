@@ -43,6 +43,7 @@ export default defineConfig({
             { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
+            { label: 'Tooltip', slug: 'components/tooltip' },
           ],
         },
         {
