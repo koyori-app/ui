@@ -12,7 +12,7 @@ const example = (args: InputProps, required = false) => ({
     return {
       args, required, draft, changes, commits, error,
       change(value: string) { draft.value = value; changes.value.push(value); error.value = ''; },
-      commit(value: number | null) { commits.value.push(value); error.value = ''; },
+      commit(value: number | null) { commits.value.push(value); error.value = ''; args.onNumberCommit?.(value); },
       invalid(message: string) { error.value = message; },
     };
   },
@@ -22,6 +22,7 @@ const example = (args: InputProps, required = false) => ({
         <Input v-bind="args" :value="draft" :on-value-change="change" :on-number-commit="commit" :on-number-invalid="invalid" />
       </Field>
       <button @click="draft = '0'">0に戻す</button>
+      <input id="next-input" aria-label="次の入力" />
       <p>入力通知: <output data-testid="changes">{{ JSON.stringify(changes) }}</output></p>
       <p>確定通知: <output data-testid="commits">{{ JSON.stringify(commits) }}</output></p>
     </div>`,
@@ -38,6 +39,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Progress: Story = {};
+export const CommitAndBlur: Story = { args: { value: '5', onNumberCommit: () => document.getElementById('number-input')?.blur() } };
+export const CommitAndFocusNext: Story = { args: { value: '5', onNumberCommit: () => document.getElementById('next-input')?.focus() } };
 export const Decimal: Story = { args: { min: -2, max: 2, step: 0.25 } };
 export const AnyStep: Story = { args: { min: undefined, max: undefined, step: 'any' } };
 export const DefaultStep: Story = { args: { min: undefined, max: undefined, step: undefined } };

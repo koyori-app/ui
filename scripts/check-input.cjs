@@ -37,6 +37,21 @@ let browser;
         await page.addScriptTag({ content: axeSource + '\nwindow.inputAxe = window.axe;' });
         assert.deepEqual(await page.evaluate(async () => (await inputAxe.run(document.querySelector('#storybook-root'))).violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.failureSummary) }))), []);
       };
+      for (const name of ['commit-and-blur', 'commit-and-focus-next']) {
+        await story(name);
+        await input.focus();
+        await input.press('Enter');
+        assert.deepEqual(await commits(), [5], `${framework}: ${name} commits once during synchronous focus changes`);
+        assert(await input.evaluate(el => el !== document.activeElement));
+        if (name === 'commit-and-focus-next') assert(await page.locator('#next-input').evaluate(el => el === document.activeElement));
+        await input.focus();
+        await input.press('Enter');
+        assert.deepEqual(await commits(), [5, 5], 'refocusing starts a new commit');
+        await input.fill('6');
+        await input.press('Enter');
+        assert.deepEqual(await commits(), [5, 5, 6], 'editing starts a new commit');
+      }
+
       await story('progress');
       assert.equal(await page.getByRole('spinbutton', { name: '数値', exact: true }).count(), 1);
       assert.equal(await input.getAttribute('aria-describedby'), 'number-input-description');

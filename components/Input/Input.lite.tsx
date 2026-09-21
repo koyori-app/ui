@@ -29,8 +29,9 @@ export interface InputProps {
 export default function Input(props: InputProps) {
   const field = useContext(FieldContext);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // The commit callback can synchronously blur the input before React renders.
+  let numberCommitted = useRef<boolean | null>(null);
   const state = useStore({
-    numberCommitted: false,
     numberInvalid: false,
     get context() {
       return getFieldContext(field);
@@ -50,19 +51,19 @@ export default function Input(props: InputProps) {
     change(event: { type: string; target: EventTarget | null }) {
       if (event.type !== 'input' || props.disabled || props.readOnly) return;
       const input = event.target as HTMLInputElement;
-      state.numberCommitted = false;
+      numberCommitted = false;
       state.syncValidity();
       props.onValueChange?.(input.value);
     },
     commit(event: { target: EventTarget | null }) {
-      if (props.type !== 'number' || props.disabled || props.readOnly || state.numberCommitted) return;
+      if (props.type !== 'number' || props.disabled || props.readOnly || numberCommitted) return;
       const input = event.target as HTMLInputElement;
       state.syncValidity();
       if (!input.validity.valid) {
         props.onNumberInvalid?.(input.validationMessage);
         return;
       }
-      state.numberCommitted = true;
+      numberCommitted = true;
       props.onNumberCommit?.(input.value === '' ? null : input.valueAsNumber);
     },
     keydown(event: { key: string; keyCode?: number; isComposing?: boolean; nativeEvent?: { isComposing?: boolean }; target: EventTarget | null }) {
@@ -92,7 +93,7 @@ export default function Input(props: InputProps) {
       aria-label={props.ariaLabel}
       aria-describedby={state.context?.describedBy}
       aria-invalid={state.context?.invalid || (props.type === 'number' && state.numberInvalid) || undefined}
-      onFocus={() => { state.numberCommitted = false; }}
+      onFocus={() => { numberCommitted = false; }}
       onBlur={(event) => state.commit(event)}
       onKeyDown={(event) => state.keydown(event)}
       onInput={(event) => state.change(event)}
