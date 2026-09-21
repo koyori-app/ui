@@ -1,0 +1,18 @@
+---
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import VueDemo from '../examples/DatePickerDemo.vue';
+import ReactDemo from '../examples/DatePickerDemo.tsx';
+import vueSource from '../examples/DatePickerDemo.vue?raw';
+import reactSource from '../examples/DatePickerDemo.tsx?raw';
+---
+
+<Tabs syncKey="framework">
+  <TabItem label="Vue">
+    <div class="component-preview not-content"><VueDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={vueSource} lang="vue" title="DatePickerDemo.vue" /></details>
+  </TabItem>
+  <TabItem label="React">
+    <div class="component-preview not-content"><ReactDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={reactSource} lang="tsx" title="DatePickerDemo.tsx" /></details>
+  </TabItem>
+</Tabs>

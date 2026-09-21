@@ -216,6 +216,14 @@ Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレーム�
 [使い方とプレビュー](apps/docs/src/content/docs/components/calendar.mdx)を参照してください。
 日付の計算は `components/Calendar/calendar.ts` にまとめ、`node scripts/check-calendar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 
+## DatePicker
+
+`DatePicker` はCalendarをポップアップで開き、選択日または「未設定」をトリガーに表示します。
+`value` / `defaultValue` は `YYYY-MM-DD`、`onValueChange` は選択日（クリア時は空文字）を通知します。
+`presets: { label, value, disabled? }[]` で今日・明日などを渡せます。日時変換・候補の計算・保存は利用側で行います。
+Calendarと同じ範囲制限とキーボード操作を使い、選択・取消はトリガーへ戻ります。非モーダルなのでTabで外へ移動すると閉じます。
+公開APIとVue・Reactの利用例は [DatePicker docs](apps/docs/src/content/docs/components/date-picker.mdx)、ブラウザー検証は `node scripts/check-date-picker.cjs` を参照してください。
+
 ## Checkbox
 
 `Checkbox` は `label` を必須にし、`hideLabel` で読み上げ名を保ったまま表示ラベルを隠せます。
@@ -269,7 +277,7 @@ Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
