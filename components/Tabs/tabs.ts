@@ -48,14 +48,34 @@ function tabStop(list: HTMLElement, focused: Element | null) {
 export function listenToTabs(list: HTMLElement | null) {
   if (!list) return () => {};
   const highlight = listenToSidebar(list);
-  const focus = () => tabStop(list, list.ownerDocument.activeElement);
-  const blur = (event: FocusEvent) => {
-    if (!list.contains(event.relatedTarget as Node | null)) tabStop(list, null);
+  let focusedTab: HTMLButtonElement | null = null;
+  const focus = () => {
+    focusedTab = list.querySelector<HTMLButtonElement>('[role="tab"]:focus');
+    tabStop(list, focusedTab);
   };
+  const blur = (event: FocusEvent) => {
+    if (!list.contains(event.relatedTarget as Node | null)) {
+      // Removal can fire blur before disconnecting the button. Check after the DOM update.
+      const previous = focusedTab;
+      queueMicrotask(() => {
+        if (focusedTab === previous && previous?.isConnected && !previous.disabled && !list.contains(list.ownerDocument.activeElement)) focusedTab = null;
+      });
+      tabStop(list, null);
+    }
+  };
+  const items = new MutationObserver(() => {
+    if (!focusedTab || (list.contains(focusedTab) && !focusedTab.disabled)) return;
+    const active = list.ownerDocument.activeElement;
+    const restore = active === list.ownerDocument.body || active === focusedTab;
+    focusedTab = null;
+    if (restore) list.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]:not(:disabled)')?.focus();
+  });
+  items.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
   list.addEventListener('focusin', focus);
   list.addEventListener('focusout', blur);
   return () => {
     highlight();
+    items.disconnect();
     list.removeEventListener('focusin', focus);
     list.removeEventListener('focusout', blur);
   };

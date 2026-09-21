@@ -107,6 +107,59 @@ let browser, server, docsServer;
       await selected('list'); await focused(tab('calendar'));
       await page.keyboard.press('Tab'); await focused(panel('list'));
 
+      for (const action of ['Remove list', 'Disable list']) {
+        await story('dynamic-items');
+        await tab('list').focus();
+        await page.getByRole('button', { name: action, exact: true }).evaluate(el => el.click());
+        await selected('board'); await focused(tab('board')); await requests([]);
+        assert.equal(await page.locator('[role="tab"][tabindex="0"]').count(), 1);
+        await page.keyboard.press('ArrowRight'); await focused(tab('calendar'));
+        await page.keyboard.press('Enter'); await selected('calendar');
+        await page.keyboard.press('ArrowLeft'); await focused(tab('board'));
+        await page.keyboard.press('Space'); await selected('board'); await requests(['calendar', 'board']);
+
+        await story('dynamic-items');
+        await tab('calendar').click();
+        await tab('list').focus();
+        await page.getByRole('button', { name: action, exact: true }).evaluate(el => el.click());
+        await selected('calendar'); await focused(tab('calendar')); await requests(['calendar']);
+
+        await story('dynamic-items');
+        await tab('calendar').focus();
+        await page.getByRole('button', { name: action, exact: true }).evaluate(el => el.click());
+        await selected('board'); await focused(tab('calendar'));
+
+        await story('dynamic-items');
+        await tab('list').focus();
+        const outside = page.getByRole('button', { name: action, exact: true });
+        await outside.click();
+        await selected('board'); await focused(outside);
+
+        await story('dynamic-items');
+        await tab('list').focus();
+        await outside.evaluate(el => { el.click(); el.focus(); });
+        await selected('board'); await focused(outside);
+
+        await story('dynamic-items');
+        await tab('list').focus();
+        await tab('list').evaluate(el => el.blur());
+        await page.getByRole('button', { name: action, exact: true }).evaluate(el => el.click());
+        await selected('board');
+        assert(await page.evaluate(() => document.activeElement === document.body), 'an earlier explicit blur must not restore stale focus');
+      }
+      for (const action of ['Remove all', 'Disable all']) {
+        await story('dynamic-items');
+        await tab('list').focus();
+        await page.getByRole('button', { name: action, exact: true }).evaluate(el => el.click());
+        await page.waitForFunction(() => !document.querySelector('[role="tab"][aria-selected="true"]'));
+        assert.equal(await page.getByRole('tabpanel').count(), 0);
+        assert.equal(await page.locator('[role="tab"][tabindex="0"]').count(), 0);
+        await requests([]);
+        await page.getByRole('button', { name: 'Reset items', exact: true }).evaluate(el => el.click());
+        await selected('list');
+        assert(await page.evaluate(() => document.activeElement === document.body), 'restoring items does not reclaim focus after all tabs were unavailable');
+      }
+
       await story('rejected');
       await tab('board').click(); await selected('list'); await focused(tab('board')); await requests(['board']);
       await page.keyboard.press('Tab'); await focused(panel('list'));

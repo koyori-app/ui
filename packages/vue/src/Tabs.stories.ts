@@ -51,3 +51,30 @@ export const Narrow: Story = {
 };
 export const RightToLeft: Story = { render: args => ({ components: { Example: example(args) }, template: '<div dir="rtl"><Example /></div>' }) };
 export const Multiple: Story = { render: args => ({ components: { First: example(args), Second: example({ ...args, id: 'other-views' }) }, template: '<First /><Second />' }) };
+
+export const DynamicItems: Story = {
+  render: args => ({
+    components: { Tabs, TabPanel },
+    setup() {
+      const currentItems = ref(args.items);
+      const value = ref(args.value);
+      const requests = ref<string[]>([]);
+      return { args, currentItems, value, requests,
+        select(next: string) { value.value = next; requests.value.push(next); },
+        removeList() { currentItems.value = currentItems.value.filter(item => item.value !== 'list'); },
+        disableList() { currentItems.value = currentItems.value.map(item => item.value === 'list' ? { ...item, disabled: true } : item); },
+        disableAll() { currentItems.value = currentItems.value.map(item => ({ ...item, disabled: true })); } };
+    },
+    template: `<div>
+      <Tabs v-bind="args" :items="currentItems" :value="value" :on-value-change="select">
+        <TabPanel v-for="item in currentItems" :key="item.value" :value="item.value">{{ item.label }}</TabPanel>
+      </Tabs>
+      <button @click="removeList">Remove list</button>
+      <button @click="disableList">Disable list</button>
+      <button @click="currentItems = []">Remove all</button>
+      <button @click="disableAll">Disable all</button>
+      <button @click="currentItems = args.items">Reset items</button>
+      <output>{{ JSON.stringify(requests) }}</output>
+    </div>`,
+  }),
+};

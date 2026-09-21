@@ -49,3 +49,21 @@ export const Narrow: Story = {
 };
 export const RightToLeft: Story = { render: args => <div dir="rtl"><Example args={args} /></div> };
 export const Multiple: Story = { render: args => <><Example args={args} /><Example args={{ ...args, id: 'other-views' }} /></> };
+
+function DynamicItemsExample(args: TabsProps) {
+  const [currentItems, setItems] = useState(args.items);
+  const [value, setValue] = useState(args.value);
+  const [requests, setRequests] = useState<string[]>([]);
+  return <div>
+    <Tabs {...args} items={currentItems} value={value} onValueChange={next => { setValue(next); setRequests(current => [...current, next]); }}>
+      {currentItems.map(item => <TabPanel key={item.value} value={item.value}>{item.label}</TabPanel>)}
+    </Tabs>
+    <button onClick={() => setItems(current => current.filter(item => item.value !== 'list'))}>Remove list</button>
+    <button onClick={() => setItems(current => current.map(item => item.value === 'list' ? { ...item, disabled: true } : item))}>Disable list</button>
+    <button onClick={() => setItems([])}>Remove all</button>
+    <button onClick={() => setItems(current => current.map(item => ({ ...item, disabled: true })))}>Disable all</button>
+    <button onClick={() => setItems(args.items)}>Reset items</button>
+    <output>{JSON.stringify(requests)}</output>
+  </div>;
+}
+export const DynamicItems: Story = { render: args => <DynamicItemsExample {...args} /> };
