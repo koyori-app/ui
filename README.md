@@ -274,6 +274,14 @@ Input/Textarea を差し替える Vue／React の例と API は [InlineEdit の�
 Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレームワークの操作・IME・フォーカス・アクセシビリティを検証します。
 既存 Playwright は `PLAYWRIGHT_MODULE`、検証サーバーのポートは `INLINE_EDIT_TEST_PORT`（既定 16308）で指定できます。
 
+## Tag・Badge
+
+`Tag`・`Badge` はラベル・ステータス・件数を表示し、`size` と `dotColor` を共有します。
+`Tag` は `onRemove` の指定時だけ削除ボタンを表示し、削除操作を外側へ通知します。
+色の意味、データの更新、削除後のフォーカスは利用側で管理します。
+[使い方と Vue／React の例](apps/docs/src/content/docs/components/tag-badge.mdx)を参照してください。
+型検査・Storybook・docs のビルド後に `TAG_BADGE_TEST_PORT=16308 node scripts/check-tag-badge.cjs` でブラウザー検証できます。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。

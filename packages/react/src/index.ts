@@ -30,3 +30,5 @@ export { default as DatePicker, type DatePickerProps, type DatePickerPreset } fr
 export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.js';
 export { default as InlineEdit, type InlineEditProps } from './generated/components/InlineEdit/InlineEdit.js';
 export type { InlineEditCommitReason } from './generated/components/InlineEdit/inline-edit.js';
+export { default as Tag, type TagProps } from './generated/components/Tag/Tag.js';
+export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.js';

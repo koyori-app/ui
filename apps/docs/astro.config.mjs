@@ -44,6 +44,7 @@ export default defineConfig({
             { label: 'Picker', slug: 'components/picker' },
             { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },
+            { label: 'Tag・Badge', slug: 'components/tag-badge' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
             { label: 'Tooltip', slug: 'components/tooltip' },
           ],
