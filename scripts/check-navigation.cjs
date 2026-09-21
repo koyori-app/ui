@@ -207,6 +207,39 @@ let browser;
       await page.waitForTimeout(360);
       assert(await nav.evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollTop === 0), 'shrinking content does not leave highlight overflow');
 
+      await story('breadcrumb', 'default');
+      const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
+      assert.equal(await crumbs.getByRole('listitem').count(), 4);
+      assert.equal(await crumbs.getByRole('link').count(), 3, 'the current page is not a link');
+      const crumbCurrent = crumbs.locator('[aria-current="page"]');
+      assert.equal(await crumbCurrent.count(), 1, 'only the last item is the current page');
+      assert.equal(await crumbCurrent.evaluate(el => el.tagName), 'SPAN');
+      // 区切りは CSS で描くため、読み上げのテキストには混ざらない。
+      assert.equal(await crumbs.evaluate(el => el.textContent), 'プロジェクトKoyori UIコンポーネントBreadcrumb');
+      await crumbs.getByRole('link').first().focus();
+      await page.keyboard.press('Tab');
+      assert(await crumbs.getByRole('link').nth(1).evaluate(el => el === document.activeElement), 'Tab moves along the links');
+      await accessibility();
+
+      await story('breadcrumb', 'single');
+      assert.equal(await crumbs.getByRole('link').count(), 0);
+      assert.equal(await crumbs.getByRole('listitem').count(), 1);
+      assert.equal(await crumbs.getByRole('listitem').evaluate(el => getComputedStyle(el, '::before').content), 'none', 'the first item has no separator');
+
+      await story('breadcrumb', 'current-as-link');
+      assert.equal(await crumbs.getByRole('link').count(), 4);
+      assert.equal(await crumbs.getByRole('link').last().getAttribute('aria-current'), 'page', 'a linked current page keeps aria-current');
+
+      // 狭い親では項目単位で折り返し、横スクロールを出さない。
+      await story('breadcrumb', 'long-labels');
+      assert(await crumbs.getByRole('list').evaluate(el => el.scrollWidth <= el.clientWidth), 'long labels wrap without horizontal overflow');
+      assert((await crumbs.boundingBox()).height > 40, 'a narrow parent wraps onto more than one line');
+
+      // 0 件では空のランドマークを残さない（story ヘルパーは描画を待つため直接開く）。
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-breadcrumb--empty&viewMode=story`);
+      await page.waitForTimeout(200);
+      assert.equal(await crumbs.count(), 0, 'no landmark is rendered for an empty list');
+
       await page.setViewportSize({ width: 320, height: 700 });
       await story('sidebar', 'narrow');
       assert.equal((await sidebar.boundingBox()).width, 180);
@@ -219,7 +252,7 @@ let browser;
       assert.equal(await trigger.locator('svg').evaluate(el => getComputedStyle(el.parentElement).transitionDuration), '0s');
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Accordion state, keyboard, focus and retention; Sidebar embedded menus, entry/moving highlight, nesting, current/disabled state, scrolling, sizing, reduced motion and axe passed.`);
+      console.log(`${framework}: Accordion state, keyboard, focus and retention; Sidebar embedded menus, entry/moving highlight, nesting, current/disabled state, scrolling, sizing, reduced motion; Breadcrumb structure, current page, separators, wrapping and axe passed.`);
     }
   } finally {
     await browser?.close();

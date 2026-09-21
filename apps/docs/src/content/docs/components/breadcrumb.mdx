@@ -1,0 +1,78 @@
+---
+title: Breadcrumb
+description: 階層の位置を示し、上の階層へ戻るためのコンポーネント。
+---
+
+import BreadcrumbPreview from '../../../components/BreadcrumbPreview.astro';
+
+Breadcrumb は、今いるページが階層のどこかを示し、上の階層へ戻る導線を並べます。
+表示専用で、遷移はアプリ側のリンクやルーターが行います。
+
+## プレビュー
+
+上の階層を押すと、その階層まで戻ります。
+
+<BreadcrumbPreview />
+
+## 使い方
+
+上の階層から順に渡します。最後の項目が現在地です。
+
+```tsx
+// React
+<Breadcrumb items={[
+  { label: 'プロジェクト', href: '/projects' },
+  { label: 'Koyori UI', href: '/projects/ui' },
+  { label: 'Breadcrumb' },
+]} />
+```
+
+```vue
+<!-- Vue -->
+<Breadcrumb :items="[
+  { label: 'プロジェクト', href: '/projects' },
+  { label: 'Koyori UI', href: '/projects/ui' },
+  { label: 'Breadcrumb' },
+]" />
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `items` | `BreadcrumbItem[]` | 必須 | 上の階層から順に並べる。最後が現在地。空配列なら何も表示しない |
+| `label` | `string` | `パンくずリスト` | ランドマークの読み上げ名。1 ページに複数置くときに区別する |
+
+`BreadcrumbItem` は `label`（必須）と `href`（省略可）です。`href` を省いた項目はリンクではなく文字列になります。
+現在地をリンクにしたい場合は、最後の項目にも `href` を渡してください。`aria-current="page"` は付いたままです。
+
+## ルーターと組み合わせる
+
+項目は通常の `a` 要素です。クライアント側で遷移する場合は、親でクリックを受けてルーターに渡します。
+
+```tsx
+<div onClick={(event) => {
+  const link = (event.target as HTMLElement).closest('a');
+  if (!link) return;
+  event.preventDefault();
+  router.push(link.getAttribute('href')!);
+}}>
+  <Breadcrumb items={items} />
+</div>
+```
+
+## アクセシビリティ
+
+[W3C の Breadcrumb パターン](https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb/)に沿っています。
+
+- `nav` のランドマークに `aria-label` を付け、中は順序付きリスト（`ol`）で階層の順序を伝えます。
+- 現在地には `aria-current="page"` を付けます。見た目は色と太字の両方で示し、色だけに頼りません。
+- 区切り記号は CSS で描き、読み上げには含めません。
+- キーボード操作は `Tab` でリンクを順にたどるだけです。独自のキー操作はありません。
+- リンクの高さは 28px あり、WCAG 2.2 の最小ターゲットサイズを満たします。
+
+## スタイル
+
+- 狭い幅では項目単位で折り返します。省略や横スクロールはしません。長いラベルは項目の中で折ります。
+- 区切りは `/` です。色は `--koyori-color-text-muted`、リンクは `--koyori-color-text-secondary` で、ホバーで下線が付きます。
+- 背景は敷きません。ヘッダーなどに置くときは、外側で余白と背景を付けてください。

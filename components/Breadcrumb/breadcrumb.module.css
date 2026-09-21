@@ -1,0 +1,67 @@
+@import '../tokens.css';
+
+.root {
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--koyori-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--koyori-space-xs);
+  min-width: 0;
+}
+
+/* 区切りは読み上げから外す。代替テキストを空にできない環境でも記号が二重に読まれるだけで意味は壊れない。 */
+.item + .item::before {
+  content: '/' / '';
+  color: var(--koyori-color-text-muted);
+}
+
+/* 行の高さ 20px + 上下 4px で、WCAG 2.2 の最小ターゲット 24px を満たす。 */
+.link, .text {
+  display: inline-block;
+  padding-block: var(--koyori-space-xs);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  border-radius: var(--koyori-radius-md);
+  color: var(--koyori-color-text-secondary);
+  text-decoration: none;
+  transition: color var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+.link:hover {
+  color: var(--koyori-color-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.link:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+/* 現在地は SidebarLink と同じ強調。色だけに頼らないよう太字も付ける。 */
+.link[aria-current='page'], .text[aria-current='page'] {
+  color: var(--koyori-color-text);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link { transition: none; }
+}
