@@ -295,7 +295,7 @@ export default function Picker(props: PickerProps) {
       </button>
       {/* Field 内の名前は id 参照で作る。button の外に置き、トリガーの文字列を二重にしない。 */}
       <span class={styles.status} id={state.id ? `${state.id}-value` : undefined} aria-hidden="true">{state.view.label}</span>
-      <div ref={panelRef!} id={state.id ? `${state.id}-panel` : undefined} class={menu.panel}
+      <div ref={panelRef!} id={state.id ? `${state.id}-panel` : undefined} class={`${menu.panel} ${styles.panel}`}
         role="group" aria-label={props.label} hidden={!state.open || props.disabled}
         onKeyDown={(event) => state.navigate(event)}
       >

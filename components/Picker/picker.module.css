@@ -1,3 +1,9 @@
+.panel {
+  /* Scroll the whole panel when its children's minimum heights no longer fit. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .search {
   box-sizing: border-box;
   flex-shrink: 0;
@@ -25,17 +31,17 @@
 
 .list {
   outline: none;
+  overscroll-behavior: auto;
 }
 
 .list:has(.option) {
   min-height: var(--koyori-control-height-sm);
 }
 
-/* Keep feedback scrollable while reserving one row for retained options. */
+/* Keep a control-sized viewport, and let scrolling continue into the panel. */
 .feedback {
-  min-height: 0;
+  min-height: var(--koyori-control-height-sm);
   overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .message {
