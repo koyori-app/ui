@@ -1,0 +1,49 @@
+---
+title: Tooltip
+description: ホバーとフォーカスで操作や省略表示の短い補足を表示します。
+---
+
+import TooltipPreview from '../../../components/TooltipPreview.astro';
+
+Tooltip はボタン・リンクなどの短い補足です。トリガーへのホバーまたはキーボードフォーカスで表示し、Escapeで閉じます。
+
+<TooltipPreview />
+
+## 使い方
+
+Reactではchildren、Vueではdefault slotに **1つの要素** を渡します。コンポーネントを渡す場合もDOMのルートを1つにし、そのルートをフォーカス可能にしてください。Buttonやリンクをそのまま使えます。文字列だけ、複数トリガー、Fragment、Tooltipの入れ子には使いません。
+
+`id` はページ内で一意で、サーバーとクライアントで同じ値にします。マウント後、トリガーの既存の `aria-describedby` を保ってTooltipのidを追加し、無効化・破棄時には追加分だけ外します。説明は非表示時にもDOMに置きます。SSRだけでは自動の関連付け・操作は動かないため、Astroでは例のように `client:load` を指定してください。
+
+アイコンボタン自身の `ariaLabel` は必ず残してください。Tooltipの本文は説明であり、ボタンの名前の代わりにはしません。必須の案内やエラーはFieldなどで常時表示し、タッチだけの操作でも情報が得られるようにしてください。Tooltip内にリンクやボタンは置けません。
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 必須 | 説明を接続する一意なid |
+| `content` | `string` | 必須 | プレーンテキストの補足。空文字・空白だけなら表示・関連付けをしない |
+| `placement` | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | 希望する位置。入りきらなければ反対側へ反転し、画面内へ寄せる |
+| `disabled` | `boolean` | `false` | Tooltipを無効化。中のボタン・リンクの操作には影響しない |
+| `children` | node / default slot | 必須 | 1つのトリガー要素 |
+
+## 操作と配置
+
+- フォーカスを移動せずに表示します。Tabで次の要素へ移り、トリガーと説明の両方からホバー・フォーカスが外れたら閉じます。
+- マウスを説明へ移して読む間は開いたままです。間の余白を通るため、ホバー終了後は150ms待って閉じます。
+- Escapeは表示中のTooltipを閉じ、外側のDialogやメニューへ伝えません。フォーカス・ホバーが残る間は勝手に再表示しません。両方が外れてから再度入ると表示します。
+- 位置はスクロール・ウィンドウのサイズ・説明のサイズ変更に追従します。Popover APIがあるブラウザーではトップレイヤーに出し、祖先のoverflowやtransformによる切り取りを避けます。APIがない場合はfixed表示となり、祖先による切り取りの制約が残ります。
+- 長い文と長い単語は折り返し、画面幅を超えません。画面の高さを超える場合はマウスでスクロールできますが、Tooltip自体はキーボード操作用の領域ではありません。長文は常設の説明やDialogで提供してください。
+
+## 無効なトリガー
+
+ネイティブの `disabled` ボタンはフォーカスできないので、直接包んだ場合はTooltipも表示しません。Tooltipが勝手に有効化したり、Tab対象に変えたりすることはありません。
+
+無効な理由を補足する場合はプレビューのように、名前付きの `role="group"`・`tabindex="0"` のspanで無効ボタンを包み、そのspanをTooltipの子にします。無効ボタン部分の `pointer-events: none` はラッパーへホバーを届けるための指定です。元のボタンの名前とdisabled状態を維持します。重要な理由は常時表示も検討してください。
+
+## アクセシビリティとスタイル
+
+説明は `role="tooltip"` と `aria-describedby` で接続し、トリガーの名前やクリック動作を変更しません。説明の表示にはアニメーションを使わないため、`prefers-reduced-motion` でも動きません。
+背景・文字・枠線・余白・角丸は共通トークンを使います。間隔と画面端の余白は `--koyori-menu-gap`・`--koyori-menu-viewport-margin` です。Tooltipには選択項目がないため、メニューの移動ハイライトは付けません。
+
+設計の参照は [APG Tooltip](https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/)、[WCAGのホバー・フォーカス時の内容](https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html)、[デジタル庁の導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)です。

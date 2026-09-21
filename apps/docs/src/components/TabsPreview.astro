@@ -1,0 +1,18 @@
+---
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import VueDemo from '../examples/TabsDemo.vue';
+import ReactDemo from '../examples/TabsDemo.tsx';
+import vueSource from '../examples/TabsDemo.vue?raw';
+import reactSource from '../examples/TabsDemo.tsx?raw';
+---
+
+<Tabs syncKey="framework">
+  <TabItem label="Vue">
+    <div class="component-preview not-content"><VueDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={vueSource} lang="vue" title="TabsDemo.vue" /></details>
+  </TabItem>
+  <TabItem label="React">
+    <div class="component-preview not-content"><ReactDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={reactSource} lang="tsx" title="TabsDemo.tsx" /></details>
+  </TabItem>
+</Tabs>

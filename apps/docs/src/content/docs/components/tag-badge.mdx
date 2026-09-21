@@ -1,0 +1,67 @@
+---
+title: Tag・Badge
+description: ラベル・ステータス・件数を表示し、Tag の削除操作を外側へ通知する。
+---
+
+import TagBadgePreview from '../../../components/TagBadgePreview.astro';
+
+`Tag` はラベル、`Badge` はステータスや件数を表示します。どちらも色付きドットとサイズを指定できます。
+ステータス・優先度などの文言と色の対応はアプリ側で決めます。色だけで意味を伝えず、必ずラベルにも書いてください。
+
+## プレビュー
+
+削除するとアプリ側で一覧と件数を更新します。最後のラベルを削除しても件数の **0** は表示されます。
+削除後は次の削除ボタン、前の削除ボタン、ラベルを戻すボタンの順でフォーカスを移します。
+
+<TagBadgePreview />
+
+## Props
+
+`Tag`・`Badge` と `TagProps`・`BadgeProps` を各パッケージの公開エントリーから import できます。
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | Tag: `string` / Badge: `string \| number` | 必須 | 表示するラベル・ステータス・件数。数値の 0 も表示する |
+| `size` | `'sm' \| 'md'` | `'sm'` | 文字と余白のサイズ |
+| `dotColor` | `string` | — | 装飾ドットの CSS 色。`var(--koyori-color-accent)` など。未指定・空文字で非表示 |
+
+Tag にだけ、次の Props があります。
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `onRemove` | `(event: { currentTarget: EventTarget \| null }) => void` | — | 削除操作を通知する。指定時だけ削除ボタンを表示 |
+| `removeLabel` | `string` | `label + 'を削除'` | 削除ボタンの読み上げ名。対象と操作が分かる文言にする |
+
+Vue は `:on-remove="handler"`、React は `onRemove={handler}` でコールバックを渡します。
+Tag 自身は削除・保存を行いません。通知を受けてアプリが配列などを更新します。API、権限、拒否・保存失敗の表示、
+再試行と削除後のフォーカスは利用側の責務です。削除を受け入れなければ Tag はそのまま残ります。
+
+空のラベルは意味を伝えられないため、データがない場合はアプリ側で部品を省くか「未設定」のような文言を渡します。
+件数の単位・桁区切り・上限表示（例: `99+`）もアプリ側で整形します。Badge に自動の読み上げ通知はありません。
+件数だけの場合はプレビューの「ラベル件数」のように対象を添え、変更を通知する必要があれば利用側に `role="status"` を置きます。
+
+## 操作と見た目
+
+Tag 全体と Badge は通常のテキスト表示です。削除可能な Tag をリンクや別のボタンの中には入れないでください。
+削除ボタンは標準の `button type="button"` で、Tab で移動し Enter / Space で実行できます。フォームは送信しません。
+ボタンとドットのアイコンは読み上げから除き、削除ボタンの名前で操作を伝えます。
+[W3C の Button パターン](https://www.w3.org/WAI/ARIA/apg/patterns/button/)と
+[デジタル庁のウェブアクセシビリティ導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)を参照しています。
+
+長いラベルは省略せず親の幅で折り返します。文字・配色・角丸は共通トークンを使い、削除ボタンは既存 Button と同じ
+フォーカス枠・hover・押下の動きを使います。削除ボタンの操作領域は既定で 24 × 24px です。
+`prefers-reduced-motion: reduce` ではアニメーションを止め、強制カラーモードではドットの輪郭も表示します。
+両フレームワークで SSR でき、Astro のデモは `client:load` で削除操作を有効にします。
+
+## 検証
+
+```sh
+pnpm typecheck
+pnpm build-storybook
+pnpm build:docs
+TAG_BADGE_TEST_PORT=16308 node scripts/check-tag-badge.cjs
+```
+
+Playwright と Chromium、日本語フォント、Python 3 が必要です。既存の Playwright を使う場合は `PLAYWRIGHT_MODULE` を指定します。
+検証スクリプトは両フレームワークのサイズ・ドット・長いラベル・件数 0・削除通知・キーボード・フォーカス・axe と、
+ビルド済み docs の初回 HTML・hydration 後の削除とフォーカス移動を確認します。

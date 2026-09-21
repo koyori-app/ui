@@ -79,7 +79,10 @@ CSS の import はアプリのエントリーなどで一度だけ行えば十�
 | [Dialog・ConfirmDialog](./components/dialog/) | 操作を中断して確認・入力を求めるモーダル |
 | [Dropdown](./components/dropdown/) | コピー・アーカイブなどを実行するアクションメニュー |
 | [Picker](./components/picker/) | 単一・複数の項目を選択。検索欄は省略可能 |
+| [DatePicker](./components/date-picker/) | Calendarを開いて日付の選択・クリア・候補からの選択を行う |
+| [Tag・Badge](./components/tag-badge/) | ラベル・ステータス・件数と、任意のラベル削除ボタン |
 | [Field・Input・Textarea](./components/field/) | ラベル・説明・エラーを関連付けた1行・複数行の文字入力 |
+| [InlineEdit](./components/inline-edit/) | 表示・編集・確定・取消、保存中や失敗時の操作とフォーカス |
 
 ## ブロック
 
@@ -88,6 +91,7 @@ CSS の import はアプリのエントリーなどで一度だけ行えば十�
 | ブロック | 内容 |
 | --- | --- |
 | [担当者の選択](./blocks/assignees/) | Picker で選んだ人を AvatarGroup で表示する |
+| [タスクのプロパティとSSR境界](./blocks/task-properties/) | 現在値をSSRし、担当者・状態の編集と取得状態を利用側で組み立てる |
 | [2 列のダイアログ](./blocks/two-column-dialog/) | 左に本文、右にプロパティを置く大きなダイアログ |
 
 コンポーネントの色は現在ライト背景向けです。ドキュメントをダーク表示にしても、デモは白い背景で表示します。

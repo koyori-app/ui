@@ -1,0 +1,60 @@
+.panel {
+  --koyori-menu-width: calc(7 * var(--koyori-control-height-sm) + 2 * var(--koyori-space-sm) + 2 * var(--koyori-space-xs) + 2px);
+  --koyori-menu-max-height: 520px;
+  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-xs) + var(--koyori-space-sm));
+}
+
+.body {
+  padding: var(--koyori-space-sm);
+  gap: var(--koyori-space-md);
+}
+
+/* Keep day labels and hit areas readable; the popup body scrolls on narrow screens. */
+.calendar {
+  min-width: max-content;
+}
+
+.presets {
+  --highlight-opacity: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  --highlight-background: var(--koyori-color-surface-active);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: var(--koyori-space-sm);
+}
+
+.field {
+  display: block;
+}
+
+.field .trigger {
+  --button-background: var(--koyori-color-surface);
+  --button-hover-background: var(--koyori-color-surface);
+  --button-border: var(--koyori-color-border-strong);
+  --button-press-scale: 1;
+  width: 100%;
+  text-align: start;
+}
+
+.triggerSurface {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.field .triggerSurface {
+  width: 100%;
+  justify-content: space-between;
+  padding-inline: var(--koyori-space-lg);
+}
+
+.field .trigger[aria-invalid='true']:not(:disabled) {
+  --button-border: var(--koyori-color-danger);
+}
