@@ -61,3 +61,16 @@ export const AsyncSave: Story = { args: { commitOnBlur: true }, render: args => 
 export const Empty: Story = { render: args => example(args, false, '') };
 export const Disabled: Story = { args: { disabled: true } };
 export const InitiallyEditing: Story = { args: { editing: true } };
+export const NativeForm: Story = {
+  render: args => ({
+    components: { InlineEdit },
+    setup: () => ({ args, editing: ref(false), submits: ref(0) }),
+    template: `<form @submit.prevent="submits++">
+      <InlineEdit v-bind="args" :editing="editing" :on-edit="() => editing = true" :on-cancel="() => editing = false">
+        <input :id="args.id" name="title" required />
+      </InlineEdit>
+      <button type="submit">フォームを送信</button>
+      <output>送信: {{ submits }}</output>
+    </form>`,
+  }),
+};

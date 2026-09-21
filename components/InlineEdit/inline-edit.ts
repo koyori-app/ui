@@ -28,7 +28,7 @@ export function createInlineEdit(root: HTMLElement) {
   let restoreFocus = true;
   let frame = 0;
 
-  const blocked = () => options.disabled || options.saving || editor.disabled;
+  const blocked = () => options.disabled || options.saving || (options.editing ? editor.disabled : trigger.disabled);
   const focusEditor = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {

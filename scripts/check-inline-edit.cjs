@@ -45,6 +45,29 @@ let browser;
         assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
       };
 
+      await story('native-form');
+      const form = page.locator('form');
+      const submit = page.getByRole('button', { name: 'フォームを送信' });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        assert(await form.evaluate(el => el.checkValidity()), `${framework}: a closed editor must not block form validation`);
+        assert.equal(await form.evaluate(el => new FormData(el).has('title')), false);
+        await submit.click();
+        assert.equal(await output.innerText(), `送信: ${attempt * 2 + 1}`);
+        await start();
+        assert(await input.evaluate(el => el.willValidate), 'editing restores native validation');
+        assert.equal(await form.evaluate(el => el.checkValidity()), false);
+        await submit.click();
+        await focused(input);
+        assert.equal(await output.innerText(), `送信: ${attempt * 2 + 1}`, 'required input blocks submission while editing');
+        await input.fill('有効な値');
+        assert.equal(await form.evaluate(el => new FormData(el).get('title')), '有効な値');
+        await submit.click();
+        assert.equal(await output.innerText(), `送信: ${attempt * 2 + 2}`);
+        await input.fill('');
+        await input.press('Escape');
+        await focused(trigger);
+      }
+
       await story('default');
       await axeCheck();
       await trigger.focus();

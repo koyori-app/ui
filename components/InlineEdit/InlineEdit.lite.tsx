@@ -60,7 +60,7 @@ export default function InlineEdit(props: InlineEditProps) {
         </span>
       </button>
       <fieldset class={styles.editor} data-inline-edit-editor="" hidden={!props.editing}
-        disabled={props.disabled || props.saving} aria-busy={props.saving || undefined}
+        disabled={!props.editing || props.disabled || props.saving} aria-busy={props.saving || undefined}
         aria-label={`${props.label}の編集`} tabIndex={-1}
         onKeyDown={(event) => behavior?.keydown(event)}
       >

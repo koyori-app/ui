@@ -59,3 +59,16 @@ export const AsyncSave: Story = {
 export const Empty: Story = { render: args => <Example args={args} initial="" /> };
 export const Disabled: Story = { args: { disabled: true } };
 export const InitiallyEditing: Story = { args: { editing: true } };
+
+function NativeFormExample({ args }: { args: InlineEditProps }) {
+  const [editing, setEditing] = useState(false);
+  const [submits, setSubmits] = useState(0);
+  return <form onSubmit={event => { event.preventDefault(); setSubmits(count => count + 1); }}>
+    <InlineEdit {...args} editing={editing} onEdit={() => setEditing(true)} onCancel={() => setEditing(false)}>
+      <input id={args.id} name="title" required />
+    </InlineEdit>
+    <button type="submit">フォームを送信</button>
+    <output>送信: {submits}</output>
+  </form>;
+}
+export const NativeForm: Story = { render: args => <NativeFormExample args={args} /> };
