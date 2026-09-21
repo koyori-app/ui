@@ -191,6 +191,8 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
+`node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
+Input の数値入力の契約と Vue / React の例は [Field・Input のドキュメント](apps/docs/src/content/docs/components/field.mdx#数値入力)を参照してください。
 `node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロール、
 Breadcrumb の構造・現在地・区切り・折り返しを両フレームワークのブラウザーで検証します。
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
