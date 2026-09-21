@@ -46,6 +46,7 @@ export default defineConfig({
             { label: 'Sidebar', slug: 'components/sidebar' },
             { label: 'Tag・Badge', slug: 'components/tag-badge' },
             { label: 'Tabs', slug: 'components/tabs' },
+            { label: 'SplitPane', slug: 'components/split-pane' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
             { label: 'Tooltip', slug: 'components/tooltip' },
           ],

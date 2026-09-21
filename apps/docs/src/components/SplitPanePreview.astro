@@ -1,0 +1,17 @@
+---
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import VueDemo from '../examples/SplitPaneDemo.vue';
+import ReactDemo from '../examples/SplitPaneDemo.tsx';
+import vueSource from '../examples/SplitPaneDemo.vue?raw';
+import reactSource from '../examples/SplitPaneDemo.tsx?raw';
+---
+<Tabs syncKey="framework">
+  <TabItem label="Vue">
+    <div class="component-preview not-content"><VueDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={vueSource} lang="vue" title="SplitPaneDemo.vue" /></details>
+  </TabItem>
+  <TabItem label="React">
+    <div class="component-preview not-content"><ReactDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={reactSource} lang="tsx" title="SplitPaneDemo.tsx" /></details>
+  </TabItem>
+</Tabs>

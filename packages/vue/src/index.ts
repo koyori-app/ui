@@ -35,3 +35,4 @@ export { default as InlineEdit, type InlineEditProps } from './generated/compone
 export type { InlineEditCommitReason } from './generated/components/InlineEdit/inline-edit.js';
 export { default as Tag, type TagProps } from './generated/components/Tag/Tag.vue';
 export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.vue';
+export { default as SplitPane, type SplitPaneProps } from './generated/components/SplitPane/SplitPane.vue';
