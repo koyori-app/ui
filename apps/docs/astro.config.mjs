@@ -49,6 +49,7 @@ export default defineConfig({
           label: 'ブロック',
           items: [
             { label: '担当者の選択', slug: 'blocks/assignees' },
+            { label: 'タスクのプロパティとSSR境界', slug: 'blocks/task-properties' },
             { label: '2 列のダイアログ', slug: 'blocks/two-column-dialog' },
             { label: 'レスポンシブなナビゲーション', slug: 'blocks/responsive-navigation' },
           ],

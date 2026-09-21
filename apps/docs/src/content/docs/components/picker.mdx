@@ -120,5 +120,17 @@ Field の `id` はトリガー、`required` は一覧の `aria-required` に使�
 共通トークンと `--dropdown-hover-background`・`--dropdown-selected-background` を参照します。
 パネル・項目・ハイライトは Dropdown とともに `shared/menu.module.css` を参照し、配置とハイライト座標の計算も共有します。
 
-Vue 版を SSR 環境で使うときは、現在の生成方式に合わせてブラウザー側だけで描画してください。
-このページでは `client:only="vue"` を使っています。
+## SSR の境界
+
+現在の Vue 生成物は `onUpdate` を `watch(..., { immediate: true })` に変換します。
+Picker の監視処理は `requestAnimationFrame` を呼ぶため、そのままサーバー描画するとエラーが記録されます。
+`disabled` や `defaultOpen={false}` でも初期化を止められません。
+
+このページと担当者の選択デモは Astro の `client:only="vue"` を使い、初回 HTML には読み込み表示を出します。
+`client:load` / `client:visible` は SSR を省略しないため、単独では代わりになりません。
+タイトル・現在の担当者などを初回 HTML に残す場合は、Vue の親を SSR し、`onMounted` 後の `v-if` で
+Picker だけを描画します。`v-show` は子を初期化するため使いません。
+
+React 版はこのサイトで `client:load` による SSR と hydration を行います。
+サーバーとブラウザーで候補・選択値・初期状態を揃え、閉じた状態から開始してください。
+両フレームワークの再現例・検証コマンドは [タスクのプロパティとSSR境界](../../blocks/task-properties/) にあります。

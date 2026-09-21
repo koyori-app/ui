@@ -265,6 +265,12 @@ pnpm preview:docs  # ビルド済みサイトをローカルで確認
 `pnpm dev:docs` を起動し直すと、生成・パッケージビルドも反映されます。
 `pnpm typecheck` は型定義を含むパッケージをビルドしてから、ドキュメントと Vue／React の例も検査します。
 
+task への移植前の描画境界と責務は [タスクのプロパティとSSR境界](apps/docs/src/content/docs/blocks/task-properties.mdx) にまとめています。
+Vue の現在値は SSR に残し、Picker だけをマウント後に作る例と、React の SSR / hydration の例があります。
+候補取得・権限・状態判定・再試行・URL 同期・永続化は利用側で管理します。
+`pnpm build:docs` 後に `node scripts/check-migration.cjs` で初回 HTML、hydration、操作、フォーカスと状態保持を検証できます。
+既存 Playwright の場所は `PLAYWRIGHT_MODULE`、検証ポートは `MIGRATION_TEST_PORT`（既定 16318）で指定できます。
+
 [Docs CI](.github/workflows/docs.yml) は PR・main への push・手動実行でビルドと型検査を行います。
 公開先へのデプロイは未設定です。静的ホスティングではリポジトリのルートから
 `pnpm build:docs` を実行し、`apps/docs/dist` を出力ディレクトリに指定します。

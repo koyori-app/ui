@@ -8,7 +8,7 @@ import reactSource from '../examples/DataListDemo.tsx?raw';
 
 <Tabs syncKey="framework">
   <TabItem label="Vue">
-    <div class="component-preview not-content"><VueDemo client:load /></div>
+    <div class="component-preview not-content"><VueDemo client:only="vue"><p slot="fallback">デモを読み込んでいます…</p></VueDemo></div>
     <details><summary>コードを表示</summary><Code code={vueSource} lang="vue" title="DataListDemo.vue" /></details>
   </TabItem>
   <TabItem label="React">
