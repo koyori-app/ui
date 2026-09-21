@@ -136,6 +136,10 @@ Picker は単一・複数選択用です。`label` と `items: { value, label, d
 存在しない値は表示から除き、単一選択では項目順で先頭の1件を使います。単一選択の解除は外側から空配列を渡します。
 検索で見えなくなった項目の選択も保持します。検索はラベルの部分一致で、大文字・小文字と全角・半角を揃えます。
 開き直すと検索文字列をクリアします。`searchPlaceholder`・`searchLabel`・`emptyMessage` で文言を差し替えられます。
+候補0件と検索一致0件を別の文言にする場合は `noResultsMessage` も指定します。未指定時は既存の `emptyMessage` にフォールバックします。
+`loading`・`error`（取得失敗メッセージ）・`onRetry` で非同期状態を表示できます。表示は読み込み中、失敗、空候補／検索結果なし、件数の順に優先します。
+取得済みの候補・選択・検索を保ち、再試行は Tab と Enter / Space でも実行できます。API 呼び出しと状態更新は利用側で行います。
+`loadingMessage`・`retryLabel` で文言を変更できます。Storybook の AsyncLoading・AsyncRetry で成功と再失敗を確認できます。
 候補数の通知は入力が300ms止まってから更新します。候補と空表示はすぐ更新し、閉じると保留中の通知を取り消します。
 `formatResultsCount(count)` は候補数の通知文、`selectionSeparator` は複数の選択ラベルの区切り（既定: `、`）です。
 一覧は `listbox` で、上下キー・Home・End・先頭文字で移動し、Enter / Space で選択、Escape で閉じます。
@@ -191,10 +195,18 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
+`node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
+Input の数値入力の契約と Vue / React の例は [Field・Input のドキュメント](apps/docs/src/content/docs/components/field.mdx#数値入力)を参照してください。
 `node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロール、
 Breadcrumb の構造・現在地・区切り・折り返しを両フレームワークのブラウザーで検証します。
 Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
 `PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
+
+## Tooltip
+
+`Tooltip` は1つのボタン・リンクに短い補足を関連付け、ホバー・フォーカスで表示します。
+`id`・`content`・`placement` を指定します。[使い方・無効トリガーの扱い](apps/docs/src/content/docs/components/tooltip.mdx)を参照してください。
+Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレームワークの操作・配置・アクセシビリティを検証できます（`TOOLTIP_TEST_PORT` でポート変更可能）。
 
 ## Calendar
 
@@ -203,6 +215,14 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 `locale`・`firstDayOfWeek` で表示を合わせます。キーボード操作は W3C の Date Picker の例に合わせています。
 [使い方とプレビュー](apps/docs/src/content/docs/components/calendar.mdx)を参照してください。
 日付の計算は `components/Calendar/calendar.ts` にまとめ、`node scripts/check-calendar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+
+## DatePicker
+
+`DatePicker` はCalendarをポップアップで開き、選択日または「未設定」をトリガーに表示します。
+`value` / `defaultValue` は `YYYY-MM-DD`、`onValueChange` は選択日（クリア時は空文字）を通知します。
+`presets: { label, value, disabled? }[]` で今日・明日などを渡せます。日時変換・候補の計算・保存は利用側で行います。
+Calendarと同じ範囲制限とキーボード操作を使い、選択・取消はトリガーへ戻ります。非モーダルなのでTabで外へ移動すると閉じます。
+公開APIとVue・Reactの利用例は [DatePicker docs](apps/docs/src/content/docs/components/date-picker.mdx)、ブラウザー検証は `node scripts/check-date-picker.cjs` を参照してください。
 
 ## Checkbox
 
@@ -246,6 +266,14 @@ Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる
 `node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
 ブラウザーでの構造・キーボード操作・axe の検証は `node scripts/check-navigation.cjs` に含みます（Storybook のビルド後に実行）。
 
+## InlineEdit
+
+InlineEdit は表示と編集の切り替え、Enter・Escape・任意の blur 確定とフォーカスを共通化します。
+値・下書き・検証・API 更新は利用側で持ち、保存失敗時も下書きを維持できます。
+Input/Textarea を差し替える Vue／React の例と API は [InlineEdit のページ](apps/docs/src/content/docs/components/inline-edit.mdx) にあります。
+Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレームワークの操作・IME・フォーカス・アクセシビリティを検証します。
+既存 Playwright は `PLAYWRIGHT_MODULE`、検証サーバーのポートは `INLINE_EDIT_TEST_PORT`（既定 16308）で指定できます。
+
 ## Tag・Badge
 
 `Tag`・`Badge` はラベル・ステータス・件数を表示し、`size` と `dotColor` を共有します。
@@ -257,7 +285,7 @@ Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
@@ -272,6 +300,12 @@ pnpm preview:docs  # ビルド済みサイトをローカルで確認
 デモはパッケージの公開エントリーと CSS を使います。共通コンポーネントを変更したら
 `pnpm dev:docs` を起動し直すと、生成・パッケージビルドも反映されます。
 `pnpm typecheck` は型定義を含むパッケージをビルドしてから、ドキュメントと Vue／React の例も検査します。
+
+task への移植前の描画境界と責務は [タスクのプロパティとSSR境界](apps/docs/src/content/docs/blocks/task-properties.mdx) にまとめています。
+Vue の現在値は SSR に残し、Picker だけをマウント後に作る例と、React の SSR / hydration の例があります。
+候補取得・権限・状態判定・再試行・URL 同期・永続化は利用側で管理します。
+`pnpm build:docs` 後に `node scripts/check-migration.cjs` で初回 HTML、hydration、操作、フォーカスと状態保持を検証できます。
+既存 Playwright の場所は `PLAYWRIGHT_MODULE`、検証ポートは `MIGRATION_TEST_PORT`（既定 16318）で指定できます。
 
 [Docs CI](.github/workflows/docs.yml) は PR・main への push・手動実行でビルドと型検査を行います。
 公開先へのデプロイは未設定です。静的ホスティングではリポジトリのルートから

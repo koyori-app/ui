@@ -1,0 +1,89 @@
+---
+title: DatePicker
+description: Calendarをポップアップで開き、日付の選択・クリア・候補からの選択を行う。
+---
+
+import DatePickerPreview from '../../../components/DatePickerPreview.astro';
+
+トリガーから [Calendar](../calendar/) を開いて1日を選びます。日付を選ぶと閉じて、選択日をトリガーに表示します。
+「今日」「明日」などの候補と業務上の制約は利用側から渡します。
+
+## プレビュー
+
+この例では今日を2026年12月31日に固定しています。「明日」で年をまたぐ日付を選択できます。
+
+<DatePickerPreview />
+
+## 値と通知
+
+`value` / `defaultValue` は `YYYY-MM-DD`、未設定は空文字 `''` です。不正な日付は未設定として表示します。
+`value` を渡すと外部管理、省略すると内部管理です。外部管理の場合は `onValueChange` で利用側の値も更新してください。
+日付・候補の選択はその日付を、クリアは `''` を通知します。選択済みの日を選び直しても通知します。
+クリアは未設定時に無効です。取消、Escape、外側クリック、Tabで外へ出る操作は値を変更せず、通知もしません。
+
+```tsx
+const [date, setDate] = useState('');
+<DatePicker label="期限" value={date} onValueChange={setDate} locale="ja-JP"
+  presets={[{ label: '今日', value: '2026-12-31' }, { label: '明日', value: '2027-01-01' }]} />
+```
+
+```vue
+<DatePicker label="期限" :value="date" :on-value-change="value => date = value" locale="ja-JP"
+  :presets="[{ label: '今日', value: '2026-12-31' }, { label: '明日', value: '2027-01-01' }]" />
+```
+
+日付の表示と演算はCalendarのUTC・グレゴリオ暦処理を再利用するため、端末のタイムゾーンで選択日がずれません。
+`today` 未指定時の「今日」だけは端末のローカル日付です。アプリのタイムゾーンでの今日・明日や月末などは利用側で計算し、日付文字列として渡してください。
+DatePickerは時刻、API日時との変換、保存、権限、祝日などの業務ルールを持ちません。
+`new Date(value).toISOString()` などで日付と日時を混同せず、APIが日時を要求する場合は利用側でタイムゾーンを明示して変換します。
+
+## Props
+
+| 名前 | 型 | 既定値・説明 |
+| --- | --- | --- |
+| `label` | `string` | 必須。トリガー・ポップアップ・グリッドの読み上げ名 |
+| `value` | `string` | 外部管理する日付。`''` は未設定 |
+| `defaultValue` | `string` | 内部管理時の初期日付 |
+| `onValueChange` | `(value: string) => void` | 選択時は日付、クリア時は `''` を通知 |
+| `placeholder` | `string` | `未設定` |
+| `disabled` | `boolean` | `false`。開閉と選択を無効にし、開いていれば閉じる |
+| `presets` | `DatePickerPreset[]` | `{ label: string, value: string, disabled?: boolean }[]`。省略時は候補なし |
+| `clearLabel` / `cancelLabel` | `string` | `クリア` / `キャンセル` |
+| `formatValue` | `(value: string) => string` | トリガーの表示だけを変更。既定はロケールに応じた日付・曜日 |
+| `min` / `max` | `string` | 選択できる最初／最後の日。両端を含む |
+| `isDateDisabled` | `(date: string) => boolean` | 選択できない日。グリッドではフォーカス可能 |
+| `locale` | `string` | ブラウザー既定。日付・月名・曜日のロケール |
+| `firstDayOfWeek` | `0`〜`6` | `0`（日曜） |
+| `today` | `string` | 今日の印と未選択時の初期フォーカス。既定は端末の今日。不正値は無視 |
+| `previousMonthLabel` / `nextMonthLabel` | `string` | `前の月` / `次の月` |
+
+グリッドと候補には同じ `min` / `max` / `isDateDisabled` を適用します。不正な候補の日付は選択できません。
+不正な範囲指定はCalendarと同じく無視し、`min > max` なら `min` を優先します。
+外部から渡された既存日付が範囲外になっても、自動で値を変更・通知しません。開くと範囲内の日へフォーカスします。
+
+## キーボードとフォーカス
+
+日付の移動と選択は [APGのDate Picker例](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/)のグリッド操作に合わせています。
+ポップアップは非モーダルの `role="dialog"` です。Tabを内部に閉じ込めず、外へ出ると閉じます。
+
+| 操作 | 動作 |
+| --- | --- |
+| トリガーで `Enter` / `Space` / `↓` | 開き、選択日（未設定なら今日）へフォーカス。範囲外なら境界の日へ |
+| グリッドで矢印・`Home` / `End` | 日・週の移動。移動だけでは選択を変更しない |
+| `PageUp` / `PageDown` | 前月／翌月。Shift併用で前年／翌年 |
+| 日付・候補で `Enter` / `Space` | 選択して閉じ、トリガーへ戻る |
+| クリア | 未設定にして閉じ、トリガーへ戻る |
+| `Escape` / キャンセル | 値を変えずに閉じ、トリガーへ戻る |
+| `Tab` / `Shift+Tab` | 月送り・グリッド・候補・操作ボタンを移動。外へ出たときは移動先にフォーカスを保つ |
+| 外側クリック | 値を変えず閉じる。クリック先のフォーカスを奪わない |
+
+開き直すと選択日または今日へ戻り、取り消した月移動は引き継ぎません。読み上げ名には選択日を含め、月の変化はCalendarのライブ領域で通知します。
+Field内ではラベル・説明・エラー・必須表示をトリガーへ関連付けます。保存時の検証は利用側で行います。
+共通のハイライトとフォーカス表示を使い、動きを減らす設定ではハイライトのアニメーションを停止します。
+
+## 配置とSSR
+
+共通のメニュー配置処理で、トリガーの下または上へ開きます。Popover API対応環境ではトップレイヤーに表示し、親の `overflow: hidden` による切り取りを避けます。
+狭い画面ではポップアップの幅を縮め、内容が収まらなければスクロールできます。Popover API非対応環境では通常の絶対配置となり、親のoverflowによる切り取りが適用されます。
+Vue・ReactともSSRでは閉じたトリガーを描画し、Calendarは初めて開いたときに生成します。
+サーバーとクライアントで `value`・`locale`・`today` を揃えてください。このページは両方とも `client:load` を使っています。
