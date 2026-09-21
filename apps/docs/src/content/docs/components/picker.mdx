@@ -27,6 +27,42 @@ import PickerPreview from '../../../components/PickerPreview.astro';
 存在しない値は表示から除き、単一選択に複数の値を渡すと項目順で先頭の1件を使います。
 単一選択を解除するときは、外側から `selectedValues` に空配列を渡してください。
 
+## 非同期の候補取得
+
+`loading`・`error`（取得失敗のメッセージ）・`onRetry` を渡すと、読み込みと再試行を表示できます。
+API 呼び出し、エラーの判定、再試行中の状態更新は利用側で行います。Picker はコールバックの完了を待ちません。
+
+```tsx
+// React: reload は利用側で loading・error・items を更新する関数
+<Picker label="担当者" items={members} selectionMode="multiple"
+  selectedValues={values} onSelectionChange={setValues}
+  loading={loading} error={error} onRetry={reload}
+  emptyMessage="担当者に指定できる利用者がいません"
+  noResultsMessage="一致するメンバーがいません" />
+```
+
+```vue
+<!-- Vue -->
+<Picker label="担当者" :items="members" selection-mode="multiple"
+  :selected-values="values" :on-selection-change="setValues"
+  :loading="loading" :error="error" :on-retry="reload"
+  empty-message="担当者に指定できる利用者がいません"
+  no-results-message="一致するメンバーがいません" />
+```
+
+表示と読み上げは「読み込み中 → 取得失敗 → 空候補／検索結果なし → 候補数」の順で優先します。
+`items` が空なら「項目がありません」、候補はあるが検索に一致しない場合は「該当する項目がありません」と表示します。
+`emptyMessage` は両方の既存の共通上書きです。検索結果なしだけを変えるときは `noResultsMessage` を指定します。
+読み込み中・失敗時も、渡された候補は選択できます。再取得中も `items` を保持すると、選択中の名前と候補が引き続き表示されます。
+`items` を一時的に空にしても選択値は書き換えず、候補が戻ると再び選択表示します。
+候補にない値の選択を更新時にも保持する必要がある場合は、利用側で `selectedValues` を管理してください。
+
+再試行ボタンは一覧の外に置き、`Tab` で移動して `Enter`・`Space` で実行できます。
+実行前に検索欄へフォーカスを戻し、検索文字列・選択・アクティブな候補を保持します。
+検索なしの場合は有効な候補がある一覧へ、なければトリガーへ戻します。後から取得が完了してもフォーカスを奪いません。
+`onRetry` がなければメッセージだけを表示し、読み込み中は再試行ボタンを表示しません。
+状態は既存の `role="status"` で300ms後に通知し、取得中の一覧には `aria-busy` を付けます。
+
 ## Props
 
 | 名前 | 型 | 既定値・説明 |
@@ -43,7 +79,13 @@ import PickerPreview from '../../../components/PickerPreview.astro';
 | `searchLabel` | `string` | 「label を検索」に相当する検索欄の名前 |
 | `formatResultsCount` | `(count: number) => string` | 候補数の通知文。既定は「N件の候補」 |
 | `selectionSeparator` | `string` | 複数のラベルの区切り。既定は `、` |
-| `emptyMessage` | `string` | 空なら「項目がありません」、検索結果がなければ「該当する項目がありません」 |
+| `emptyMessage` | `string` | 候補0件の表示。未指定なら「項目がありません」。`noResultsMessage` 未指定時は検索結果なしにも使用 |
+| `noResultsMessage` | `string` | 候補はあるが検索一致0件の表示。`emptyMessage`、次に「該当する項目がありません」へフォールバック |
+| `loading` | `boolean` | `false`。候補の読み込み中。既存の候補は操作可能 |
+| `loadingMessage` | `string` | `読み込み中…` |
+| `error` | `string` | 候補の取得失敗メッセージ。空文字・未指定なら失敗表示なし。`loading` が優先 |
+| `onRetry` | `() => void` | 取得失敗時の再試行。利用側で取得と状態更新を行う |
+| `retryLabel` | `string` | `再試行` |
 | `disabled` | `boolean` | `false`。全体を無効化する |
 | `defaultOpen` | `boolean` | `false`。初期表示で開く |
 | `icon` | React の要素、または `null` | 下矢印。`null` で非表示。Vue の差し替えは `#icon` スロット |
@@ -98,6 +140,7 @@ Field の `id` はトリガー、`required` は一覧の `aria-required` に使�
 | 一覧で `Space` | 選択・解除。検索欄では空白を入力 |
 | 一覧で先頭文字を入力 | その文字で始まる有効な候補へ移動 |
 | `Tab` / `Shift + Tab` | 検索欄と一覧を移動。外に出ると閉じる |
+| 再試行ボタンで `Enter` / `Space` | `onRetry` を呼ぶ。検索欄か一覧、候補がなければトリガーへ戻る |
 | `Escape` | 閉じてトリガーに戻る |
 
 検索欄と、単一・複数選択に対応したラベル付きの `listbox` を組み合わせています。
@@ -120,5 +163,17 @@ Field の `id` はトリガー、`required` は一覧の `aria-required` に使�
 共通トークンと `--dropdown-hover-background`・`--dropdown-selected-background` を参照します。
 パネル・項目・ハイライトは Dropdown とともに `shared/menu.module.css` を参照し、配置とハイライト座標の計算も共有します。
 
-Vue 版を SSR 環境で使うときは、現在の生成方式に合わせてブラウザー側だけで描画してください。
-このページでは `client:only="vue"` を使っています。
+## SSR の境界
+
+現在の Vue 生成物は `onUpdate` を `watch(..., { immediate: true })` に変換します。
+Picker の監視処理は `requestAnimationFrame` を呼ぶため、そのままサーバー描画するとエラーが記録されます。
+`disabled` や `defaultOpen={false}` でも初期化を止められません。
+
+このページと担当者の選択デモは Astro の `client:only="vue"` を使い、初回 HTML には読み込み表示を出します。
+`client:load` / `client:visible` は SSR を省略しないため、単独では代わりになりません。
+タイトル・現在の担当者などを初回 HTML に残す場合は、Vue の親を SSR し、`onMounted` 後の `v-if` で
+Picker だけを描画します。`v-show` は子を初期化するため使いません。
+
+React 版はこのサイトで `client:load` による SSR と hydration を行います。
+サーバーとブラウザーで候補・選択値・初期状態を揃え、閉じた状態から開始してください。
+両フレームワークの再現例・検証コマンドは [タスクのプロパティとSSR境界](../../blocks/task-properties/) にあります。

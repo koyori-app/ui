@@ -32,6 +32,53 @@ export const AllSelected: Story = {
   args: { selectionMode: 'multiple', defaultOpen: true, defaultSelectedValues: ['design', 'frontend', 'backend', 'review', 'release'] },
 };
 export const Empty: Story = { args: { defaultOpen: true, items: [] } };
+export const ErrorWithoutRetry: Story = { args: { defaultOpen: true, items: [], error: '候補を読み込めませんでした' } };
+
+// Simulate caller-owned requests: the first retry fails, the second succeeds.
+function AsyncExample({ initiallyEmpty, ...args }: PickerProps & { initiallyEmpty?: boolean }) {
+  const [request, setRequest] = useState({
+    loading: !!args.loading, error: args.error || '', attempt: 0,
+    items: args.loading || initiallyEmpty ? [] : args.items,
+  });
+  const [values, setValues] = useState(args.defaultSelectedValues || []);
+  useEffect(() => {
+    if (!request.loading) return;
+    const timer = setTimeout(() => setRequest(current => ({
+      ...current, loading: false,
+      error: current.attempt === 1 ? '再試行も失敗しました' : '',
+      items: current.attempt === 1 ? current.items : args.items,
+    })), 900);
+    return () => clearTimeout(timer);
+  }, [request.loading, args.items]);
+  return <div>
+    <Picker {...args} items={request.items} loading={request.loading} error={request.error}
+      onRetry={() => setRequest(current => ({ ...current, loading: true, attempt: current.attempt + 1 }))}
+      onSelectionChange={next => { setValues(next); args.onSelectionChange?.(next); }} />
+    <output style={{ display: 'block', marginTop: 12 }}>選択: {values.join('、') || 'なし'}</output>
+  </div>;
+}
+export const AsyncLoading: Story = {
+  args: { defaultOpen: true, loading: true, defaultSelectedValues: ['frontend'] },
+  render: args => <AsyncExample {...args} />,
+};
+export const AsyncRetry: Story = {
+  args: { defaultOpen: true, error: '候補を読み込めませんでした', selectionMode: 'multiple', defaultSelectedValues: ['frontend'] },
+  render: args => <AsyncExample {...args} />,
+};
+export const AsyncRetryWithoutSearch: Story = {
+  ...AsyncRetry, args: { ...AsyncRetry.args, searchable: false },
+};
+export const AsyncRetryLongError: Story = {
+  ...AsyncRetry,
+  args: { ...AsyncRetry.args, items: [{ value: 'frontend', label: 'Frontend' }, { value: 'backend', label: 'Backend' }], error: 'Could not load the teams. Check your network connection and try again. If the problem continues, please contact your workspace administrator.' },
+};
+export const AsyncRetryLongErrorWithoutSearch: Story = {
+  ...AsyncRetryLongError, args: { ...AsyncRetryLongError.args, searchable: false },
+};
+export const AsyncRetryEmptyWithoutSearch: Story = {
+  ...AsyncRetryWithoutSearch,
+  render: args => <AsyncExample {...args} initiallyEmpty />,
+};
 export const Disabled: Story = { args: { disabled: true } };
 export const AllDisabled: Story = {
   args: { defaultOpen: true, items: [{ value: 'unavailable', label: '準備中', disabled: true }] },
@@ -101,6 +148,13 @@ export const Localized: Story = {
     searchLabel: 'Search teams', searchPlaceholder: 'Search…', emptyMessage: 'No teams found',
     formatResultsCount: count => `${count} teams available`,
   },
+};
+export const SeparateEmptyMessages: Story = {
+  args: { defaultOpen: true, emptyMessage: '候補がありません', noResultsMessage: '一致する候補がありません' },
+};
+export const LocalizedAsync: Story = {
+  args: { defaultOpen: true, error: 'Could not load teams', loadingMessage: 'Loading teams…', retryLabel: 'Try again' },
+  render: args => <AsyncExample {...args} />,
 };
 
 function FieldExample(args: PickerProps) {

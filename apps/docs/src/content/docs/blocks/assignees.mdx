@@ -31,3 +31,15 @@ import AssigneePickerPreview from '../../../components/AssigneePickerPreview.ast
 - 選んだ結果はアバターだけでなく、文章でも伝えます。この例では `role="status"` の行に名前を並べています。
 - AvatarGroup の `label` は「このタスクの担当者」のように、何のまとまりかが分かる言葉にします。
 - 担当者を外す操作は Picker 側で行います。アバターは表示だけで、押せません。
+
+## task へ組み込むとき
+
+`TaskAssigneePicker.vue` が扱う `members` / `selected` はアプリ側のモデルです。
+候補は `{ value: id, label: username, src: avatar_url ?? undefined }`、表示は `{ name: username, src }` に変換します。
+Picker が返すのは次の ID 配列です。task の追加・解除 API に合わせる処理や永続化は利用側で行います。
+候補の再取得が失敗しても現在の担当者を消さないよう、選択済みの人物情報は候補取得結果と別に保持してください。
+
+この単純なデモの Vue 版は全体が `client:only` なので、初回 HTML は読み込み表示だけです。
+現在値を SSR に残す方法、取得中・取得失敗・候補なし・編集不可の区別と再試行は
+[プロパティ行の組み合わせ例](../task-properties/) にあります。専用の担当者部品を ui に追加せず、
+Picker と AvatarGroup の組み合わせを利用側に置きます。

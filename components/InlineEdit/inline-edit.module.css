@@ -1,0 +1,52 @@
+@import '../tokens.css';
+
+.root {
+  min-width: 0;
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.trigger {
+  max-width: 100%;
+  color: var(--koyori-color-text);
+  text-align: start;
+}
+
+.display {
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.editor {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.trigger[hidden], .editor[hidden] {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--koyori-space-sm);
+  margin-top: var(--koyori-space-sm);
+}
+
+.status {
+  margin: var(--koyori-space-sm) 0 0;
+  color: var(--koyori-color-text-secondary);
+}
+
+.srOnly, .status:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

@@ -7,14 +7,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = resolve(__dirname, '..');
 const port = process.env.PICKER_TEST_PORT || '6237';
 const base = `http://127.0.0.1:${port}`;
-const server = spawn('python3', ['-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' });
+const server = spawn('python3', ['-u', '-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'ignore'] });
 let browser;
 (async () => {
   try {
-    for (let i = 0; i < 40; i++) {
-      try { if ((await fetch(base)).ok) break; } catch {}
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+    await new Promise((resolve, reject) => {
+      server.stdout.once('data', resolve);
+      server.once('error', reject);
+      server.once('exit', code => reject(new Error(`Picker test server exited (${code}); check port ${port}`)));
+    });
     browser = await chromium.launch({ headless: true });
     for (const framework of ['react', 'vue']) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
@@ -147,7 +148,7 @@ let browser;
       assert.equal(await list.getByRole('option', { selected: true }).count(), 0);
 
       await story('empty');
-      await page.waitForTimeout(350);
+      await page.getByRole('status').filter({ hasText: '項目がありません' }).waitFor();
       assert.equal(await page.getByRole('status').innerText(), '項目がありません');
       await search.press('Enter');
       assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
@@ -284,6 +285,232 @@ let browser;
       assert(await trigger.evaluate(el => el === document.activeElement));
       await trigger.press('Escape');
       assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+
+      // Async feedback is separate from options and never replaces the query or selection.
+      const message = panel.locator('[id$="-message"]');
+      const status = panel.getByRole('status');
+      const retry = panel.getByRole('button', { name: '再試行', exact: true });
+      const announced = async text => {
+        await status.filter({ hasText: text }).waitFor();
+        assert.equal(await status.innerText(), text);
+      };
+      await story('async-loading');
+      assert.equal(await message.innerText(), '読み込み中…');
+      assert.equal(await list.getAttribute('aria-busy'), 'true');
+      assert.equal(await options.count(), 0);
+      assert.equal(await retry.count(), 0);
+      await search.fill('end');
+      await announced('読み込み中…');
+      await announced('2件の候補');
+      assert.equal(await list.getAttribute('aria-busy'), null);
+      assert.equal(await options.count(), 2);
+      assert.equal(await list.getByRole('option', { selected: true }).innerText(), 'Frontend');
+      assert.equal(await search.inputValue(), 'end');
+      assert(await search.evaluate(el => el === document.activeElement));
+      await search.press('Enter');
+      assert.equal(await trigger.innerText(), 'Frontend');
+      assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+
+      await story('async-retry');
+      assert.equal(await message.innerText(), '候補を読み込めませんでした');
+      assert.equal(await trigger.innerText(), 'Frontend');
+      assert.equal(await list.getByRole('button').count(), 0, 'retry is outside the listbox');
+      await search.fill('end');
+      await search.press('Tab');
+      assert(await retry.evaluate(el => el === document.activeElement));
+      assert.equal(await retry.evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+      await retry.press('Enter');
+      assert(await search.evaluate(el => el === document.activeElement));
+      assert.equal(await search.inputValue(), 'end');
+      assert.equal(await message.innerText(), '読み込み中…', 'loading takes precedence over a stale error');
+      assert.equal(await retry.count(), 0);
+      await search.press('ArrowDown');
+      await list.press('ArrowDown');
+      await list.press('Space');
+      assert.equal(await trigger.innerText(), 'Frontend、Backend', 'existing candidates stay selectable while loading');
+      await announced('再試行も失敗しました');
+      assert(await list.evaluate(el => el === document.activeElement));
+      assert.equal(await active(), 'Backend');
+      await list.press('Shift+Tab');
+      assert(await retry.evaluate(el => el === document.activeElement));
+      await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
+      assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      assert.equal(await retry.locator('span').evaluate(el => getComputedStyle(el).transitionDuration), '0s');
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await retry.press('Space');
+      assert(await search.evaluate(el => el === document.activeElement));
+      await announced('2件の候補');
+      assert.equal(await retry.count(), 0);
+      assert.equal(await message.isVisible(), false);
+      assert.equal(await search.inputValue(), 'end');
+      assert.equal(await list.getByRole('option', { selected: true }).count(), 2);
+      assert.equal(await page.locator('output').innerText(), '選択: frontend、backend');
+      await search.press('ArrowDown');
+      assert.equal(await active(), 'Backend');
+      await list.press('Escape');
+      assert(await trigger.evaluate(el => el === document.activeElement));
+
+      for (const empty of [false, true]) {
+        await story(empty ? 'async-retry-empty-without-search' : 'async-retry-without-search');
+        const focus = empty ? trigger : list;
+        assert(await focus.evaluate(el => el === document.activeElement));
+        await focus.press(empty ? 'Tab' : 'Shift+Tab');
+        assert(await retry.evaluate(el => el === document.activeElement));
+        await retry.press('Escape');
+        assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+        assert(await trigger.evaluate(el => el === document.activeElement));
+        await trigger.press('Enter');
+        await settle();
+        for (const [key, result] of [['Enter', '再試行も失敗しました'], ['Space', '6件の候補']]) {
+          await focus.press(empty ? 'Tab' : 'Shift+Tab');
+          assert(await retry.evaluate(el => el === document.activeElement));
+          await retry.press(key);
+          assert(await focus.evaluate(el => el === document.activeElement));
+          await announced(result);
+          assert(await focus.evaluate(el => el === document.activeElement), 'completion does not steal focus');
+          assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+        }
+        assert.equal(await list.getByRole('option', { selected: true }).innerText(), 'Frontend');
+        if (empty) await trigger.press('Tab');
+        await list.press('ArrowDown');
+        await list.press('Space');
+        assert.equal(await trigger.innerText(), 'Frontend、Backend');
+      }
+
+      await story('error-without-retry');
+      await announced('候補を読み込めませんでした');
+      assert.equal(await retry.count(), 0);
+      assert.equal(await message.innerText(), '候補を読み込めませんでした');
+      await search.fill('missing');
+      assert.equal(await message.innerText(), '候補を読み込めませんでした');
+      await story('separate-empty-messages');
+      await search.fill('missing');
+      assert.equal(await message.innerText(), '一致する候補がありません');
+      await announced('一致する候補がありません');
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--localized&viewMode=story`);
+      await page.getByRole('searchbox', { name: 'Search teams' }).fill('missing');
+      assert.equal(await page.getByRole('group', { name: 'Teams' }).locator('[id$="-message"]').innerText(), 'No teams found', 'legacy emptyMessage still customizes no matches');
+      await story('localized-async');
+      const localizedRetry = panel.getByRole('button', { name: 'Try again' });
+      await localizedRetry.click();
+      assert.equal(await message.innerText(), 'Loading teams…');
+      await announced('再試行も失敗しました');
+      assert(await localizedRetry.isVisible());
+      // Native scrolling must expose hit targets; locator.click() would hide overflow bugs
+      // by calling scrollIntoView(), which a pointer or touch user cannot do.
+      for (const [height, top, touch] of [[180, 72, false], [140, 50, false], [240, 16, false], [180, 72, true]]) {
+        for (const searchable of [true, false]) {
+          await page.setViewportSize({ width: 320, height });
+          await story(searchable ? 'async-retry-long-error' : 'async-retry-long-error-without-search');
+          await trigger.evaluate((el, top) => {
+            el.parentElement.style.position = 'fixed';
+            el.parentElement.style.top = `${top}px`;
+            window.dispatchEvent(new Event('resize'));
+          }, top);
+          if (searchable) await page.keyboard.type('end');
+          await settle();
+          const searchTop = searchable ? (await search.boundingBox()).y : null;
+          const retry = panel.getByRole('button', { name: '再試行', exact: true });
+          const touchSession = touch ? await page.context().newCDPSession(page) : null;
+          if (touchSession) await touchSession.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+          const hitPoint = locator => locator.evaluate(el => {
+            const r = el.getBoundingClientRect();
+            const p = el.closest('[role="group"]').getBoundingClientRect();
+            const x = r.x + r.width / 2;
+            const top = Math.max(r.top, p.top, 0) + 4;
+            const bottom = Math.min(r.bottom, p.bottom, innerHeight) - 4;
+            for (let y = (top + bottom) / 2; y < bottom; y += 2) {
+              if (el.contains(document.elementFromPoint(x, y))) return { x, y };
+            }
+            return null;
+          });
+          const scrollToHit = async locator => {
+            for (let i = 0; i < 40; i++) {
+              const point = await hitPoint(locator);
+              if (point) return point;
+              // Scroll the exposed part of the containing list/feedback. If it is
+              // entirely clipped, scroll the panel first. Never set scrollTop.
+              const { x, y, distance } = await locator.evaluate((el, touch) => {
+                const p = el.closest('[role="group"]').getBoundingClientRect();
+                const r = el.parentElement.getBoundingClientRect();
+                const target = el.getBoundingClientRect();
+                const top = Math.max(p.top + 6, r.top);
+                const bottom = Math.min(p.bottom - 6, r.bottom);
+                const exposed = bottom - top > 12;
+                const direction = (exposed ? target.top < top : r.top < p.top) ? -1 : 1;
+                const y = exposed ? (direction > 0 ? bottom - 2 : top + 2) : (direction > 0 ? p.bottom - 6 : p.top + 6);
+                return {
+                  x: exposed ? r.x + r.width / 2 : p.x + 2,
+                  y,
+                  // A swipe can leave its starting element; keep it inside the
+                  // screen and long enough for the browser to distinguish a tap.
+                  distance: touch ? direction * Math.min(64, direction > 0 ? y - 2 : innerHeight - y - 2) : direction * 36,
+                };
+              }, touch);
+              if (touchSession) {
+                await touchSession.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+                for (let step = 1; step <= 5; step++) {
+                  await touchSession.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - distance * step / 5 }] });
+                  await page.waitForTimeout(16);
+                }
+                await page.waitForTimeout(80);
+                await touchSession.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+              } else {
+                await page.mouse.move(x, y);
+                await page.mouse.wheel(0, distance);
+              }
+              await settle();
+            }
+            assert.fail(`${framework}: ${touch ? 'touch' : 'wheel'} cannot reach ${await locator.innerText()} at 320x${height}, searchable=${searchable}`);
+          };
+          const activate = async point => {
+            if (touchSession) {
+              await touchSession.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+              await touchSession.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            } else await page.mouse.click(point.x, point.y);
+          };
+          const candidate = list.getByRole('option', { name: 'Backend', exact: true });
+          const candidatePoint = await scrollToHit(candidate);
+          if (!touch) {
+            await page.mouse.move(candidatePoint.x, candidatePoint.y);
+            assert.equal(await list.evaluate(el => el.style.getPropertyValue('--highlight-opacity')), '1');
+          }
+          await activate(candidatePoint);
+          await settle();
+          assert.equal(await trigger.innerText(), 'Frontend、Backend', 'native scrolling exposes retained options for selection');
+          // Scroll back through the list to the retry button, without focusing it first.
+          const retryPoint = await scrollToHit(retry);
+          if (height === 240 && searchable) assert.equal((await search.boundingBox()).y, searchTop, 'search stays fixed when the minimum heights fit');
+          await activate(retryPoint);
+          const focus = searchable ? search : list;
+          assert(await focus.evaluate(el => el === document.activeElement), 'retry restores focus');
+          if (searchable) assert.equal(await search.inputValue(), 'end');
+          await page.waitForFunction(() => document.querySelector('[role="group"] [id$="-message"]')?.textContent.trim() === '再試行も失敗しました');
+          await focus.press(searchable ? 'Tab' : 'Shift+Tab');
+          assert(await retry.evaluate(el => el === document.activeElement), 'Tab exposes retry');
+          assert(await hitPoint(retry), 'focused retry has a visible hit target');
+          await page.keyboard.press(touch ? 'Space' : 'Enter');
+          assert(await focus.evaluate(el => el === document.activeElement));
+          await page.waitForFunction(() => !document.querySelector('[role="listbox"]').hasAttribute('aria-busy'));
+          assert.equal(await trigger.innerText(), 'Frontend、Backend', 'retries preserve selections');
+          if (searchable) {
+            assert.equal(await search.inputValue(), 'end');
+            await page.keyboard.press('ArrowDown');
+          }
+          await page.keyboard.press('Home');
+          await settle();
+          assert(await hitPoint(list.getByRole('option', { name: 'Frontend', exact: true })), 'keyboard reveals active options');
+          await page.keyboard.press('Escape');
+          assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+          if (touchSession) {
+            await touchSession.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+            await touchSession.detach();
+          }
+          console.log(`${framework}: 320x${height}, top=${top}, searchable=${searchable}, ${touch ? 'touch' : 'wheel/pointer'}: options, hover, retry, query/selection retention and keyboard passed`);
+        }
+      }
+
       assert.deepEqual(errors, []);
       await page.close();
       console.log(`${framework}: Picker with/without search, IME, selection/merging, keyboard, focus, sizing, placement, scrolling and accessibility passed`);

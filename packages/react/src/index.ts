@@ -1,4 +1,5 @@
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.js';
+export { default as Tooltip, type TooltipProps } from './generated/components/Tooltip/Tooltip.js';
 export { default as Tabs, type TabsProps } from './generated/components/Tabs/Tabs.js';
 export { type TabItem } from './generated/components/Tabs/tabs.js';
 export { default as TabPanel, type TabPanelProps } from './generated/components/TabPanel/TabPanel.js';
@@ -28,4 +29,9 @@ export { default as DataListRow, type DataListRowProps } from './generated/compo
 export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.js';
 export { default as ProgressBar, type ProgressBarProps } from './generated/components/ProgressBar/ProgressBar.js';
 export { default as Calendar, type CalendarProps } from './generated/components/Calendar/Calendar.js';
+export { default as DatePicker, type DatePickerProps, type DatePickerPreset } from './generated/components/DatePicker/DatePicker.js';
 export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.js';
+export { default as InlineEdit, type InlineEditProps } from './generated/components/InlineEdit/InlineEdit.js';
+export type { InlineEditCommitReason } from './generated/components/InlineEdit/inline-edit.js';
+export { default as Tag, type TagProps } from './generated/components/Tag/Tag.js';
+export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.js';

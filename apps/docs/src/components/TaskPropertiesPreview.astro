@@ -1,0 +1,20 @@
+---
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import VueDemo from '../examples/TaskPropertiesDemo.vue';
+import ReactDemo from '../examples/TaskPropertiesDemo.tsx';
+import vueSource from '../examples/TaskPropertiesDemo.vue?raw';
+import reactSource from '../examples/TaskPropertiesDemo.tsx?raw';
+import layoutSource from '../examples/task-properties-demo.css?raw';
+---
+
+<Tabs syncKey="framework">
+  <TabItem label="Vue">
+    <div class="component-preview not-content"><VueDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={vueSource} lang="vue" title="TaskPropertiesDemo.vue" /></details>
+  </TabItem>
+  <TabItem label="React">
+    <div class="component-preview not-content"><ReactDemo client:load /></div>
+    <details><summary>コードを表示</summary><Code code={reactSource} lang="tsx" title="TaskPropertiesDemo.tsx" /></details>
+  </TabItem>
+</Tabs>
+<details><summary>共通のレイアウトCSSを表示</summary><Code code={layoutSource} lang="css" title="task-properties-demo.css" /></details>

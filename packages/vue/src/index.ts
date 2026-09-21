@@ -1,4 +1,5 @@
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.vue';
+export { default as Tooltip, type TooltipProps } from './generated/components/Tooltip/Tooltip.vue';
 export { default as Tabs, type TabsProps } from './generated/components/Tabs/Tabs.vue';
 export { type TabItem } from './generated/components/Tabs/tabs.js';
 export { default as TabPanel, type TabPanelProps } from './generated/components/TabPanel/TabPanel.vue';
@@ -28,4 +29,9 @@ export { default as DataListRow, type DataListRowProps } from './generated/compo
 export { default as Checkbox, type CheckboxProps } from './generated/components/Checkbox/Checkbox.vue';
 export { default as ProgressBar, type ProgressBarProps } from './generated/components/ProgressBar/ProgressBar.vue';
 export { default as Calendar, type CalendarProps } from './generated/components/Calendar/Calendar.vue';
+export { default as DatePicker, type DatePickerProps, type DatePickerPreset } from './generated/components/DatePicker/DatePicker.vue';
 export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.vue';
+export { default as InlineEdit, type InlineEditProps } from './generated/components/InlineEdit/InlineEdit.vue';
+export type { InlineEditCommitReason } from './generated/components/InlineEdit/inline-edit.js';
+export { default as Tag, type TagProps } from './generated/components/Tag/Tag.vue';
+export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.vue';
