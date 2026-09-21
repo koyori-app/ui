@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { onMounted, onUnmounted, ref } from 'vue';
-import { AvatarGroup, Button, Field, Picker, EllipsisIcon } from './index';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { AvatarGroup, Button, Field, Picker, EllipsisIcon, type PickerProps } from './index';
 
 const meta = {
   title: 'Components/Picker',
@@ -33,6 +33,55 @@ export const AllSelected: Story = {
   args: { selectionMode: 'multiple', defaultOpen: true, defaultSelectedValues: ['design', 'frontend', 'backend', 'review', 'release'] },
 };
 export const Empty: Story = { args: { defaultOpen: true, items: [] } };
+export const ErrorWithoutRetry: Story = { args: { defaultOpen: true, items: [], error: '候補を読み込めませんでした' } };
+
+// Simulate caller-owned requests: the first retry fails, the second succeeds.
+function asyncExample(args: PickerProps, initiallyEmpty = false) {
+  return {
+    components: { Picker },
+    setup() {
+      const request = ref({
+        loading: !!args.loading, error: args.error || '', attempt: 0,
+        items: args.loading || initiallyEmpty ? [] : args.items,
+      });
+      const values = ref(args.defaultSelectedValues || []);
+      watch(() => request.value.loading, (loading, _, onCleanup) => {
+        if (!loading) return;
+        const timer = setTimeout(() => {
+          request.value = {
+            ...request.value, loading: false,
+            error: request.value.attempt === 1 ? '再試行も失敗しました' : '',
+            items: request.value.attempt === 1 ? request.value.items : args.items,
+          };
+        }, 900);
+        onCleanup(() => clearTimeout(timer));
+      }, { immediate: true });
+      const retry = () => { request.value = { ...request.value, loading: true, attempt: request.value.attempt + 1 }; };
+      const change = (next: string[]) => { values.value = next; args.onSelectionChange?.(next); };
+      return { args, request, values, retry, change };
+    },
+    template: `<div>
+      <Picker v-bind="args" :items="request.items" :loading="request.loading" :error="request.error"
+        :on-retry="retry" :on-selection-change="change" />
+      <output style="display: block; margin-top: 12px">選択: {{ values.join('、') || 'なし' }}</output>
+    </div>`,
+  };
+}
+export const AsyncLoading: Story = {
+  args: { defaultOpen: true, loading: true, defaultSelectedValues: ['frontend'] },
+  render: args => asyncExample(args),
+};
+export const AsyncRetry: Story = {
+  args: { defaultOpen: true, error: '候補を読み込めませんでした', selectionMode: 'multiple', defaultSelectedValues: ['frontend'] },
+  render: args => asyncExample(args),
+};
+export const AsyncRetryWithoutSearch: Story = {
+  ...AsyncRetry, args: { ...AsyncRetry.args, searchable: false },
+};
+export const AsyncRetryEmptyWithoutSearch: Story = {
+  ...AsyncRetryWithoutSearch,
+  render: args => asyncExample(args, true),
+};
 export const Disabled: Story = { args: { disabled: true } };
 export const AllDisabled: Story = {
   args: { defaultOpen: true, items: [{ value: 'unavailable', label: '準備中', disabled: true }] },
@@ -128,6 +177,13 @@ export const Localized: Story = {
     searchLabel: 'Search teams', searchPlaceholder: 'Search…', emptyMessage: 'No teams found',
     formatResultsCount: count => `${count} teams available`,
   },
+};
+export const SeparateEmptyMessages: Story = {
+  args: { defaultOpen: true, emptyMessage: '候補がありません', noResultsMessage: '一致する候補がありません' },
+};
+export const LocalizedAsync: Story = {
+  args: { defaultOpen: true, error: 'Could not load teams', loadingMessage: 'Loading teams…', retryLabel: 'Try again' },
+  render: args => asyncExample(args),
 };
 export const InField: Story = {
   render: args => ({

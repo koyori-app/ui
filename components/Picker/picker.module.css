@@ -27,6 +27,19 @@
   outline: none;
 }
 
+.message {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.message[data-error='true'] {
+  color: var(--koyori-color-danger);
+}
+
+.retry {
+  margin-top: var(--koyori-space-md);
+}
+
 /* 選択背景・ホバー背景は絶対配置なので、アバターも重なり順に加える。 */
 .optionAvatar {
   position: relative;

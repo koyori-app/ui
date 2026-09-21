@@ -136,6 +136,10 @@ Picker は単一・複数選択用です。`label` と `items: { value, label, d
 存在しない値は表示から除き、単一選択では項目順で先頭の1件を使います。単一選択の解除は外側から空配列を渡します。
 検索で見えなくなった項目の選択も保持します。検索はラベルの部分一致で、大文字・小文字と全角・半角を揃えます。
 開き直すと検索文字列をクリアします。`searchPlaceholder`・`searchLabel`・`emptyMessage` で文言を差し替えられます。
+候補0件と検索一致0件を別の文言にする場合は `noResultsMessage` も指定します。未指定時は既存の `emptyMessage` にフォールバックします。
+`loading`・`error`（取得失敗メッセージ）・`onRetry` で非同期状態を表示できます。表示は読み込み中、失敗、空候補／検索結果なし、件数の順に優先します。
+取得済みの候補・選択・検索を保ち、再試行は Tab と Enter / Space でも実行できます。API 呼び出しと状態更新は利用側で行います。
+`loadingMessage`・`retryLabel` で文言を変更できます。Storybook の AsyncLoading・AsyncRetry で成功と再失敗を確認できます。
 候補数の通知は入力が300ms止まってから更新します。候補と空表示はすぐ更新し、閉じると保留中の通知を取り消します。
 `formatResultsCount(count)` は候補数の通知文、`selectionSeparator` は複数の選択ラベルの区切り（既定: `、`）です。
 一覧は `listbox` で、上下キー・Home・End・先頭文字で移動し、Enter / Space で選択、Escape で閉じます。

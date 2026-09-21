@@ -31,6 +31,15 @@ export interface PickerProps {
   formatResultsCount?: (count: number) => string;
   selectionSeparator?: string;
   emptyMessage?: string;
+  /** Overrides emptyMessage for searches with no matches in a nonempty items list. */
+  noResultsMessage?: string;
+  /** Async data is owned by the caller. Existing items remain selectable. */
+  loading?: boolean;
+  loadingMessage?: string;
+  /** Fetch failure message. Loading takes precedence while retrying. */
+  error?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
   disabled?: boolean;
   defaultOpen?: boolean;
   selectionMode?: 'single' | 'multiple';
@@ -84,8 +93,11 @@ export default function Picker(props: PickerProps) {
       return props.items.filter((item) => selected.has(item.value)).map((item) => item.label).join(props.selectionSeparator ?? '、') || props.label;
     },
     resultsMessage(count: number) {
+      if (props.loading) return props.loadingMessage ?? '読み込み中…';
+      if (props.error) return props.error;
       return count ? props.formatResultsCount?.(count) ?? `${count}件の候補`
-        : props.emptyMessage ?? (props.items.length ? '該当する項目がありません' : '項目がありません');
+        : props.items.length ? props.noResultsMessage ?? props.emptyMessage ?? '該当する項目がありません'
+        : props.emptyMessage ?? '項目がありません';
     },
     get view() {
       const items = state.getItems();
@@ -129,6 +141,14 @@ export default function Picker(props: PickerProps) {
       state.typeBuffer = '';
       resetMenu(panelRef, listRef);
       if (restoreFocus) triggerRef?.focus();
+    },
+    retry() {
+      if (props.disabled || props.loading || !props.error || !props.onRetry) return;
+      // Move before the caller hides the retry button, preserving query and active option.
+      if (state.isSearchable()) searchRef?.focus();
+      else if (state.getItems().some((item) => !item.disabled)) listRef?.focus();
+      else triggerRef?.focus();
+      props.onRetry();
     },
     search(text: string) {
       state.query = text;
@@ -180,6 +200,8 @@ export default function Picker(props: PickerProps) {
         state.close(true);
         return;
       }
+      // Retry uses native button keys; only the search and list own option navigation.
+      if (event.target !== searchRef && event.target !== listRef) return;
       const inSearch = event.target === searchRef;
       if (['ArrowDown', 'ArrowUp'].includes(event.key) || (!inSearch && ['Home', 'End'].includes(event.key))) {
         event.preventDefault();
@@ -220,7 +242,7 @@ export default function Picker(props: PickerProps) {
       state.position();
       if (document.activeElement === listRef) state.revealActive();
     });
-  }, [state.open, state.query, props.items, props.disabled, props.selectedValues, state.storedValues, props.selectionMode, props.searchable]);
+  }, [state.open, state.query, props.items, props.disabled, props.selectedValues, state.storedValues, props.selectionMode, props.searchable, props.loading, props.error, props.onRetry, props.loadingMessage, props.retryLabel, props.emptyMessage, props.noResultsMessage]);
   onUpdate(() => {
     // Mitosis emits Vue watch(() => [deps]); a new formatter can rerun it even with the same message.
     // Keep the pending announcement timer when the values are unchanged.
@@ -283,8 +305,18 @@ export default function Picker(props: PickerProps) {
             aria-controls={state.id ? `${state.id}-list` : undefined} autoComplete="off"
             onInput={(event) => state.input(event)} onChange={(event) => state.input(event)} />
         </Show>
+        <div class={menu.empty} hidden={!props.loading && !props.error && state.view.items.length > 0}>
+          <span id={state.id ? `${state.id}-message` : undefined} class={styles.message} data-error={!props.loading && !!props.error}>{state.view.message}</span>
+          <Show when={!props.loading && props.error && props.onRetry}>
+            <button class={`${controls.button} ${styles.retry}`} data-variant="tertiary" type="button"
+              aria-describedby={state.id ? `${state.id}-message` : undefined} onClick={() => state.retry()}>
+              <span class={controls.surface}>{props.retryLabel ?? '再試行'}</span>
+            </button>
+          </Show>
+        </div>
         <div ref={listRef!} id={state.id ? `${state.id}-list` : undefined} class={`${menu.list} ${styles.list}`}
           role="listbox" aria-label={props.label} aria-multiselectable={props.selectionMode === 'multiple'}
+          aria-busy={props.loading || undefined}
           aria-labelledby={state.context?.labelId}
           aria-required={state.context?.required || undefined} aria-invalid={state.context?.invalid || undefined}
           aria-activedescendant={state.view.activeId} tabIndex={state.view.canFocus ? 0 : -1}
@@ -319,7 +351,6 @@ export default function Picker(props: PickerProps) {
             )}
           </For>
         </div>
-        <span class={menu.empty} hidden={state.view.items.length > 0}>{state.view.message}</span>
         <span class={styles.status} role="status" aria-atomic="true">
           {state.announcement}
         </span>
