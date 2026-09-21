@@ -206,12 +206,38 @@ let browser;
       await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
       assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
 
-      await story('in-dialog');
-      await open();
-      assert(await panel.evaluate(el => el.matches(':popover-open')));
-      await page.keyboard.press('Escape');
-      await closed();
-      assert(await page.getByRole('dialog', { name: 'タスクの編集', exact: true }).isVisible());
+      for (const action of ['initial', 'select', 'clear', 'cancel', 'escape', 'escape-trigger']) {
+        // Use a fresh Dialog: repeated native close requests can become non-cancelable.
+        await story('in-dialog');
+        const parentDialog = page.locator('dialog');
+        await parentDialog.evaluate(el => {
+          el.dataset.cancels = '0';
+          el.addEventListener('cancel', () => { el.dataset.cancels = String(Number(el.dataset.cancels) + 1); });
+        });
+        await trigger.focus();
+        if (action !== 'initial') {
+          await open();
+          assert(await panel.evaluate(el => el.matches(':popover-open')));
+          if (action === 'clear') {
+            await page.keyboard.press('Enter');
+            await closed();
+            await open();
+          }
+          if (action === 'select') await page.keyboard.press('Enter');
+          else if (action === 'clear' || action === 'cancel') {
+            await panel.getByRole('button', { name: action === 'clear' ? 'クリア' : 'キャンセル', exact: true }).click();
+          } else {
+            if (action === 'escape-trigger') await trigger.focus();
+            await page.keyboard.press('Escape');
+          }
+        }
+        await closed();
+        assert(await parentDialog.isVisible());
+        assert.equal(await parentDialog.getAttribute('data-cancels'), '0', `${action} does not cancel the parent Dialog`);
+        await page.keyboard.press('Escape');
+        await settle();
+        assert.equal(await parentDialog.getAttribute('data-cancels'), '1', `Escape after ${action} reaches the parent Dialog`);
+      }
 
       await story('bottom-edge');
       await open();

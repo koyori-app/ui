@@ -91,7 +91,7 @@ export default function DatePicker(props: DatePickerProps) {
       bodyRef?.querySelector<HTMLElement>('[role="grid"] [data-date]:focus')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     },
     key(event: { key: string; keyCode?: number; isComposing?: boolean; nativeEvent?: { isComposing?: boolean }; preventDefault(): void; stopPropagation(): void }) {
-      if (event.key === 'Escape' && !event.isComposing && !event.nativeEvent?.isComposing && event.keyCode !== 229) {
+      if (state.open && event.key === 'Escape' && !event.isComposing && !event.nativeEvent?.isComposing && event.keyCode !== 229) {
         event.preventDefault();
         event.stopPropagation();
         state.close(true);
