@@ -109,7 +109,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Calen
 
 for (const framework of ['vue', 'react']) {
   const css = read(`packages/${framework}/dist/style.css`);
-  assert.match(css, /prefers-reduced-motion:reduce\)\{\._highlight_\w+\{transition:none/, `${framework}: 動きを減らす設定でハイライトを止める`);
+  assert.match(css, /prefers-reduced-motion:reduce\)[^{]*\{\._highlight_\w+\{transition:none/, `${framework}: 動きを減らす設定でハイライトを止める（共有ルールの hover 条件併記も許容）`);
   assert.match(css, /forced-colors[^@]*_day_\w+\[aria-selected=(?:"|')?true(?:"|')?\]\{[^}]*background:\s*Highlight/i, `${framework}: 強制配色で選択日を強調色にする`);
   assert.match(css, /forced-colors[^@]*_day_\w+\[aria-current=(?:"|')?date(?:"|')?\]\{[^}]*canvastext/i, `${framework}: 強制配色で今日に枠線を引く`);
 }

@@ -36,6 +36,7 @@ export default defineConfig({
             { label: 'Checkbox', slug: 'components/checkbox' },
             { label: 'ContextMenu', slug: 'components/context-menu' },
             { label: 'DataList', slug: 'components/data-list' },
+            { label: 'DatePicker', slug: 'components/date-picker' },
             { label: 'Dialog・ConfirmDialog', slug: 'components/dialog' },
             { label: 'Drawer', slug: 'components/drawer' },
             { label: 'Dropdown', slug: 'components/dropdown' },

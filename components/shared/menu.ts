@@ -96,6 +96,7 @@ export function resetMenu(panel: HTMLElement | null, list: HTMLElement | null) {
 /* panel を渡すと、その popover が閉じたときだけ全体を閉じる。サブメニューを閉じたときの toggle で
    全体まで閉じないようにするため。Dropdown・Picker は渡さない。 */
 export function listenToMenu(root: HTMLElement | null, close: () => void, position: () => void, panel?: HTMLElement | null) {
+  let blurFrame: number | undefined;
   /* panel の id を aria-controls で指すボタン（メニューボタン）は外側として扱わない。
      押した瞬間に閉じると、続く click でアプリがまた開いてしまい、トグルにならないため。 */
   const controls = (target: EventTarget | null) =>
@@ -104,6 +105,15 @@ export function listenToMenu(root: HTMLElement | null, close: () => void, positi
     if (!root?.contains(event.target as Node) && !controls(event.target)) close();
   };
   const blur = (event: FocusEvent) => {
+    // Calendar replaces focused cells when the month changes, then focuses the new cell in a frame.
+    // A null relatedTarget can be that temporary gap rather than focus leaving the popup.
+    if (!event.relatedTarget) {
+      cancelAnimationFrame(blurFrame ?? 0);
+      blurFrame = requestAnimationFrame(() => {
+        if (root?.isConnected && !root.contains(document.activeElement) && !controls(document.activeElement)) close();
+      });
+      return;
+    }
     if (!root?.contains(event.relatedTarget as Node) && !controls(event.relatedTarget)) close();
   };
   const toggle = (event: Event) => {
@@ -116,6 +126,7 @@ export function listenToMenu(root: HTMLElement | null, close: () => void, positi
   window.addEventListener('resize', position);
   window.addEventListener('scroll', position, true);
   return () => {
+    cancelAnimationFrame(blurFrame ?? 0);
     root?.removeEventListener('toggle', toggle, true);
     document.removeEventListener('pointerdown', outside);
     root?.removeEventListener('focusout', blur);
