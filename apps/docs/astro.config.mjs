@@ -39,6 +39,7 @@ export default defineConfig({
             { label: 'Dialog・ConfirmDialog', slug: 'components/dialog' },
             { label: 'Drawer', slug: 'components/drawer' },
             { label: 'Dropdown', slug: 'components/dropdown' },
+            { label: 'InlineEdit', slug: 'components/inline-edit' },
             { label: 'Picker', slug: 'components/picker' },
             { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },
