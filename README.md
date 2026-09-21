@@ -246,6 +246,15 @@ Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる
 `node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
 ブラウザーでの構造・キーボード操作・axe の検証は `node scripts/check-navigation.cjs` に含みます（Storybook のビルド後に実行）。
 
+## Tabs
+
+Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表示を切り替えます。
+矢印・Home/End でフォーカスを移し、Enter/Space・クリックで `onValueChange` に選択を通知します。
+非表示パネルの DOM・入力値は保持します。URL 同期・永続化は利用側で管理します。
+[API と Vue／React の例](apps/docs/src/content/docs/components/tabs.mdx)を参照してください。
+Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
+`TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
