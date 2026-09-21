@@ -68,6 +68,12 @@ Accordion は `id`・`label` と本文を受け取る開閉セクションです
 `headingLevel`（既定 3）で見出し階層、`disabled` で操作の無効化、`icon`（Vue は `#icon`）で先頭アイコンを指定できます。
 Enter / Space で開閉し、閉じた内容は Tab 移動・読み上げから除きます。本文の DOM と入力内容は保持します。
 
+SplitPane は `primary`・`secondary`（Vue は同名スロット）を左右に並べ、境界のドラッグと ← / →・Home / End で幅を調整します。
+`size` / `defaultSize`、`minSize` / `minSecondarySize` はpxで、`onSizeChange` が操作による変更要求を通知します。
+親が狭い場合は両最小幅の比率で縮め、希望幅を保持します。`label`・一意の `primaryId`、見える見出しには `ariaLabelledBy` を渡します。
+永続化は利用側で行います。[APIと狭い幅の扱い](apps/docs/src/content/docs/components/split-pane.mdx)を参照してください。
+ブラウザー検証は両Storybookのビルド後に `SPLIT_PANE_TEST_PORT=16306 node scripts/check-split-pane.cjs` で実行できます。
+
 Sidebar は `label` をナビゲーションの名前にし、`header`・`footer`（Vue は同名スロット）と本文を縦に並べます。
 SidebarLink の `label`・`href` でページ移動、`current` で現在地、`badge` で補足、`disabled` で移動の無効化を指定します。
 アイコンは `icon`（Vue は `#icon`）で渡します。通常のリンクなので新しいタブでも開け、現在地はアプリの URL から渡します。

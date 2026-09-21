@@ -1,0 +1,48 @@
+@import '../tokens.css';
+
+.root {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  color: var(--koyori-color-text);
+  font: var(--koyori-font-size-sm)/var(--koyori-line-height-sm) var(--koyori-font-family);
+}
+.pane { min-width: 0; min-height: 0; overflow: auto; }
+.handle {
+  display: grid;
+  place-items: center;
+  position: relative;
+  min-width: 0;
+  min-height: var(--koyori-control-height-sm);
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+.handle::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 1px;
+  background: var(--koyori-color-border-strong);
+}
+.grip {
+  z-index: 1;
+  width: var(--koyori-space-xs);
+  height: var(--koyori-control-height-sm);
+  max-width: 100%;
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-border-strong);
+}
+.handle:hover, .root[data-dragging] > .handle { background: var(--koyori-color-surface-hover); }
+.handle:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-width));
+}
+.handle[aria-disabled='true'] { cursor: default; background: transparent; }
+.root[data-dragging] { user-select: none; cursor: col-resize; }
+@media (forced-colors: active) {
+  .handle::before, .grip { background: ButtonText; forced-color-adjust: none; }
+  .handle:focus-visible { outline-color: Highlight; }
+}

@@ -42,6 +42,7 @@ export default defineConfig({
             { label: 'Picker', slug: 'components/picker' },
             { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },
+            { label: 'SplitPane', slug: 'components/split-pane' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
           ],
         },

@@ -26,3 +26,4 @@ export { default as Checkbox, type CheckboxProps } from './generated/components/
 export { default as ProgressBar, type ProgressBarProps } from './generated/components/ProgressBar/ProgressBar.vue';
 export { default as Calendar, type CalendarProps } from './generated/components/Calendar/Calendar.vue';
 export { default as Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './generated/components/Breadcrumb/Breadcrumb.vue';
+export { default as SplitPane, type SplitPaneProps } from './generated/components/SplitPane/SplitPane.vue';

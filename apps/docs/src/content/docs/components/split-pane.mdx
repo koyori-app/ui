@@ -1,0 +1,63 @@
+---
+title: SplitPane
+description: 一覧と詳細を左右に並べ、境界をドラッグまたはキーボードで移動する。
+---
+
+import SplitPanePreview from '../../../components/SplitPanePreview.astro';
+
+SplitPane は左の `primary` と右の `secondary` を並べ、左の幅を CSS px で調整します。
+React は同名の props、Vue は同名のスロットに内容を渡します。高さは親要素で指定し、各ペイン内でスクロールします。
+
+## プレビュー
+
+<SplitPanePreview />
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 左ペインの名前。境界の読み上げ名に使う |
+| `primaryId` | `string` | 必須 | 左ペインに付けるページ内で一意のID。SSRでも同じ値を使う |
+| `ariaLabelledBy` | `string` | — | 左ペインに見える見出しがある場合、そのID。境界の名前として `label` より優先 |
+| `size` | `number` | — | 外部で管理する左の希望幅（px） |
+| `defaultSize` | `number` | `320` | 外部管理しない場合の初期の希望幅（px） |
+| `minSize` | `number` | `160` | 左の最小幅（px） |
+| `minSecondarySize` | `number` | `160` | 右の最小幅（px） |
+| `onSizeChange` | `(size: number) => void` | — | 操作で要求された、現在の範囲内の幅（px）を通知 |
+| `disabled` | `boolean` | `false` | 幅の操作を停止。境界はフォーカス可能 |
+| `primary` / `secondary` | React要素 / Vueスロット | — | 左 / 右の内容。空も可 |
+
+Vue の名前は `:aria-labelled-by="headingId"`（または `ariaLabelledBy`）です。
+`size`・`defaultSize`・最小幅に負の値、`NaN`、`Infinity` を渡すと既定値を使います。
+無効な `size` は内部の希望幅へフォールバックします。0は有効です。
+実幅が0になったペインは `inert` で操作・読み上げ対象から外し、内容と入力値は保持します。
+
+## サイズの制御と狭い親要素
+
+- `size` を省略すると内部で希望幅を保持します。`defaultSize` の後からの変更は反映しません。
+- `size` を渡すと制御モードになります。`onSizeChange` の要求を `size` に戻した場合だけ希望幅を変えます。要求を拒否しても境界は勝手に動きません。利用中の制御モード切替は避けてください。
+- 実際の左幅は、境界の幅を除いた領域の `minSize` から「残り幅 − `minSecondarySize`」までに収めます。
+- 親が両最小幅の合計より狭い場合は、その比率で両ペインを縮め、境界の操作を停止します。例: 最小幅が160pxずつで利用可能幅が256pxなら128pxずつです。内容はペイン内でスクロールし、親の横幅を押し広げません。
+- 親幅・最小幅・外部 `size` の変更による補正は通知しません。希望幅は保持するので、親が広がると元の幅へ戻ります。`ResizeObserver` で親幅の変化に追従します。
+- 通知はポインターの移動中またはキー操作時に行います。同じ実幅への操作では通知しません。永続化、通知の間引き、保存失敗時の扱いは利用側で行ってください。
+
+SSRは希望幅で描画し、hydration後に実際の親幅を計測して補正します。計測前は境界を操作できません。
+左右配置専用で、右から左の文章はペインの内容に `dir="rtl"` を付けます。
+
+## キーボードと中断
+
+- Tab / Shift+Tabで通常の順番に移動します。左の内容、境界、右の内容の順です。境界にはフォーカス枠が付きます。
+- ← / → で10px、Shift併用で50px移動します。Home / Endは許される最小 / 最大幅に移します。
+- 範囲を越える要求は端で止まります。最小幅を保つため、Enterでの折り畳みは実装していません。
+- ドラッグ開始時に境界へフォーカスし、Pointer Captureで境界の外側への移動も追います。タッチとペンも同じ処理です。
+- Escape、pointercancel、capture喪失、フォーカス離脱、ウィンドウの非アクティブ化、非表示、削除でドラッグを終了します。それまでに採用したサイズは戻しません。
+- ドラッグ中の親幅・最小幅・`disabled` の変更も操作を終了します。外部 `size` の変更は直ちに表示へ反映し、続けてドラッグすると開始位置からの移動量で新しい幅を要求します。
+
+## アクセシビリティ
+
+[APGのWindow Splitter](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/)を参考に、境界は `role="separator"` と `aria-orientation="vertical"` を持ちます。
+`aria-controls` は左ペイン、`aria-valuemin`・`aria-valuemax`・`aria-valuenow` は表示中のpx幅を示し、`aria-valuetext` は単位を付けて読み上げます。
+見える見出しがある場合は `ariaLabelledBy` で結び付けてください。`label` だけを渡しても画面に文字は追加しません。
+操作不能時は `aria-disabled` で伝え、フォーカスは維持します。ペインの内容に必要な見出しやランドマークは利用側で付けます。
+
+境界の色とフォーカス枠は共通トークンを使います。幅にアニメーションを付けないため「動きを減らす」設定でも即座に反映し、強制配色ではシステム色で線とつまみを保ちます。
