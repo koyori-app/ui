@@ -246,6 +246,14 @@ Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる
 `node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
 ブラウザーでの構造・キーボード操作・axe の検証は `node scripts/check-navigation.cjs` に含みます（Storybook のビルド後に実行）。
 
+## InlineEdit
+
+InlineEdit は表示と編集の切り替え、Enter・Escape・任意の blur 確定とフォーカスを共通化します。
+値・下書き・検証・API 更新は利用側で持ち、保存失敗時も下書きを維持できます。
+Input/Textarea を差し替える Vue／React の例と API は [InlineEdit のページ](apps/docs/src/content/docs/components/inline-edit.mdx) にあります。
+Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレームワークの操作・IME・フォーカス・アクセシビリティを検証します。
+既存 Playwright は `PLAYWRIGHT_MODULE`、検証サーバーのポートは `INLINE_EDIT_TEST_PORT`（既定 16308）で指定できます。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。

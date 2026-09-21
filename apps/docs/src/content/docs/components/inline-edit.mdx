@@ -1,0 +1,80 @@
+---
+title: InlineEdit
+description: 表示と編集を切り替え、確定・取消とフォーカスを共通化する。
+---
+
+import InlineEditPreview from '../../../components/InlineEditPreview.astro';
+
+InlineEdit は表示用ボタンと編集欄を切り替えます。表示内容は React の `display` / Vue の `#display`、
+編集欄は子要素 / 既定スロットで差し替えます。Input・Textarea と組み合わせられます。
+
+<InlineEditPreview />
+
+## 状態の持ち方
+
+値、下書き、`editing`、`saving`、`error` は利用側で管理します。
+
+- `onEdit` で値を下書きにコピーし、`editing = true` にします。
+- `onCommit` で下書きを検証し、必要なら API を更新します。成功したときだけ値を更新して `editing = false` にします。
+- 検証や保存の失敗時は `error` を設定し、下書きと `editing = true` を保ちます。再試行できます。
+- `onCancel` で下書きを戻して `editing = false` にします。InlineEdit は取消通知より先に後続の blur 確定を遮断します。
+- API を待つ間は `saving = true` にします。入力・保存・取消が無効になり、「保存中…」を読み上げます。保存中の Escape でも取り消しません。
+
+空欄を許可するか、空白を除くか、変更なしでも保存するかは利用側で決めます。
+`onCommit` は値の変換や検証を行いません。入力部品の変更・数値確定通知は下書きの更新に使い、
+永続化は InlineEdit の `onCommit` にまとめてください。入力部品の blur と二重に保存しないようにします。
+数値入力と組み合わせる場合は、`onCommit` で対象の input の最新の `validity` と `valueAsNumber` も確認します。
+空欄と数値 `0` の区別、最小・最大値などの検証も利用側で行います。
+
+## Props
+
+両パッケージから `InlineEditProps` と `InlineEditCommitReason` を公開しています。
+
+| 名前 | 型 | 既定値・説明 |
+| --- | --- | --- |
+| `id` | `string` | 必須。ページ内で一意。内側の Input/Textarea にも適用する |
+| `label` | `string` | 必須。入力欄の可視ラベルと表示ボタンの名前 |
+| `editing` | `boolean` | 必須。利用側が制御する編集状態 |
+| `display` | React の要素 | 表示ボタンの内容。Vue は `#display`。省略時は `label` |
+| 子要素 | React の要素 | 編集コントロール。Vue は既定スロット |
+| `onEdit` | `() => void` | 表示ボタンから編集開始を要求する |
+| `onCommit` | `(reason: InlineEditCommitReason) => void` | `enter` / `blur` / `button` による確定要求 |
+| `onCancel` | `() => void` | Escape・キャンセルボタンによる取消要求 |
+| `commitOnBlur` | `boolean` | `false`。有効時は編集領域全体から出ると確定要求する |
+| `multiline` | `boolean` | `false`。Enterを改行に使う。Textarea・contenteditableは自動判定もする |
+| `saving` | `boolean` | `false`。保存中の表示と操作の無効化 |
+| `disabled` | `boolean` | `false`。編集開始・編集・確定・取消を無効化する |
+| `error` | `string` | 編集欄に表示し、入力の説明と `aria-invalid` に接続する |
+| `description` | `string` | 入力欄の説明。操作方法や検証条件を書く |
+| `editLabel` | `string` | `「label」を編集`。表示内容と合わせてボタンの名前にする |
+| `saveLabel` / `cancelLabel` | `string` | `保存` / `キャンセル` |
+| `savingLabel` | `string` | `保存中…` |
+
+`display` にはテキストや装飾要素を渡します。ボタン内なのでリンクや入力などの操作要素は置かないでください。
+編集欄は内部で Field に包まれ、Input/Textarea のラベル・エラー接続を共有します。
+独自のネイティブ入力を渡す場合は `id` を入力にも指定し、`aria-describedby` に必要な
+`id-description` / `id-error`、`aria-invalid` を設定してください。
+保存中はネイティブの fieldset で子のフォーム部品を無効にします。
+独自ウィジェットや contenteditable を渡す場合は、その部品にも `saving` / `disabled` に応じた操作停止を実装してください。
+
+## キーボードとフォーカス
+
+| 操作 | 動作 |
+| --- | --- |
+| 表示ボタンで Enter / Space | 編集を開始し、最初の編集コントロールへ移動 |
+| 1行入力で Enter | 確定を要求する |
+| 複数行入力で Enter | 改行する |
+| 複数行入力で Ctrl / Command + Enter | 確定を要求する |
+| Escape | 取り消す。IME変換中は取り消さない |
+| Tab / Shift + Tab | 通常の順序で移動。領域内の保存・取消への移動ではblur確定しない |
+
+IMEの変換中や変換を確定するEnterは保存として扱いません。
+入力内の独自キー処理で `preventDefault()` したイベントも確定として扱いません。
+確定・取消後は表示ボタンに戻します。blur確定や、非同期保存中に別の要素へ移った場合は移動先のフォーカスを保ちます。
+保存失敗時は下書きを残し、フォーカスが編集領域内か一時的に失われた場合だけ入力欄へ戻します。
+初期状態の `editing = true` でも入力欄へフォーカスします。
+
+表示ボタンと操作ボタンは共通スタイルを使い、フォーカス表示と `prefers-reduced-motion` に対応します。
+[APG Button Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/button/) と
+[キーボード操作の指針](https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/)、
+[デジタル庁のガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook) を参照しています。
