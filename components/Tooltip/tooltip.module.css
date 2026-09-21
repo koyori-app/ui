@@ -1,0 +1,42 @@
+@import '../tokens.css';
+
+.root {
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.root > :focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+.panel {
+  position: fixed;
+  z-index: var(--koyori-z-menu);
+  inset: auto;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2 * var(--koyori-menu-viewport-margin)));
+  max-height: calc(100dvh - 2 * var(--koyori-menu-viewport-margin));
+  margin: 0;
+  padding: var(--koyori-space-sm) var(--koyori-space-lg);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  border: 1px solid var(--koyori-color-border-strong);
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-text);
+  color: var(--koyori-color-surface);
+  box-shadow: var(--koyori-shadow-panel);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.panel[hidden] { display: none; }
+.panel:not([data-side]) { visibility: hidden; }
+
+@media (forced-colors: active) {
+  .panel { border-color: CanvasText; background: Canvas; color: CanvasText; }
+}
