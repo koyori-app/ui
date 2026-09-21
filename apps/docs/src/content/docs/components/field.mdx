@@ -4,9 +4,10 @@ description: ラベル・説明・エラーを入力欄に関連付けるフォ�
 ---
 
 import FieldPreview from '../../../components/FieldPreview.astro';
+import NumberInputPreview from '../../../components/NumberInputPreview.astro';
 
 Field は、ラベル・説明・エラーを中の Input・Textarea・Picker に関連付けます。
-Input は1行、Textarea は複数行の文字入力です。
+Input は1行の文字・数値入力、Textarea は複数行の文字入力です。
 
 ## プレビュー
 
@@ -45,9 +46,35 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 | `readOnly` | `boolean` | `false` | 読み取り専用にする |
 | `ariaLabel` | `string` | — | Field の外で使うときの名前（`aria-label`） |
 | `id` | `string` | — | Field の外で使うときの id。Field の中では Field の `id` を使う |
-| `type` | `'text' \| 'email' \| 'password' \| 'search' \| 'tel' \| 'url'` | `'text'` | Input のみ。入力の種類 |
+| `type` | `'text' \| 'email' \| 'password' \| 'search' \| 'tel' \| 'url' \| 'number'` | `'text'` | Input のみ。入力の種類 |
+| `min` / `max` | `number` | — | Input の `type="number"` のみ。数値の下限・上限 |
+| `step` | `number \| 'any'` | `1`（ブラウザー既定） | 数値の刻み。正数を指定。`'any'` は刻みの検証をしない |
+| `onNumberCommit` | `(value: number \| null) => void` | — | 数値入力の確定通知。有効な空欄は `null`、0は `0` |
+| `onNumberInvalid` | `(message: string) => void` | — | 数値の確定を拒否したとき、ブラウザーの検証メッセージを通知 |
 | `autocomplete` | `string` | — | Input のみ。自動入力の種類。例: `email`、`name` |
 | `rows` | `number` | `3` | Textarea のみ。表示する行数 |
+
+## 数値入力
+
+既存の Input に `type="number"` を指定します。ラベル・共通スタイルと文字列の変更通知を再利用できるため、別の NumberInput は追加していません。
+用途の制約は利用側で渡します。進捗率なら `min={0}`・`max={100}`・`step={1}`、見積時間なら `min={0}`・`step={0.25}` などです。刻みの起点は `min`、未指定なら0です。現在のdraftでは起点を変えません。
+
+<NumberInputPreview />
+
+`value` と `onValueChange` は数値入力でも **文字列** です。空欄は `''`、0は `'0'` として保持し、入力のたびに通知します。入力途中で `Number(text)` に変換すると空欄まで0になるため、draftと確定値を分けて管理します。
+
+通知と検証の契約は次のとおりです。
+
+- `onNumberCommit` は blur または変換中でない Enter で呼びます。Enter直後のblur・Enter連打は、新たに編集するまで同じ確定を通知しません。再フォーカスすると新しい編集として扱います。
+- 空欄は `null`、有効な数値は `valueAsNumber` の値です。`Field required` の空欄は確定できません。
+- 入力途中の `-` や `1e` は、ブラウザーの `input.value` では `''` になることがあります。`onValueChange` は画面内の未完成文字列を完全には保持しません。確定時には `validity.badInput` も含むネイティブ検証を行うため、未完成の入力を空欄の `null` として確定しません。受け付ける文字、指数表記、ロケールの小数点はブラウザーに従います。
+- 範囲外・step不一致・未完成・必須の空欄では `onNumberCommit` を呼ばず、`onNumberInvalid` に `validationMessage` を渡します。入力を丸めたり上限・下限へ補正したりしません。エラーは上の例のように `Field error` に表示してください。編集・再確定が成功したときのエラー解除は利用側が行います。
+- `disabled` / `readOnly` では変更・確定・エラー通知を行いません。外側からの `value` 更新も変更・確定通知を発生させません。数値用の属性と通知は他の `type` に影響しません。
+
+`onNumberCommit` は入力欄の値の通知であり、保存処理ではありません。InlineEdit と組み合わせる場合、Input の blur 通知を永続化に直結せず、draftの更新に使ってください。保存・取消とその順序は InlineEdit の `onCommit` / `onCancel` と利用側で管理します。ボタン確定などで最新値が必要なら対象の `HTMLInputElement.validity.valid` を確認し、空欄なら `null`、それ以外は `valueAsNumber` を読みます。古い確定値だけを見て保存しないでください。
+
+ネイティブの数値入力は spinbutton として公開され、上下矢印で値を増減できます。Tabで移動し、通常の文字編集キーはブラウザーに任せます。Home/Endなどの挙動もブラウザー標準です。
+設計の参照は [APG Spinbutton](https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/) と[デジタル庁の導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)です。
 
 ## アクセシビリティ
 
