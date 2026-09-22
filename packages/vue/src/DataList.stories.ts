@@ -88,6 +88,37 @@ export const Sortable: Story = {
   }),
 };
 
+/* ここから追加読み込み。取得と件数はアプリ側が持つ。 */
+const moreColumns = [{ id: 'title', label: 'タイトル' }, { id: 'owner', label: '担当者', width: '9rem' }];
+const allRows = ['1件目', '2件目', '3件目', '4件目', '5件目', '6件目'];
+const moreRows = `<DataListRow v-for="title in allRows.slice(0, count)" :key="title">
+  <th scope="row">{{ title }}</th><td>yupix</td>
+</DataListRow>`;
+
+export const LoadMore: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const count = ref(2);
+      const loading = ref(false);
+      const calls = ref(0);
+      const load = () => {
+        calls.value += 1;
+        loading.value = true;
+        setTimeout(() => { count.value = Math.min(count.value + 2, allRows.length); loading.value = false; }, 800);
+      };
+      return { args, moreColumns, allRows, count, loading, calls, load };
+    },
+    template: `<div>
+      <DataList v-bind="args" :columns="moreColumns" :count="allRows.length"
+        :has-more="count < allRows.length" :loading-more="loading" :on-load-more="load">
+        ${moreRows}
+      </DataList>
+      <p>読み込み要求: <output>{{ calls }}</output></p>
+    </div>`,
+  }),
+};
+
 /* 同じ columns と sort を渡すと、複数のグループで表示がそろう。 */
 export const TwoGroups: Story = {
   render: args => ({
@@ -106,4 +137,37 @@ export const TwoGroups: Story = {
       </DataList>
     </div>`,
   }),
+};
+/* 2 ページ目で失敗し、再試行で成功する。行はそのまま残る。 */
+export const LoadMoreError: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const count = ref(2);
+      const loading = ref(false);
+      const failed = ref(false);
+      const tried = ref(false);
+      const load = () => {
+        loading.value = true;
+        setTimeout(() => {
+          loading.value = false;
+          if (!tried.value) { tried.value = true; failed.value = true; return; }
+          failed.value = false;
+          count.value = Math.min(count.value + 2, allRows.length);
+        }, 800);
+      };
+      return { args, moreColumns, allRows, count, loading, failed, load };
+    },
+    template: `<DataList v-bind="args" :columns="moreColumns" :count="allRows.length"
+      :status="failed ? 'error' : 'ready'" message="次のページを取得できませんでした" :on-retry="load"
+      :has-more="true" :loading-more="loading" :on-load-more="load">
+      ${moreRows}
+    </DataList>`,
+  }),
+};
+
+/* 候補が 0 件なら、追加読み込みのボタンは出さず空の表示だけにする。 */
+export const LoadMoreEmpty: Story = {
+  args: { columns: moreColumns, status: 'empty', count: 0, hasMore: true },
+  render: args => ({ components: { DataList }, setup: () => ({ args }), template: '<DataList v-bind="args" :on-load-more="() => {}" />' }),
 };

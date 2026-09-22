@@ -254,6 +254,12 @@ Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描�
 列に `sortable` を付けると見出しが並べ替えのボタンになり、`sort`（`{ columnId, direction }` または `null`）と
 `onSortChange` で状態を扱います。押すたびに 昇順 → 降順 → 解除、別の列は昇順から始まります。
 読み上げは `aria-sort` で伝え、DataList 自体は行を並べ替えません。複数のグループに同じ `columns` と `sort` を渡すと表示がそろいます。
+データ取得・更新・ソート・グループ分けは利用側で管理します。
+`hasMore` を渡すと行の下に「さらに読み込む」ボタンが出て、`onLoadMore` で押下を通知します。
+`loadingMore` の間もボタンを消さず `aria-disabled` にしてフォーカスを保ち、行の `tbody` に `aria-busy` を付けます。
+読み終えて `hasMore` を false にするとボタンは消え、フォーカスがあった場合は一覧の領域へ移します。
+取得に失敗したら `status="error"` にすると、行を残したまま既存のエラー表示と再試行ボタンが出ます。
+スクロール連動の自動読み込みは持ちません。
 DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧の枠外にも表示できます。
 仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
 Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。

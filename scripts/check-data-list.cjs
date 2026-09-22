@@ -10,7 +10,7 @@ const port = process.env.DATA_LIST_TEST_PORT || '6284';
 const base = `http://127.0.0.1:${port}`;
 const server = spawn('python3', ['-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' });
 
-// 並び順の遷移はブラウザーなしで確かめる。
+// 並び順の遷移と追加読み込みの条件はブラウザーなしで確かめる。
 const compiled = mkdtempSync(join(tmpdir(), 'koyori-data-list-'));
 let sorting;
 try {
@@ -21,7 +21,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { nextSort, ariaSort } = sorting;
+const { nextSort, ariaSort, showLoadMore } = sorting;
 const ascending = { columnId: 'title', direction: 'ascending' };
 const descending = { columnId: 'title', direction: 'descending' };
 
@@ -39,13 +39,29 @@ assert.equal(ariaSort({ id: 'owner', sortable: true }, ascending), 'none', '別�
 assert.equal(ariaSort({ id: 'title', sortable: true }, ascending), 'ascending');
 assert.equal(ariaSort({ id: 'title', sortable: true }, descending), 'descending');
 
+
+assert.equal(showLoadMore(undefined, true, false), true, '未指定は ready と同じ扱い');
+assert.equal(showLoadMore('ready', true, false), true, '続きがあれば出す');
+assert.equal(showLoadMore('ready', false, true), true, '取得中は続きが無くても残す');
+assert.equal(showLoadMore('ready', true, true), true);
+assert.equal(showLoadMore('ready', false, false), false, '続きも取得中も無ければ出さない');
+assert.equal(showLoadMore('ready', undefined, undefined), false, '未指定は出さない');
+for (const status of ['empty', 'loading', 'error']) {
+  assert.equal(showLoadMore(status, true, false), false, `${status} では出さない`);
+  assert.equal(showLoadMore(status, true, true), false, `${status} では取得中でも出さない`);
+}
+
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/DataList/DataList.vue'], ['React', 'packages/react/src/generated/components/DataList/DataList.tsx']]) {
   const source = readFileSync(resolve(root, path), 'utf8');
   assert.match(source, /aria-sort/, `${name} 版が並び順を読み上げ属性で伝える`);
   assert.match(source, /ariaSort/, `${name} 版も同じ判定を通す`);
   assert.match(source, /nextSort/, `${name} 版も同じ遷移を通す`);
+  assert.match(source, /aria-disabled/, `${name} 版は取得中もボタンを残して押せなくする`);
+  assert.match(source, /role="status"/, `${name} 版は取得中を読み上げる`);
+  assert.match(source, /showLoadMore/, `${name} 版も同じ条件を通す`);
+  assert.match(source, /aria-busy/, `${name} 版は取得中の行を伝える`);
 }
-console.log('DataList の並び順の遷移と読み上げ属性、生成物を確認しました。');
+console.log('DataList の並び順の遷移と読み上げ属性、追加読み込みの条件、生成物を確認しました。');
 
 let browser;
 (async () => {
@@ -256,9 +272,57 @@ let browser;
       assert.equal(await page.getByRole('columnheader', { name: 'タイトル' }).first().locator('span[aria-hidden="true"]').evaluate(el => getComputedStyle(el).transitionDuration), '0s');
       await page.emulateMedia({ reducedMotion: 'no-preference' });
 
+      // 追加読み込み。取得中もボタンを残し、読み終えたらフォーカスを領域へ移す。
+      const moreStory = async name => {
+        await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-datalist--${name}&viewMode=story`);
+        await page.locator('#list-default-heading').waitFor();
+      };
+      const loadMore = page.getByRole('button', { name: 'さらに読み込む', exact: true });
+      const rowCount = () => page.getByRole('rowheader').count();
+
+      await moreStory('load-more');
+      assert.equal(await rowCount(), 2);
+      await loadMore.focus();
+      await page.keyboard.press('Enter');
+      await loadMore.dispatchEvent('click');
+      assert.equal(await page.locator('output').innerText(), '1', '取得中の押下は無視する');
+      assert.equal(await loadMore.getAttribute('aria-disabled'), 'true', '取得中も残して押せなくする');
+      assert.equal(await page.locator('tbody[aria-busy="true"]').count(), 1);
+      assert.equal(await page.locator('table [role="status"]').innerText(), '読み込み中…');
+      assert(await loadMore.evaluate(el => el === document.activeElement), '取得中もフォーカスは残る');
+      await page.waitForFunction(() => document.querySelectorAll('th[scope="row"]').length === 4);
+      assert.equal(await page.locator('tbody[aria-busy="true"]').count(), 0);
+      await accessibility();
+
+      await loadMore.click();
+      await page.waitForFunction(() => document.querySelectorAll('th[scope="row"]').length === 6);
+      assert.equal(await loadMore.count(), 0, '最後まで読むとボタンは消える');
+      assert(await page.getByRole('region', { name: /進行中の一覧/ }).evaluate(el => el === document.activeElement),
+        '消えたボタンのフォーカスは一覧の領域へ移す');
+      await accessibility();
+
+      // 失敗すると行を残したまま既存のエラー表示と再試行が出る。
+      await moreStory('load-more-error');
+      await loadMore.click();
+      await page.waitForFunction(() => !!document.querySelector('[role="alert"]'));
+      assert.equal(await page.getByRole('alert').innerText(), '次のページを取得できませんでした');
+      assert.equal(await loadMore.count(), 0, 'エラー中は追加読み込みのボタンを出さない');
+      assert.equal(await rowCount(), 2, '取得済みの行は残る');
+      await accessibility();
+      await page.getByRole('button', { name: '再試行', exact: true }).click();
+      await page.waitForFunction(() => document.querySelectorAll('th[scope="row"]').length === 4);
+      assert.equal(await page.getByRole('alert').count(), 0);
+      assert.equal(await loadMore.count(), 1, '成功するとボタンが戻る');
+      await accessibility();
+
+      await moreStory('load-more-empty');
+      assert.equal(await loadMore.count(), 0, '空のときは追加読み込みのボタンを出さない');
+      assert.equal(await page.locator('table [role="status"]').innerText(), '項目がありません');
+      await accessibility();
+
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: DataList structure, checkbox multi-selection, collapse/focus/retention, status/retry, avatar assignees, compact rows, menus, scrolling, sorting, motion and axe passed`);
+      console.log(`${framework}: DataList structure, checkbox multi-selection, collapse/focus/retention, status/retry, avatar assignees, compact rows, menus, scrolling, sorting, load more, motion and axe passed`);
     }
   } finally {
     await browser?.close();

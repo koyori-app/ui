@@ -1,7 +1,7 @@
 import { For, Show, onUpdate, useDefaultProps, useRef, useStore } from '@builder.io/mitosis';
 import controls from '../shared/control.module.css';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
-import { ariaSort, nextSort } from './data-list';
+import { ariaSort, nextSort, showLoadMore } from './data-list';
 import styles from './data-list.module.css';
 
 export interface DataListColumn {
@@ -28,12 +28,21 @@ export interface DataListProps {
   /** Override the empty, loading or error message. */
   message?: string;
   children?: any;
+  /** Set it while more rows can be fetched. */
+  hasMore?: boolean;
+  /** Set it while the next page is being fetched. The button stays and turns aria-disabled. */
+  loadingMore?: boolean;
+  /** Label of the load more button. */
+  loadMoreLabel?: string;
+  /** Message announced while the next page is being fetched. */
+  loadingMoreMessage?: string;
   /* Mitosis は任意 props で名前付きの型を参照できないため、形をそのまま書く。
      同じ形を DataListSort として data-list.ts から公開している。 */
   /** Controlled sort state. Pass an empty value to clear it. Sorting itself is up to the application. */
   sort?: { columnId: string; direction: 'ascending' | 'descending' } | null;
   onOpenChange?: (open: boolean) => void;
   onRetry?: () => void;
+  onLoadMore?: () => void;
   /** Receives the next state each time a sortable header is pressed. Empty means the sort was cleared. */
   onSortChange?: (sort: { columnId: string; direction: 'ascending' | 'descending' } | null) => void;
 }
@@ -42,6 +51,8 @@ export default function DataList(props: DataListProps) {
   useDefaultProps({ open: undefined });
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  let heldLoadMore = useRef<boolean | null>(false);
   const state = useStore({
     storedOpen: props.defaultOpen ?? true,
     isOpen() { return !props.collapsible || (props.open ?? state.storedOpen); },
@@ -51,6 +62,14 @@ export default function DataList(props: DataListProps) {
       props.onOpenChange?.(next);
     },
   });
+
+  /* 読み終えてボタンが消えるとき、フォーカスが body に落ちないよう一覧の領域へ移す。
+     要素が外れるときに blur は起きないため、React の effect でも押していたことが分かるよう印を持つ。 */
+  onUpdate(() => {
+    if (!heldLoadMore || showLoadMore(props.status, props.hasMore, props.loadingMore)) return;
+    heldLoadMore = false;
+    scrollRef?.focus();
+  }, [props.hasMore, props.loadingMore, props.status]);
 
   onUpdate(() => {
     if (!state.isOpen() && panelRef) {
@@ -82,7 +101,7 @@ export default function DataList(props: DataListProps) {
         </Show>
       </div>
       <div ref={panelRef!} id={`${props.id}-panel`} hidden={!state.isOpen()} class={styles.panel}>
-        <div class={styles.scroll} data-menu-top-layer="" tabIndex={0} role="region" aria-label={`${props.label}の一覧（横スクロール可能）`}>
+        <div ref={scrollRef!} class={styles.scroll} data-menu-top-layer="" tabIndex={0} role="region" aria-label={`${props.label}の一覧（横スクロール可能）`}>
           <table class={styles.table}>
             <caption class={styles.srOnly}>{props.label}</caption>
             <colgroup><For each={props.columns}>{column => <col key={column.id} style={{ width: column.width ?? 'auto' }} />}</For></colgroup>
@@ -98,9 +117,26 @@ export default function DataList(props: DataListProps) {
                 </Show>
               </th>
             )}</For></tr></thead>
-            <tbody aria-busy={props.status === 'loading'}>
+            <tbody aria-busy={props.status === 'loading' || props.loadingMore}>
               <Show when={props.status !== 'empty'}>{props.children}</Show>
             </tbody>
+            <Show when={showLoadMore(props.status, props.hasMore, props.loadingMore)}>
+                <tbody><tr><td colSpan={props.columns.length || 1}>
+                  <div class={styles.status}>
+                    <button type="button" class={controls.button} data-variant="secondary"
+                      aria-disabled={props.loadingMore || undefined}
+                      onFocus={() => { heldLoadMore = true; }}
+                      onBlur={() => { heldLoadMore = false; }}
+                      onClick={() => { if (!props.loadingMore) props.onLoadMore?.(); }}
+                    >
+                      <span class={controls.surface}>{props.loadMoreLabel ?? 'さらに読み込む'}</span>
+                    </button>
+                    <Show when={props.loadingMore}>
+                      <span role="status">{props.loadingMoreMessage ?? '読み込み中…'}</span>
+                    </Show>
+                  </div>
+                </td></tr></tbody>
+            </Show>
             <Show when={props.status === 'empty' || props.status === 'loading' || props.status === 'error'}>
                 <tbody><tr><td colSpan={props.columns.length || 1}>
                   <div class={styles.status}>
