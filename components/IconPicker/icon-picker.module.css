@@ -1,0 +1,84 @@
+@import '../tokens.css';
+
+.root {
+  display: grid;
+  gap: var(--koyori-space-md);
+  justify-items: start;
+  color: var(--koyori-color-text);
+  font: var(--koyori-font-size-sm)/var(--koyori-line-height-sm) var(--koyori-font-family);
+}
+
+.preview {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 1px solid var(--koyori-color-border-strong);
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-surface);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.image { width: 100%; height: 100%; object-fit: cover; }
+.placeholder { color: var(--koyori-color-text-muted); font-size: var(--koyori-font-size-sm); }
+.error { color: var(--koyori-color-danger); }
+
+/* 候補の選択は「項目を選ぶ操作」なので、共通ハイライトを使う。 */
+.grid {
+  --highlight-background: var(--koyori-color-surface-hover);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--koyori-control-height-sm), 1fr));
+  gap: var(--koyori-space-xs);
+  width: 100%;
+}
+
+.emoji {
+  position: relative;
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--koyori-control-height-sm);
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--koyori-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.emoji[aria-pressed='true'] {
+  border-color: var(--koyori-color-selection-indicator);
+  background: var(--koyori-color-selection);
+}
+
+.emoji:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-width));
+}
+
+.emoji:disabled { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
+
+/* ボタンから開くため、入力欄自体はレイアウトも読み上げも持たない。 */
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: var(--koyori-space-md); }
+
+@media (forced-colors: active) {
+  .emoji[aria-pressed='true'] { border-color: Highlight; }
+}

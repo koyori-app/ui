@@ -118,6 +118,13 @@ Picker ではトリガーに Field の `id` が付き、`requiredText` を名前
 説明・エラーの `aria-describedby` はトリガーにだけ付けます。一覧は `aria-required` と `aria-invalid` で状態を伝えます。必須チェックと送信値の管理はアプリ側で行います。
 Input・Textarea の値は `value` と `onValueChange(value)` で扱い、入力のたびに呼ばれます。Field の外で使う場合は `ariaLabel` で名前を付けます。
 入力欄の枠線は `--koyori-color-border-strong`（背景比 3:1 以上）、エラーは `--koyori-color-danger`（4.5:1 以上）を使います。
+Input には `prefix` / `suffix`（Vue は同名スロット）で入力欄の前後に要素を置けます。単位・通貨記号のほか、
+パスワードの表示切り替えのようなボタンも置けます。入力欄と前後の要素はひとつの枠に収まり、枠・背景・ホバー・エラー・無効の
+見た目は外側の要素が描きます。`id`・`aria-describedby`・`aria-invalid` は入力欄だけに付き、Tab は入力欄 → 末尾のボタンの順です。
+フォーカス枠は `:has()` で入力欄だけを見るため、末尾のボタンにフォーカスしても枠が二重になりません。
+前後の要素の高さ・角丸は「外側の値 − 余白」で計算し、トークンの上書きにも追従します。
+トグルボタンには Button の `ariaPressed`（`'true' | 'false'`）を使います。
+`node scripts/check-input.cjs` に先頭・末尾の要素の検証も含めています。
 
 Dropdown はアクションメニューです。`label` と `items: { value, label, disabled? }[]` を渡し、
 項目を実行すると閉じて `onSelect(value)` を呼び出します。選択状態は持ちません。`value` は一覧内で一意にしてください。
@@ -185,8 +192,8 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 ブラウザー検証は Storybook のビルド後に `node scripts/check-picker.cjs` で実行します（Dropdown と同じ実行環境）。
 
 アイコンは [Lucide](https://lucide.dev/) の必要な SVG を Mitosis の共通コンポーネントとして取り込みます。
-`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon`・`MenuIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
-`XIcon` はダイアログの閉じるボタンなどに使います。`MenuIcon` は Drawer を開くボタンに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
+`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon`・`MenuIcon`・`EyeIcon`・`EyeOffIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
+`XIcon` はダイアログの閉じるボタンなどに使います。`EyeIcon`・`EyeOffIcon` はパスワードの表示切り替えに使います。`MenuIcon` は Drawer を開くボタンに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
 `size` で縦横のサイズを指定できます（既定値: 16px）。色は親の `color` を引き継ぎます。
 装飾用として読み上げから除外するため、アイコンだけのボタンにはボタン側で `aria-label` を付けてください。
 アイコンを追加するときは出典・コミット・ライセンスを `THIRD_PARTY_NOTICES.md` に記録します。
@@ -243,7 +250,16 @@ Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描�
 `DataList` と `DataListRow` で、列の揃った一覧を組み立てます。各 DataList が1グループになり、
 見出し・件数・折り畳み、行の選択表示、空・読み込み中・エラー・再試行を扱えます。
 セルは通常の `td` / `th scope="row"` で渡し、Button・Avatar・Picker などを組み合わせます。
+データ取得・更新・並べ替え・グループ分けは利用側で管理します。
+列に `sortable` を付けると見出しが並べ替えのボタンになり、`sort`（`{ columnId, direction }` または `null`）と
+`onSortChange` で状態を扱います。押すたびに 昇順 → 降順 → 解除、別の列は昇順から始まります。
+読み上げは `aria-sort` で伝え、DataList 自体は行を並べ替えません。複数のグループに同じ `columns` と `sort` を渡すと表示がそろいます。
 データ取得・更新・ソート・グループ分けは利用側で管理します。
+`hasMore` を渡すと行の下に「さらに読み込む」ボタンが出て、`onLoadMore` で押下を通知します。
+`loadingMore` の間もボタンを消さず `aria-disabled` にしてフォーカスを保ち、行の `tbody` に `aria-busy` を付けます。
+読み終えて `hasMore` を false にするとボタンは消え、フォーカスがあった場合は一覧の領域へ移します。
+取得に失敗したら `status="error"` にすると、行を残したまま既存のエラー表示と再試行ボタンが出ます。
+スクロール連動の自動読み込みは持ちません。
 DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧の枠外にも表示できます。
 仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
 Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。
@@ -297,10 +313,68 @@ Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表�
 Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
 `TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
 
+## Skeleton
+
+`Skeleton` は読み込み中の場所を灰色の矩形で示す表示専用の部品です。一覧は DataList の `loading`、
+それ以外のサイドバー・設定セクション・フォームにはこちらを使います。
+`width`・`height`・`radius` で矩形、`lines` でテキスト行を並べます（小数は切り捨て、1 未満・非有限は 1 行）。
+`width` と `height` を同じにして `radius="50%"` を渡すとアバター用の円になります。
+自身は `aria-hidden="true"` の飾りで `role`・`aria-live` を持ちません。読み込み中であることは領域の `aria-busy="true"` と、
+必要に応じた `role="status"` の文言で伝えます。点滅は「動きを減らす」設定で止まり、強制配色では `GrayText` の枠線が付きます。
+塗りと縁は `--skeleton-background`・`--skeleton-border` で上書きできます。行数の計算は `components/Skeleton/skeleton.ts` にまとめ、
+`node scripts/check-skeleton.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/skeleton.mdx)を参照してください。
+## Alert
+
+`Alert` はフォームやセクション単位の失敗・注意・案内を伝える部品です。入力欄ごとのエラーは Field の `error`、
+送信失敗・取得失敗などセクション単位のメッセージはこちらを使います。
+`message` と `variant`（`danger` 既定・`warning`・`info`・`success`）を渡し、`onRetry`・`onDismiss` を渡したときだけ
+再試行ボタン（Button の tertiary）と閉じるボタン（アイコンだけの ghost）が出ます。文言は `retryLabel`・`dismissLabel` で変更できます。
+種類は色だけでなく接頭辞（既定: エラー・注意・お知らせ・完了）でも伝えます。`prefix` で差し替えられ、空文字は既定に戻ります。
+`danger`・`warning` は `role="alert"`、`info`・`success` は `role="status"` で、要素が現れた時点から付くため後から表示しても読み上げられます。
+ライブ領域には接頭辞と本文だけを入れ、`aria-atomic="true"` で差し替え時に 1 回だけ読ませます。
+表示・非表示・再試行の処理と、閉じたあとのフォーカスは利用側の責務です。
+色は `--koyori-color-danger`／`-warning`／`-info`／`-success` と各 `-subtle` 背景で、接頭辞と本文は背景に対して 4.5:1 以上を保ちます。
+個別の上書きは `--alert-color`・`--alert-background` で行います。接頭辞と role の決定は `components/Alert/alert.ts` にまとめ、
+`node scripts/check-alert.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/alert.mdx)を参照してください。
+## Switch
+
+`Switch` は押した瞬間に反映される設定の入切に使います。送信して初めて効く選択は Checkbox です。
+`label`（必須）と `checked` / `onCheckedChange` で状態を管理し、省略すると内部で持ちます（初期値は `defaultChecked`）。
+中身は `role="switch"` の `button` で、状態は `aria-checked`、Space と Enter で切り替わります。
+ラベル全体が `label` 要素なので文字を押しても切り替わります。Field の中では `hideLabel` を付け、
+`label` に Field と同じ文言を渡すと、`id` と `aria-describedby` を Field から受け取ります。
+つまみは `transform` だけで動かし、キーフレームを使わないため連続して押しても途中から自然に戻ります。
+動きは「動きを減らす」設定で止まり、強制配色ではシステムの強調色とつまみの位置で入切が伝わります。
+`node scripts/check-switch.cjs` で生成物と配布 CSS を検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/switch.mdx)を参照してください。
+## Card・Separator
+
+カードと区切り線はコンポーネントではなく、グローバルなクラスで提供します（`components/shared/utilities.css`）。
+角丸・余白・影・罫線しか持たないため、`div` や `hr` に付けて Vue・React で同じマークアップになります。
+`koyori-card`・`koyori-card-heading`・`koyori-card-actions`・`koyori-separator` の 4 つで、配布 CSS に含まれます。
+カードの余白は `--koyori-card-padding`（既定 16px）で、外側の角丸は「内側の角丸 + 外側の padding」を calc するため、
+トークンを上書きしても中の Button や入れ子のカードと角がそろいます。
+区切りは `hr` に付けます（暗黙で `role="separator"`）。縦にするときは `aria-orientation="vertical"` も付けてください。
+`node scripts/check-card-separator.cjs` で配布 CSS とブラウザーでの見え方を検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/card-separator.mdx)を参照してください。
+## IconPicker
+
+`IconPicker` はテナントやプロジェクトのアイコンを、絵文字の候補または画像のアップロードで設定する部品です。
+`label`・`emojis`（重複は除く）と、現在値の `emoji`・`imageUrl` を渡します。`imageUrl` があれば絵文字より優先して表示します。
+候補の用意、MIME・サイズの検証、アップロード、保存は利用側で行います。`onImageSelect` は選ばれた `File` をそのまま渡し、
+同じファイルを選び直せるよう通知のあとに入力欄の値を空に戻します。削除は取り消せない操作なので danger のボタンです。
+全体と候補の一覧は `role="group"`、プレビューは `role="img"` で現在の状態（画像・絵文字・未設定）を読み上げます。
+候補は `aria-pressed` の切り替えボタンと roving tabindex で、← → で 1 つ、↑ ↓ で 1 行、Home / End で端へ移り、端では止まります。
+列数は折り返しの結果なので、キーを押した時点の実際の並びから求めます。ホバーの背景は Dropdown と同じ共通ハイライトです。
+`node scripts/check-icon-picker.cjs` で計算・生成物・ブラウザー操作を検証します（Storybook のビルド後に実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/icon-picker.mdx)を参照してください。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・IconPicker・Switch・Skeleton・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

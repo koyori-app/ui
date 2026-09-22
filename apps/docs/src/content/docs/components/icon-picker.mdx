@@ -1,0 +1,87 @@
+---
+title: IconPicker
+description: 絵文字の候補と画像アップロードで、テナントやプロジェクトのアイコンを設定する。
+---
+
+import IconPickerPreview from '../../../components/IconPickerPreview.astro';
+
+IconPicker は、テナントやプロジェクトのアイコンを「候補から絵文字を選ぶ」か「画像をアップロードする」で設定します。
+候補の用意、MIME とサイズの検証、アップロード、保存はすべてアプリ側で行います。
+コンポーネントは表示と操作だけを担当します。
+
+## プレビュー
+
+<IconPickerPreview />
+
+## 使い方
+
+```tsx
+// React
+<IconPicker label="プロジェクトのアイコン" emojis={emojis} emoji={emoji} imageUrl={imageUrl}
+  onEmojiChange={setEmoji} onImageSelect={upload} onImageRemove={remove} />
+```
+
+```vue
+<!-- Vue -->
+<IconPicker label="プロジェクトのアイコン" :emojis="emojis" :emoji="emoji" :image-url="imageUrl"
+  :on-emoji-change="(value) => (emoji = value)" :on-image-select="upload" :on-image-remove="remove" />
+```
+
+`onImageSelect` は選ばれた `File` をそのまま渡します。送信はアプリ側で行います。
+
+```ts
+async function upload(file: File) {
+  if (!file.type.startsWith('image/')) return;   // MIME の検証はアプリ側
+  if (file.size > 1024 * 1024) return;           // サイズの検証もアプリ側
+  const body = new FormData();
+  body.append('icon', file);
+  const response = await fetch('/api/project/icon', { method: 'POST', body });
+  setImageUrl((await response.json()).url);
+}
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 全体の読み上げ名。例: `プロジェクトのアイコン` |
+| `emojis` | `string[]` | 必須 | 絵文字の候補。重複は取り除かれる |
+| `emoji` | `string` | — | 現在の絵文字 |
+| `imageUrl` | `string` | — | 現在の画像。指定すると絵文字より優先して表示する |
+| `accept` | `string` | `'image/*'` | ファイル選択の `accept`。検証は利用側 |
+| `disabled` | `boolean` | `false` | すべての操作を無効にする |
+| `uploadLabel` | `string` | `'画像を選ぶ'` | アップロードのボタンの文言 |
+| `removeLabel` | `string` | `'画像を削除'` | 削除のボタンの文言 |
+| `imageErrorMessage` | `string` | `'画像を読み込めませんでした'` | 画像の読み込みに失敗したときの文言 |
+| `onEmojiChange` | `(emoji: string) => void` | — | 候補を選んだときの通知 |
+| `onImageSelect` | `(file: File) => void` | — | ファイルを選んだときの通知 |
+| `onImageRemove` | `() => void` | — | 削除ボタンの押下を通知。`imageUrl` があるときだけボタンを出す |
+
+同じファイルを続けて選び直せるよう、通知のあとに入力欄の値は空に戻します。
+
+## 操作とアクセシビリティ
+
+- 全体は `role="group"` で `label` が名前になります。候補の一覧も `role="group"`（「絵文字の候補」）です。
+- プレビューは `role="img"` で、現在の状態を読み上げます（`画像のアイコン` / `絵文字 📘` / `アイコン未設定`）。
+- 候補は `aria-pressed` の切り替えボタンです。選ばれているのは常に 1 つだけで、`imageUrl` があるときはどれも押されていない状態になります。
+- 候補の一覧は roving tabindex です。Tab で一覧に入ると現在の候補（無ければ先頭）にフォーカスし、
+  ← → で 1 つ前後、↑ ↓ で 1 行ぶん、Home / End で先頭・末尾へ移ります。端では止まり、先頭と末尾はつながりません。
+  行の折り返しは表示幅で変わるため、列数はキーを押した時点の実際の並びから求めます。
+- 画像の選択はボタンから開きます。`input[type="file"]` 自体は Tab の順にも読み上げにも出てきません。
+- 削除は取り消せない操作なので danger のボタンです。削除後の確認や取り消しが必要なら、アプリ側で用意してください。
+- 画像の読み込みに失敗したら `role="status"` で知らせ、絵文字またはプレースホルダーに戻ります。`imageUrl` を変えると失敗の状態は解除されます。
+- 候補にマウスを乗せたときの背景は Dropdown と同じ動きで、「動きを減らす」設定とホバーできない端末では動きません。
+
+## スタイル
+
+- プレビューは 64px 角、角丸は `--koyori-radius-md` です。画像は `object-fit: cover` で収めます。
+- 候補は `--koyori-control-height-sm`（36px）を下限に `auto-fill` で並び、幅に応じて折り返します。間隔は `--koyori-space-xs` です。
+- 選択中の候補は `--koyori-color-selection` の背景と `--koyori-color-selection-indicator` の枠です（Checkbox のチェック時と同じ）。
+- ホバーの背景は `--highlight-background`（既定 `--koyori-color-surface-hover`）で変えられます。
+
+## 検証
+
+```sh
+pnpm build-storybook
+node scripts/check-icon-picker.cjs
+```

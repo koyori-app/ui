@@ -1,0 +1,88 @@
+@import '../tokens.css';
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--koyori-space-xs);
+  max-width: 100%;
+  color: var(--koyori-color-text);
+  font: var(--koyori-font-size-sm)/var(--koyori-line-height-sm) var(--koyori-font-family);
+  cursor: pointer;
+}
+
+/* 連打しても途中から自然に戻るよう、keyframes ではなく transition だけで動かす。 */
+.track {
+  display: inline-flex;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  margin-block: calc((var(--koyori-control-height-sm) - 20px) / 2);
+  padding: 0;
+  border: 2px solid var(--koyori-color-border-strong);
+  border-radius: 10px;
+  background: var(--koyori-color-surface);
+  cursor: inherit;
+  transition:
+    background-color var(--koyori-motion-fast) var(--koyori-ease-out),
+    border-color var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+/* トラックの内側は 32px。16px のサムが端から端まで 16px 動く。 */
+.thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--koyori-color-border-strong);
+  transition:
+    transform var(--koyori-motion-fast) var(--koyori-ease-out),
+    background-color var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+.track[aria-checked='true'] {
+  border-color: var(--koyori-color-selection-indicator);
+  background: var(--koyori-color-selection-indicator);
+}
+
+.track[aria-checked='true'] .thumb {
+  transform: translateX(16px);
+  background: var(--koyori-color-selection);
+}
+
+.root:hover .track:not(:disabled) { border-color: var(--koyori-color-text); }
+
+.track:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+.root[data-disabled='true'] { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
+
+.track:disabled,
+.track[aria-checked='true']:disabled {
+  border-color: var(--koyori-color-text-disabled);
+  background: var(--koyori-color-surface-disabled);
+}
+
+.track:disabled .thumb,
+.track[aria-checked='true']:disabled .thumb {
+  background: var(--koyori-color-text-disabled);
+}
+
+.label { overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .track, .thumb { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .track { forced-color-adjust: none; border-color: ButtonText; background: Canvas; }
+  .thumb { background: ButtonText; }
+  .track[aria-checked='true'] { border-color: Highlight; background: Highlight; }
+  .track[aria-checked='true'] .thumb { background: HighlightText; }
+  .root:hover .track:not(:disabled) { border-color: Highlight; }
+  .track:focus-visible { outline-color: Highlight; }
+  .track:disabled, .track[aria-checked='true']:disabled { border-color: GrayText; background: Canvas; }
+  .track:disabled .thumb, .track[aria-checked='true']:disabled .thumb { background: GrayText; }
+}
