@@ -297,10 +297,22 @@ Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表�
 Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
 `TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
 
+## Switch
+
+`Switch` は押した瞬間に反映される設定の入切に使います。送信して初めて効く選択は Checkbox です。
+`label`（必須）と `checked` / `onCheckedChange` で状態を管理し、省略すると内部で持ちます（初期値は `defaultChecked`）。
+中身は `role="switch"` の `button` で、状態は `aria-checked`、Space と Enter で切り替わります。
+ラベル全体が `label` 要素なので文字を押しても切り替わります。Field の中では `hideLabel` を付け、
+`label` に Field と同じ文言を渡すと、`id` と `aria-describedby` を Field から受け取ります。
+つまみは `transform` だけで動かし、キーフレームを使わないため連続して押しても途中から自然に戻ります。
+動きは「動きを減らす」設定で止まり、強制配色ではシステムの強調色とつまみの位置で入切が伝わります。
+`node scripts/check-switch.cjs` で生成物と配布 CSS を検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/switch.mdx)を参照してください。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Switch・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
