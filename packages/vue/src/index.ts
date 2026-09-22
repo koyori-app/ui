@@ -38,3 +38,8 @@ export type { InlineEditCommitReason } from './generated/components/InlineEdit/i
 export { default as Tag, type TagProps } from './generated/components/Tag/Tag.vue';
 export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.vue';
 export { default as SplitPane, type SplitPaneProps } from './generated/components/SplitPane/SplitPane.vue';
+export { default as Skeleton, type SkeletonProps } from './generated/components/Skeleton/Skeleton.vue';
+export { default as Alert, type AlertProps } from './generated/components/Alert/Alert.vue';
+export { default as Switch, type SwitchProps } from './generated/components/Switch/Switch.vue';
+export { default as EyeIcon, type EyeIconProps } from './generated/components/EyeIcon/EyeIcon.vue';
+export { default as EyeOffIcon, type EyeOffIconProps } from './generated/components/EyeOffIcon/EyeOffIcon.vue';

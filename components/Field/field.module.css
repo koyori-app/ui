@@ -94,8 +94,86 @@ textarea.control {
   cursor: not-allowed;
 }
 
+/* Input は常にこの group に包まれる。枠・背景・状態はここが描き、input は中身だけにする。
+   suffix のボタンにフォーカスしたとき枠が二重にならないよう、focus-within ではなく :has() で input だけを見る。 */
+.group {
+  /* .affix の中で上書きする前の値を控えておく。 */
+  --affix-control-height: var(--koyori-control-height-sm);
+  --affix-radius: var(--koyori-radius-md);
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  width: 100%;
+  min-height: var(--koyori-control-height-sm);
+  border: 1px solid var(--koyori-color-border-strong);
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  transition: border-color var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+.group .control {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  min-height: calc(var(--koyori-control-height-sm) - 2px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: none;
+}
+
+.group .control:focus-visible { outline: none; }
+.group .control:disabled { background: transparent; }
+
+.group:hover:has(.control:not(:disabled)) {
+  border-color: var(--koyori-color-text-secondary);
+}
+
+.group:has(.control[aria-invalid='true']),
+.group:hover:has(.control[aria-invalid='true']) {
+  border-color: var(--koyori-color-danger);
+}
+
+.group:has(.control:disabled) {
+  border-color: var(--koyori-color-border);
+  background: var(--koyori-color-surface-disabled);
+  cursor: not-allowed;
+}
+
+.group:has(.control:focus-visible) {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+/* 内側の角丸と高さは「外側 − 余白」。トークンを上書きしても追従する。 */
+.affix {
+  --koyori-control-height-sm: calc(var(--affix-control-height) - 4px);
+  --koyori-radius-md: calc(var(--affix-radius) - 2px);
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--koyori-space-md);
+  color: var(--koyori-color-text-secondary);
+}
+
+/* 未指定の前後要素は幅を持たない。 */
+.affix:empty { display: none; }
+
+.affix[data-affix='suffix']:has(button) { padding-inline-end: 1px; }
+
+.affix:not(:empty) + .control { padding-inline-start: var(--koyori-space-xs); }
+
+.group:has(.affix[data-affix='suffix']:not(:empty)) .control {
+  padding-inline-end: var(--koyori-space-xs);
+}
+
+.group:has(.control:disabled) .affix { color: var(--koyori-color-text-disabled); }
+
 @media (prefers-reduced-motion: reduce) {
-  .control {
+  .control, .group {
     transition: none;
   }
 }

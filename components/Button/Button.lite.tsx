@@ -13,6 +13,9 @@ interface ButtonOptions {
   ariaControls?: string;
   /** Kind of popup this button opens, e.g. 'menu' for a menu button. */
   ariaHasPopup?: 'menu' | 'listbox' | 'dialog' | 'true';
+  /** Pressed state of a toggle button, e.g. showing or hiding a password.
+   * A string, like ariaHasPopup: Vue casts an omitted Boolean prop to false and would mark every button. */
+  ariaPressed?: 'true' | 'false';
   /** Receives the click event, e.g. for menuButtonPosition(event). */
   onClick?: (event: { currentTarget: EventTarget | null }) => void;
 }
@@ -34,6 +37,7 @@ export default function Button(props: ButtonProps) {
       aria-expanded={props.ariaControls ? props.ariaExpanded : undefined}
       aria-controls={props.ariaControls}
       aria-haspopup={props.ariaHasPopup}
+      aria-pressed={props.ariaPressed}
       disabled={props.disabled}
       onClick={(event) => props.onClick?.(event)}
     >
