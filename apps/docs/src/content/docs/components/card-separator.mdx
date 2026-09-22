@@ -1,0 +1,63 @@
+---
+title: Card・Separator
+description: 角丸・余白・影の付いた囲みと、区切り線を付けるユーティリティクラス。
+---
+
+import CardSeparatorPreview from '../../../components/CardSeparatorPreview.astro';
+
+Card と Separator はコンポーネントではなく、**グローバルなクラス** です。
+角丸・余白・影・罫線しか持たないため、`div` や `hr` に付けて使います。Vue・React で同じマークアップになります。
+クラスは `@koyori-app/ui-vue/style.css`（React は `ui-react`）に含まれます。
+
+## プレビュー
+
+<CardSeparatorPreview />
+
+## 使い方
+
+```html
+<div class="koyori-card">
+  <h2 class="koyori-card-heading">ログイン</h2>
+  <!-- Field や本文 -->
+  <hr class="koyori-separator" />
+  <div class="koyori-card-actions">
+    <!-- Button -->
+  </div>
+</div>
+```
+
+React では `className`、Vue では `class` に書きます。中身は通常のマークアップなので、見出しの階層（`h2`・`h3`）はページに合わせてください。
+
+## クラス
+
+| クラス | 付ける要素 | 説明 |
+| --- | --- | --- |
+| `koyori-card` | `div`・`section` など | 角丸・余白・枠線・影の付いた囲み。中身は `display: grid` で縦に並び、間隔は `--koyori-space-md` |
+| `koyori-card-heading` | `h2`・`h3` など | カードの見出し。既定の余白を外し、`--koyori-font-size-md` と太字にする |
+| `koyori-card-actions` | `div` | 操作ボタンの行。右揃えで、狭いと折り返す |
+| `koyori-separator` | `hr` | 区切り線。上下に `--koyori-space-md` の余白を取る |
+| `koyori-separator` + `aria-orientation="vertical"` | `hr` | 縦の区切り線。flex の行の中で使い、左右に余白を取る |
+
+## アクセシビリティ
+
+- 区切りは `hr` に付けます。`hr` は暗黙で `role="separator"` になるため、`role` を書き足す必要はありません。
+- 縦の区切りには `aria-orientation="vertical"` を付けます。見た目だけを縦にして属性を省かないでください。
+- カードは見た目だけの囲みです。領域として読み上げたい場合は `section` と `aria-labelledby`（見出しの `id`）を使ってください。
+- 見出しは飛ばさずに並べます。カードの中だからといって階層を戻さないでください。
+- アニメーションを持たないため、「動きを減らす」設定で変わる動きはありません。
+
+## スタイル
+
+- 余白は `--koyori-card-padding`（既定 `--koyori-space-xl` = 16px）です。カードごとに上書きできます。
+- 外側の角丸は `内側の角丸 + 外側の padding` です。`--koyori-radius-md` や `--koyori-card-padding` を変えても、
+  中に置いた Button や入れ子のカードと角がそろいます。
+- 枠線は `--koyori-color-border`、背景は `--koyori-color-surface`、影は `--koyori-shadow-panel` です。
+  入れ子のカードでは影を外す（`box-shadow: none`）と重なりがうるさくなりません。
+- 区切り線の色も `--koyori-color-border` です。
+
+## 検証
+
+```sh
+pnpm build
+node scripts/check-card-separator.cjs
+```

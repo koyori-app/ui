@@ -62,6 +62,15 @@
   --koyori-color-border-strong: #8d8597;
   /* エラーの文字と枠線。背景とのコントラスト比 4.5:1 以上を保つ。 */
   --koyori-color-danger: #a23b5a;
+  /* Alert の種類ごとの文字・枠線と背景。文字は対応する -subtle 背景に対して 4.5:1 以上、
+     --koyori-color-text も各 -subtle 背景に対して 4.5:1 以上を保つ。 */
+  --koyori-color-danger-subtle: #f7e6ea;
+  --koyori-color-warning: #8a5a1f;
+  --koyori-color-warning-subtle: #f6ecdd;
+  --koyori-color-info: #465b8c;
+  --koyori-color-info-subtle: #e6eaf5;
+  --koyori-color-success: #2f6b4a;
+  --koyori-color-success-subtle: #dfeae1;
   /* danger のボタン。文字は背景とのコントラスト比 4.5:1 以上を保つ。 */
   --koyori-color-danger-hover: #8e3350;
   --koyori-color-on-danger: #fdf1f4;

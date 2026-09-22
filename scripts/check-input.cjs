@@ -9,6 +9,17 @@ const port = process.env.INPUT_TEST_PORT || '16307';
 const base = `http://127.0.0.1:${port}`;
 const server = spawn('python3', ['-u', '-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'ignore'] });
 let browser;
+
+// 先頭・末尾の要素は常に同じ構造で出す。未指定は CSS の :empty で消える。
+for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Input/Input.vue'], ['React', 'packages/react/src/generated/components/Input/Input.tsx']]) {
+  const source = readFileSync(resolve(root, path), 'utf8');
+  assert.match(source, /data-affix="prefix"/, `${name} 版に先頭の要素の枠がある`);
+  assert.match(source, /data-affix="suffix"/, `${name} 版に末尾の要素の枠がある`);
+}
+for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Button/Button.vue'], ['React', 'packages/react/src/generated/components/Button/Button.tsx']]) {
+  assert.match(readFileSync(resolve(root, path), 'utf8'), /aria-pressed/, `${name} 版の Button が押下状態を伝える`);
+}
+
 (async () => {
   try {
     // Only use a server started by this check; an occupied port must fail.
@@ -57,7 +68,8 @@ let browser;
       assert.equal(await input.getAttribute('aria-describedby'), 'number-input-description');
       await page.keyboard.press('Tab');
       assert(await input.evaluate(el => el === document.activeElement));
-      assert.equal(await input.evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+      // 枠は入力欄を包む要素に出る。入力欄自身の outline は none。
+      assert.deepEqual(await input.evaluate(el => [getComputedStyle(el).outlineStyle, getComputedStyle(el.parentElement).outlineStyle, getComputedStyle(el.parentElement).outlineWidth]), ['none', 'solid', '2px']);
       await input.press('Enter');
       assert.deepEqual(await commits(), [null], 'empty commits as null');
       await input.press('Tab');
@@ -159,14 +171,77 @@ let browser;
       for (const attribute of ['min', 'max', 'step']) assert.equal(await input.getAttribute(attribute), null);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await story('progress');
-      assert.equal(await input.evaluate(el => getComputedStyle(el).transitionDuration), '0s');
+      assert.equal(await input.evaluate(el => getComputedStyle(el.parentElement).transitionDuration), '0s');
       await page.locator('label').click();
       assert(await input.evaluate(el => el === document.activeElement));
       await accessibility();
       await page.screenshot({ path: `/tmp/ui-7-input-${framework}.png` });
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+      // 先頭・末尾の要素。枠は外側の group だけが描く。
+      const affix = page.locator('#affix-input');
+      const affixStory = async name => {
+        await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-input--${name}&viewMode=story`);
+        await affix.waitFor();
+      };
+      const groupOf = locator => locator.locator('xpath=..');
+      const outlines = () => page.evaluate(() => [...document.querySelectorAll('#storybook-root *')]
+        .filter(el => getComputedStyle(el).outlineStyle !== 'none' && getComputedStyle(el).outlineWidth !== '0px').length);
+
+      await affixStory('with-prefix');
+      assert.equal(await groupOf(affix).locator('[data-affix="prefix"]').innerText(), '¥');
+      assert.equal(await groupOf(affix).locator('[data-affix="suffix"]').evaluate(el => getComputedStyle(el).display), 'none', '未指定の末尾は幅を持たない');
+      assert.equal(await affix.evaluate(el => getComputedStyle(el).borderTopWidth), '0px', '入力欄自身は枠を描かない');
+      assert.notEqual(await groupOf(affix).evaluate(el => getComputedStyle(el).borderTopWidth), '0px', '枠は外側の要素が描く');
+      await affix.focus();
+      assert.equal(await outlines(), 1, 'フォーカス枠は 1 つだけ');
+      assert.notEqual(await groupOf(affix).evaluate(el => getComputedStyle(el).outlineStyle), 'none', '枠は外側に出る');
+      await accessibility();
+
+      await affixStory('with-suffix');
+      assert.equal(await groupOf(affix).locator('[data-affix="suffix"]').innerText(), '件');
+      await accessibility();
+
+      await affixStory('affix-invalid');
+      assert.equal(await affix.getAttribute('aria-invalid'), 'true');
+      const danger = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--koyori-color-danger').trim());
+      const toRgb = async hex => page.evaluate(hex => { const el = document.createElement('span'); el.style.color = hex; document.body.append(el); const value = getComputedStyle(el).color; el.remove(); return value; }, hex);
+      assert.equal(await groupOf(affix).evaluate(el => getComputedStyle(el).borderTopColor), await toRgb(danger), 'エラーの枠色は外側に出る');
+      await accessibility();
+
+      await affixStory('affix-disabled');
+      assert.equal(await affix.isEditable(), false);
+      const disabledBackground = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--koyori-color-surface-disabled').trim());
+      assert.equal(await groupOf(affix).evaluate(el => getComputedStyle(el).backgroundColor), await toRgb(disabledBackground), '無効の背景は外側に出る');
+      await accessibility();
+
+      // パスワードの表示切り替え。値とカーソル位置を保つ。
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-input--password-toggle&viewMode=story`);
+      const password = page.locator('#password-input');
+      await password.waitFor();
+      const reveal = page.getByRole('button', { name: 'パスワードを表示', exact: true });
+      assert.equal(await password.getAttribute('type'), 'password');
+      assert.equal(await reveal.getAttribute('aria-pressed'), 'false');
+      await password.focus();
+      await page.keyboard.press('Tab');
+      assert(await reveal.evaluate(el => el === document.activeElement), 'Tab は入力欄 → 末尾のボタン');
+      assert.equal(await outlines(), 1, 'ボタンのフォーカスで枠は二重にならない');
+      await password.evaluate(el => el.setSelectionRange(2, 5));
+      await reveal.click();
+      await page.waitForFunction(() => document.querySelector('#password-input')?.type === 'text');
+      assert.equal(await reveal.getAttribute('aria-pressed'), 'true');
+      assert.equal(await password.inputValue(), 'p@ssw0rd', '切り替えで値は変わらない');
+      assert.deepEqual(await password.evaluate(el => [el.selectionStart, el.selectionEnd]), [2, 5], '切り替えでカーソル位置を保つ');
+      await reveal.click();
+      await page.waitForFunction(() => document.querySelector('#password-input')?.type === 'password');
+      assert.equal(await reveal.getAttribute('aria-pressed'), 'false');
+      assert.deepEqual(await password.evaluate(el => [el.selectionStart, el.selectionEnd]), [2, 5], '戻してもカーソル位置を保つ');
+      assert.equal(await page.getByTestId('password').innerText(), 'p@ssw0rd');
+      await accessibility();
+
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Input numeric boundaries, partial edits, notifications, IME, labels, focus, disabled/readonly, reduced motion and axe passed`);
+      console.log(`${framework}: Input numeric boundaries, partial edits, notifications, IME, labels, focus, disabled/readonly, reduced motion, prefix/suffix affixes, password toggle and axe passed`);
     }
   } finally {
     await browser?.close();

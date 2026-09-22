@@ -50,3 +50,124 @@ export const Groups: Story = { render: args => ({ components: { Example: example
 export const Narrow: Story = { render: args => ({ components: { Example: example(args) }, template: '<div style="width: 280px"><Example /></div>' }) };
 export const LongTitle: Story = { args: { label: '長い名前のプロジェクトで進めている作業の一覧' } };
 export const NoColumns: Story = { args: { columns: [], status: 'empty', count: 0 } };
+
+/* ここからソート。並び替え自体は利用側が行う。 */
+const sortColumns = [{ id: 'title', label: 'タイトル', sortable: true }, { id: 'owner', label: '担当者', width: '9rem', sortable: true }, { id: 'updated', label: '更新日', width: '8rem' }];
+const tasks = [
+  { title: '設計を確認', owner: 'sousuke', updated: '2026-04-03' },
+  { title: '画面を実装', owner: 'yupix', updated: '2026-04-01' },
+  { title: 'レビューを受ける', owner: 'guest', updated: '2026-04-02' },
+];
+
+function sorted(sort: DataListProps['sort']) {
+  if (!sort) return tasks;
+  const key = sort.columnId as 'title' | 'owner';
+  const order = sort.direction === 'ascending' ? 1 : -1;
+  return [...tasks].sort((a, b) => a[key].localeCompare(b[key], 'ja') * order);
+}
+
+const sortRows = `<DataListRow v-for="task in rows(titles)" :key="task.title">
+  <th scope="row">{{ task.title }}</th><td>{{ task.owner }}</td><td>{{ task.updated }}</td>
+</DataListRow>`;
+
+export const Sortable: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const sort = ref<DataListProps['sort']>({ columnId: 'title', direction: 'ascending' });
+      return { args, sortColumns, sort, sorted, change: (next: DataListProps['sort']) => { sort.value = next; } };
+    },
+    template: `<div>
+      <DataList v-bind="args" :columns="sortColumns" :sort="sort" :on-sort-change="change">
+        <DataListRow v-for="task in sorted(sort)" :key="task.title">
+          <th scope="row">{{ task.title }}</th><td>{{ task.owner }}</td><td>{{ task.updated }}</td>
+        </DataListRow>
+      </DataList>
+      <p role="status">並び順: {{ sort ? sort.columnId + ' / ' + sort.direction : 'なし' }}</p>
+    </div>`,
+  }),
+};
+
+/* ここから追加読み込み。取得と件数はアプリ側が持つ。 */
+const moreColumns = [{ id: 'title', label: 'タイトル' }, { id: 'owner', label: '担当者', width: '9rem' }];
+const allRows = ['1件目', '2件目', '3件目', '4件目', '5件目', '6件目'];
+const moreRows = `<DataListRow v-for="title in allRows.slice(0, count)" :key="title">
+  <th scope="row">{{ title }}</th><td>yupix</td>
+</DataListRow>`;
+
+export const LoadMore: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const count = ref(2);
+      const loading = ref(false);
+      const calls = ref(0);
+      const load = () => {
+        calls.value += 1;
+        loading.value = true;
+        setTimeout(() => { count.value = Math.min(count.value + 2, allRows.length); loading.value = false; }, 800);
+      };
+      return { args, moreColumns, allRows, count, loading, calls, load };
+    },
+    template: `<div>
+      <DataList v-bind="args" :columns="moreColumns" :count="allRows.length"
+        :has-more="count < allRows.length" :loading-more="loading" :on-load-more="load">
+        ${moreRows}
+      </DataList>
+      <p>読み込み要求: <output>{{ calls }}</output></p>
+    </div>`,
+  }),
+};
+
+/* 同じ columns と sort を渡すと、複数のグループで表示がそろう。 */
+export const TwoGroups: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const sort = ref<DataListProps['sort']>(null);
+      const rows = (titles: string[]) => sorted(sort.value).filter(task => titles.includes(task.title));
+      return { args, sortColumns, sort, rows, change: (next: DataListProps['sort']) => { sort.value = next; } };
+    },
+    template: `<div style="display: grid; gap: 16px">
+      <DataList v-bind="args" id="sort-group-doing" label="進行中" :columns="sortColumns" :sort="sort" :on-sort-change="change">
+        ${sortRows.replace('titles', "['設計を確認', '画面を実装']")}
+      </DataList>
+      <DataList v-bind="args" id="sort-group-done" label="完了" :columns="sortColumns" :sort="sort" :on-sort-change="change">
+        ${sortRows.replace('titles', "['レビューを受ける']")}
+      </DataList>
+    </div>`,
+  }),
+};
+/* 2 ページ目で失敗し、再試行で成功する。行はそのまま残る。 */
+export const LoadMoreError: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const count = ref(2);
+      const loading = ref(false);
+      const failed = ref(false);
+      const tried = ref(false);
+      const load = () => {
+        loading.value = true;
+        setTimeout(() => {
+          loading.value = false;
+          if (!tried.value) { tried.value = true; failed.value = true; return; }
+          failed.value = false;
+          count.value = Math.min(count.value + 2, allRows.length);
+        }, 800);
+      };
+      return { args, moreColumns, allRows, count, loading, failed, load };
+    },
+    template: `<DataList v-bind="args" :columns="moreColumns" :count="allRows.length"
+      :status="failed ? 'error' : 'ready'" message="次のページを取得できませんでした" :on-retry="load"
+      :has-more="true" :loading-more="loading" :on-load-more="load">
+      ${moreRows}
+    </DataList>`,
+  }),
+};
+
+/* 候補が 0 件なら、追加読み込みのボタンは出さず空の表示だけにする。 */
+export const LoadMoreEmpty: Story = {
+  args: { columns: moreColumns, status: 'empty', count: 0, hasMore: true },
+  render: args => ({ components: { DataList }, setup: () => ({ args }), template: '<DataList v-bind="args" :on-load-more="() => {}" />' }),
+};
