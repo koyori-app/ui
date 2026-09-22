@@ -28,6 +28,7 @@ export default defineConfig({
           label: 'コンポーネント',
           items: [
             { label: 'Accordion', slug: 'components/accordion' },
+            { label: 'Alert', slug: 'components/alert' },
             { label: 'Avatar・AvatarGroup', slug: 'components/avatar' },
             { label: 'Breadcrumb', slug: 'components/breadcrumb' },
             { label: 'Button', slug: 'components/button' },

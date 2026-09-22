@@ -308,11 +308,25 @@ Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作と
 塗りと縁は `--skeleton-background`・`--skeleton-border` で上書きできます。行数の計算は `components/Skeleton/skeleton.ts` にまとめ、
 `node scripts/check-skeleton.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/skeleton.mdx)を参照してください。
+## Alert
+
+`Alert` はフォームやセクション単位の失敗・注意・案内を伝える部品です。入力欄ごとのエラーは Field の `error`、
+送信失敗・取得失敗などセクション単位のメッセージはこちらを使います。
+`message` と `variant`（`danger` 既定・`warning`・`info`・`success`）を渡し、`onRetry`・`onDismiss` を渡したときだけ
+再試行ボタン（Button の tertiary）と閉じるボタン（アイコンだけの ghost）が出ます。文言は `retryLabel`・`dismissLabel` で変更できます。
+種類は色だけでなく接頭辞（既定: エラー・注意・お知らせ・完了）でも伝えます。`prefix` で差し替えられ、空文字は既定に戻ります。
+`danger`・`warning` は `role="alert"`、`info`・`success` は `role="status"` で、要素が現れた時点から付くため後から表示しても読み上げられます。
+ライブ領域には接頭辞と本文だけを入れ、`aria-atomic="true"` で差し替え時に 1 回だけ読ませます。
+表示・非表示・再試行の処理と、閉じたあとのフォーカスは利用側の責務です。
+色は `--koyori-color-danger`／`-warning`／`-info`／`-success` と各 `-subtle` 背景で、接頭辞と本文は背景に対して 4.5:1 以上を保ちます。
+個別の上書きは `--alert-color`・`--alert-background` で行います。接頭辞と role の決定は `components/Alert/alert.ts` にまとめ、
+`node scripts/check-alert.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/alert.mdx)を参照してください。
 
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Skeleton・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Skeleton・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
