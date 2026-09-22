@@ -1,8 +1,8 @@
-import { For, Show, onUpdate, useRef, useStore } from '@builder.io/mitosis';
+import { For, Show, onMount, onUnMount, onUpdate, useRef, useStore } from '@builder.io/mitosis';
 import Button from '../Button/Button.lite';
-import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlight';
+import { listenToSidebar } from '../Sidebar/sidebar';
 import highlights from '../shared/highlight.module.css';
-import { nextIndex, uniqueEmojis } from './icon-picker';
+import { currentIndex, nextIndex, uniqueEmojis } from './icon-picker';
 import styles from './icon-picker.module.css';
 
 export interface IconPickerProps {
@@ -28,6 +28,7 @@ export interface IconPickerProps {
 export default function IconPicker(props: IconPickerProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  let cleanupRef = useRef<(() => void) | null>(null);
   const state = useStore({
     failed: false,
     activeIndex: -1,
@@ -44,9 +45,7 @@ export default function IconPicker(props: IconPickerProps) {
     },
     /* roving tabindex。現在の候補、無ければ先頭だけが Tab で届く。 */
     current() {
-      if (state.activeIndex >= 0) return state.activeIndex;
-      const index = uniqueEmojis(props.emojis).indexOf(props.emoji ?? '');
-      return props.imageUrl || index < 0 ? 0 : index;
+      return currentIndex(state.activeIndex, uniqueEmojis(props.emojis), props.emoji, props.imageUrl);
     },
     navigate(event: { key: string; preventDefault(): void }) {
       if (!gridRef || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
@@ -68,6 +67,10 @@ export default function IconPicker(props: IconPickerProps) {
       input.value = '';
     },
   });
+
+  /* ホバーとフォーカスのハイライトは共通の仕組みに任せる。外へ出たときに消すのも含む。 */
+  onMount(() => { cleanupRef = listenToSidebar(gridRef); });
+  onUnMount(() => cleanupRef?.());
 
   /* 画像が差し替わったら、前の画像の読み込み失敗を持ち越さない。 */
   onUpdate(() => {
@@ -93,19 +96,15 @@ export default function IconPicker(props: IconPickerProps) {
       <Show when={state.failed}>
         <span role="status" class={styles.error}>{props.imageErrorMessage ?? '画像を読み込めませんでした'}</span>
       </Show>
-      <div ref={gridRef!} class={styles.grid} role="group" aria-label="絵文字の候補"
+      <div ref={gridRef!} class={styles.grid} role="group" aria-label="絵文字の候補" data-hover-group=""
         onKeyDown={(event) => state.navigate(event)}
-        onMouseEnter={(event) => enterHighlight(gridRef, event)}
-        onMouseLeave={() => leaveHighlight(gridRef)}
       >
         <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
         <For each={state.items}>
           {(item, index) => (
             <button key={item} type="button" class={styles.emoji} aria-label={item} disabled={props.disabled}
-              aria-pressed={!props.imageUrl && props.emoji === item}
+              data-hover-item="" aria-pressed={!props.imageUrl && props.emoji === item}
               tabIndex={index === state.current() ? 0 : -1}
-              onMouseEnter={(event) => highlightItem(gridRef, event.currentTarget)}
-              onFocus={(event) => highlightItem(gridRef, event.currentTarget)}
               onClick={() => props.onEmojiChange?.(item)}
             >
               <span aria-hidden="true">{item}</span>

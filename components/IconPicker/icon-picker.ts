@@ -20,3 +20,9 @@ export function nextIndex(index: number, key: string, columns: number, length: n
     current;
   return moved < 0 || moved > length - 1 ? current : moved;
 }
+
+/* roving tabindex の位置。候補が減っても Tab で届く候補が残るよう、必ず範囲に収める。 */
+export function currentIndex(activeIndex: number, items: string[], emoji: string | undefined, imageUrl: string | undefined) {
+  const index = activeIndex >= 0 ? activeIndex : imageUrl ? -1 : items.indexOf(emoji ?? '');
+  return Math.min(Math.max(index, 0), items.length - 1);
+}

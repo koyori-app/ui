@@ -16,7 +16,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { uniqueEmojis, nextIndex } = iconPicker;
+const { uniqueEmojis, nextIndex, currentIndex } = iconPicker;
 
 assert.deepEqual(uniqueEmojis(['🌱', '📘', '🌱']), ['🌱', '📘'], '重複は最初の位置を残して除く');
 assert.deepEqual(uniqueEmojis([]), []);
@@ -39,6 +39,14 @@ assert.equal(nextIndex(2, 'ArrowDown', 0, 6), 3, '列数が取れなくても 1 
 assert.equal(nextIndex(9, 'ArrowLeft', 3, 6), 4, '範囲外の現在地は末尾に寄せる');
 assert.equal(nextIndex(-3, 'ArrowRight', 3, 6), 1, '負の現在地は先頭に寄せる');
 assert.equal(nextIndex(0, 'ArrowRight', 3, 0), -1, '候補が無ければ移動しない');
+
+// Tab で届く候補。移動していなければ現在の絵文字、移動後はその位置。
+assert.equal(currentIndex(-1, ['🌱', '📘', '🛠️'], '📘', undefined), 1, '現在の絵文字が入口');
+assert.equal(currentIndex(-1, ['🌱', '📘', '🛠️'], '🍎', undefined), 0, '候補に無い絵文字なら先頭');
+assert.equal(currentIndex(-1, ['🌱', '📘', '🛠️'], '📘', 'icon.png'), 0, '画像のときは先頭');
+assert.equal(currentIndex(2, ['🌱', '📘', '🛠️'], '📘', undefined), 2, '移動したあとはその位置');
+assert.equal(currentIndex(5, ['🌱', '📘', '🛠️'], '📘', undefined), 2, '候補が減ったら末尾に寄せ、入口を残す');
+assert.equal(currentIndex(5, [], undefined, undefined), -1, '候補が無ければ入口も無い');
 
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/IconPicker/IconPicker.vue'], ['React', 'packages/react/src/generated/components/IconPicker/IconPicker.tsx']]) {
@@ -95,6 +103,10 @@ let browser;
       };
       const pressed = () => options.evaluateAll((buttons) => buttons.filter((button) => button.getAttribute('aria-pressed') === 'true').map((button) => button.getAttribute('aria-label')));
       const focusedLabel = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
+      const waitHighlight = (value, message) => page.waitForFunction(
+        (expected) => document.querySelector('[aria-label="絵文字の候補"]')?.style.getPropertyValue('--highlight-opacity') === expected,
+        value, { timeout: 2000 },
+      ).catch(() => { throw new Error(`${framework}: ${message}`); });
 
       await story('default');
       assert.equal(await options.count(), 6);
@@ -118,6 +130,13 @@ let browser;
       assert.equal(await focusedLabel(), '🌱', '先頭では止まる');
       await page.keyboard.press('End');
       assert.equal(await focusedLabel(), '🧪');
+
+      // ハイライトはフォーカスに付いていき、候補の外へ出たら消える。ポインターは外に出しておく。
+      await page.mouse.move(0, 0);
+      await waitHighlight('1', 'フォーカスした候補にハイライトが付く');
+      await page.keyboard.press('Tab');
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent), '画像を選ぶ', 'Tab で候補の外へ出る');
+      await waitHighlight('0', '候補から離れたらハイライトを消す');
 
       // ↑ ↓ は列数ぶん動く。列数は折り返しの結果から求める。
       await story('many-emojis');
