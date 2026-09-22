@@ -108,7 +108,7 @@ export const PasswordToggle: Story = {
         <Field id="password-input" label="パスワード">
           <Input :type="visible ? 'text' : 'password'" :value="value" autocomplete="current-password" :on-value-change="change">
             <template #suffix>
-              <Button variant="ghost" aria-label="パスワードを表示" :aria-pressed="visible ? 'true' : 'false'" :on-click="toggle">
+              <Button variant="ghost" ariaLabel="パスワードを表示" :ariaPressed="visible ? 'true' : 'false'" :on-click="toggle">
                 <template #icon><EyeOffIcon v-if="visible" /><EyeIcon v-else /></template>
               </Button>
             </template>
