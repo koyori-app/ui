@@ -250,7 +250,10 @@ Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描�
 `DataList` と `DataListRow` で、列の揃った一覧を組み立てます。各 DataList が1グループになり、
 見出し・件数・折り畳み、行の選択表示、空・読み込み中・エラー・再試行を扱えます。
 セルは通常の `td` / `th scope="row"` で渡し、Button・Avatar・Picker などを組み合わせます。
-データ取得・更新・ソート・グループ分けは利用側で管理します。
+データ取得・更新・並べ替え・グループ分けは利用側で管理します。
+列に `sortable` を付けると見出しが並べ替えのボタンになり、`sort`（`{ columnId, direction }` または `null`）と
+`onSortChange` で状態を扱います。押すたびに 昇順 → 降順 → 解除、別の列は昇順から始まります。
+読み上げは `aria-sort` で伝え、DataList 自体は行を並べ替えません。複数のグループに同じ `columns` と `sort` を渡すと表示がそろいます。
 DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧の枠外にも表示できます。
 仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
 Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。

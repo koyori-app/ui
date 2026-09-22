@@ -31,6 +31,8 @@ import DataListPreview from '../../../components/DataListPreview.astro';
 | `status` | `'ready'` / `'empty'` / `'loading'` / `'error'` | `'ready'` | 一覧の状態 |
 | `message` | `string` | 状態ごとの文言 | 空・読み込み中・エラーの説明を上書き |
 | `onRetry` | `() => void` | — | エラー表示に再試行ボタンを追加 |
+| `sort` | `{ columnId, direction } \| null` | `null` | 並び順。`null` で並べ替えなし |
+| `onSortChange` | `(sort) => void` | — | 並べ替えの見出しを押すたびに次の状態を通知 |
 | 子要素 | `DataListRow` | — | 表示する行。Vue は既定スロット |
 
 `collapsible` が無効なら常に開きます。折り畳みは DOM を保持するため、セル内の入力や Picker の選択は残ります。
@@ -39,8 +41,9 @@ Vue では `:on-open-change="handler"`、React では `onOpenChange={handler}` �
 
 ### DataListColumn
 
-`{ id: string, label: string, width?: string }` を指定します。
+`{ id: string, label: string, width?: string, sortable?: boolean }` を指定します。
 `id` は列内で一意にし、幅を指定しない列が残りの幅を使います。幅は `'8rem'` など CSS の長さです。
+`sortable` を付けた列は見出しが並べ替えのボタンになります。
 
 ## セルと選択状態
 
@@ -61,6 +64,36 @@ API の取得・更新、ソート、グループ分け、ページングはア�
 - `error`: 渡した行を残し、エラー文言を表示します。`onRetry` があれば再試行できます。
 
 状態の切り替えと二重送信の防止はアプリ側で管理します。再試行を開始したら `status="loading"` に切り替えてください。
+
+## ソート
+
+`sortable: true` を付けた列の見出しがボタンになります。押すたびに `onSortChange` が次の状態を通知します。
+
+- 同じ列: 昇順 → 降順 → 解除（`null`）
+- 別の列: 昇順から
+
+```tsx
+// React
+const [sort, setSort] = useState<DataListProps['sort']>(null);
+<DataList columns={columns} sort={sort} onSortChange={setSort}>
+  {sorted(rows, sort).map(row => <DataListRow key={row.id}>…</DataListRow>)}
+</DataList>
+```
+
+```vue
+<!-- Vue -->
+<DataList :columns="columns" :sort="sort" :on-sort-change="(next) => (sort = next)">
+  <DataListRow v-for="row in sorted(rows, sort)" :key="row.id">…</DataListRow>
+</DataList>
+```
+
+**DataList は並べ替えを行いません。** 行の順序、サーバーへの問い合わせ、URL への同期、既定の並び順はすべて利用側で持ちます。
+複数のグループに同じ `columns` と `sort` を渡すと、どのグループでも同じ列・同じ向きが表示されます（Storybook の TwoGroups）。
+
+読み上げは `aria-sort` で伝えます。`sortable` の列には常に付き、並べ替えていない列は `none`、
+対象の列は `ascending` または `descending` になります。`sortable` でない列には付きません。
+見出しのボタンは Tab で移動し、Enter / Space で実行します。矢印は装飾なので読み上げから外し、
+並べ替えていない列ではホバーとフォーカスのときだけ薄く見えます。「動きを減らす」設定では矢印の回転が止まります。
 
 ## 操作とアクセシビリティ
 

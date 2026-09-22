@@ -1,6 +1,7 @@
 import { For, Show, onUpdate, useDefaultProps, useRef, useStore } from '@builder.io/mitosis';
 import controls from '../shared/control.module.css';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
+import { ariaSort, nextSort } from './data-list';
 import styles from './data-list.module.css';
 
 export interface DataListColumn {
@@ -8,6 +9,8 @@ export interface DataListColumn {
   label: string;
   /** CSS width, e.g. "8rem". Omit on the title column to use remaining space. */
   width?: string;
+  /** Turns the header into a sort button. Sorting itself is up to the application. */
+  sortable?: boolean;
 }
 
 export interface DataListProps {
@@ -25,8 +28,14 @@ export interface DataListProps {
   /** Override the empty, loading or error message. */
   message?: string;
   children?: any;
+  /* Mitosis は任意 props で名前付きの型を参照できないため、形をそのまま書く。
+     同じ形を DataListSort として data-list.ts から公開している。 */
+  /** Controlled sort state. Pass an empty value to clear it. Sorting itself is up to the application. */
+  sort?: { columnId: string; direction: 'ascending' | 'descending' } | null;
   onOpenChange?: (open: boolean) => void;
   onRetry?: () => void;
+  /** Receives the next state each time a sortable header is pressed. Empty means the sort was cleared. */
+  onSortChange?: (sort: { columnId: string; direction: 'ascending' | 'descending' } | null) => void;
 }
 
 export default function DataList(props: DataListProps) {
@@ -77,7 +86,18 @@ export default function DataList(props: DataListProps) {
           <table class={styles.table}>
             <caption class={styles.srOnly}>{props.label}</caption>
             <colgroup><For each={props.columns}>{column => <col key={column.id} style={{ width: column.width ?? 'auto' }} />}</For></colgroup>
-            <thead><tr><For each={props.columns}>{column => <th key={column.id} scope="col">{column.label}</th>}</For></tr></thead>
+            <thead><tr><For each={props.columns}>{column => (
+              <th key={column.id} scope="col" aria-sort={ariaSort(column, props.sort)}>
+                <Show when={column.sortable} else={<span>{column.label}</span>}>
+                  <button type="button" class={styles.sortButton}
+                    onClick={() => props.onSortChange?.(nextSort(props.sort, column.id))}
+                  >
+                    {column.label}
+                    <span class={styles.sortIcon} aria-hidden="true"><ChevronDownIcon size={14} /></span>
+                  </button>
+                </Show>
+              </th>
+            )}</For></tr></thead>
             <tbody aria-busy={props.status === 'loading'}>
               <Show when={props.status !== 'empty'}>{props.children}</Show>
             </tbody>
