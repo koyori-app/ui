@@ -1,0 +1,77 @@
+---
+title: Switch
+description: 押した瞬間に反映される設定の入切を切り替えるコンポーネント。
+---
+
+import SwitchPreview from '../../../components/SwitchPreview.astro';
+
+Switch は、通知の有無や公開・非公開など **押した瞬間に反映される設定** の入切に使います。
+送信ボタンを押して初めて効く選択には [Checkbox](/components/checkbox/) を使ってください。
+Checkbox はフォームの値、Switch は今の状態です。値の保存と失敗時の巻き戻しはアプリ側で行います。
+
+## プレビュー
+
+<SwitchPreview />
+
+## 使い方
+
+`checked` と `onCheckedChange` で状態を管理します。省略すると内部で持ち、`defaultChecked` が初期値になります。
+
+```tsx
+// React
+<Switch label="メール通知" checked={notify} onCheckedChange={setNotify} />
+```
+
+```vue
+<!-- Vue -->
+<Switch label="メール通知" :checked="notify" :on-checked-change="(next) => (notify = next)" />
+```
+
+Field の中に置く場合は `hideLabel` を付け、`label` には Field と同じ文言を渡します。
+Field のラベルが見える名前になり、`id` と `aria-describedby`（説明・エラー）は Field から受け取ります。
+
+```tsx
+<Field id="digest" label="週次ダイジェスト" description="毎週月曜の朝にまとめて届きます。">
+  <Switch label="週次ダイジェスト" hideLabel checked={digest} onCheckedChange={setDigest} />
+</Field>
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 読み上げ名。`hideLabel` を付けなければ右側に表示する |
+| `hideLabel` | `boolean` | `false` | 表示ラベルを省く。Field の中で使う |
+| `id` | `string` | — | Field の中では Field の `id` が優先される |
+| `checked` | `boolean` | — | 制御する場合の状態。省略すると内部で持つ |
+| `defaultChecked` | `boolean` | `false` | 非制御のときの初期値 |
+| `disabled` | `boolean` | `false` | 操作を無効にする |
+| `ariaDescribedBy` | `string` | — | Field の外で説明を関連付けるとき。Field の中では Field の値が優先される |
+| `onCheckedChange` | `(checked: boolean) => void` | — | 切り替えを通知する |
+
+`checked` を渡している間は、`onCheckedChange` を受けてアプリが `checked` を変えるまで見た目は変わりません。
+保存に失敗したら元の値のままにしておけば、Switch も元に戻ります。
+
+## アクセシビリティ
+
+- 中身は `role="switch"` を持つ `button` で、状態は `aria-checked` で伝えます。Space と Enter で切り替わります
+  （[W3C の Switch パターン](https://www.w3.org/WAI/ARIA/apg/patterns/switch/)）。
+- ラベル全体が `label` 要素なので、文字を押しても切り替わります。
+- `hideLabel` のときは `aria-label` に `label` を使います。Field の中では Field のラベルと同じ文言を渡してください。
+- 入切は色だけでなく、つまみの位置でも分かります。強制配色ではシステムの強調色とつまみの位置で伝わります。
+- つまみの移動とトラックの色の変化は「動きを減らす」設定で止まります。キーフレームを使わないため、
+  連続して押しても途中の状態から自然に戻ります。
+
+## スタイル
+
+- トラックは 36 × 20px、つまみは 16px の円です。上下の余白で `--koyori-control-height-sm`（36px）の高さに収めます。
+- 入のときはトラックが `--koyori-color-selection-indicator`、つまみが `--koyori-color-selection` になります。
+- 切のときの枠とつまみは `--koyori-color-border-strong`、ホバーで枠が `--koyori-color-text` になります（Checkbox と同じ）。
+- 動きは `--koyori-motion-fast` と `--koyori-ease-out` で、Button の押下と同じ速さです。
+
+## 検証
+
+```sh
+pnpm build
+node scripts/check-switch.cjs
+```

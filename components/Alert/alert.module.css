@@ -1,0 +1,56 @@
+@import '../tokens.css';
+
+.root {
+  --alert-color: var(--koyori-color-danger);
+  --alert-background: var(--koyori-color-danger-subtle);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--koyori-space-md);
+  box-sizing: border-box;
+  padding: var(--koyori-space-md) var(--koyori-space-lg);
+  border: 1px solid var(--alert-color);
+  border-radius: var(--koyori-radius-md);
+  background: var(--alert-background);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.root[data-variant='warning'] {
+  --alert-color: var(--koyori-color-warning);
+  --alert-background: var(--koyori-color-warning-subtle);
+}
+
+.root[data-variant='info'] {
+  --alert-color: var(--koyori-color-info);
+  --alert-background: var(--koyori-color-info-subtle);
+}
+
+.root[data-variant='success'] {
+  --alert-color: var(--koyori-color-success);
+  --alert-background: var(--koyori-color-success-subtle);
+}
+
+/* ボタンの高さ（36px）の中で、1 行目が縦中央に来るようにする。 */
+.body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-block: calc((var(--koyori-control-height-sm) - var(--koyori-line-height-sm) * 1em) / 2);
+}
+
+.prefix {
+  font-weight: 600;
+  color: var(--alert-color);
+  margin-inline-end: var(--koyori-space-sm);
+}
+
+.message {
+  overflow-wrap: anywhere;
+}
+
+@media (forced-colors: active) {
+  .root { border-color: CanvasText; }
+  /* 色が落ちても接頭辞の文字で種類が伝わる。 */
+  .prefix { color: inherit; }
+}
