@@ -39,13 +39,21 @@
   color: var(--koyori-color-text);
 }
 
-.tab[aria-selected='true']::after {
-  content: '';
+/* 下線は選択タブごとに描かず 1 本だけ置き、選択が変わると次のタブへ滑らせる。位置は tabs.ts が測る。 */
+.indicator {
   position: absolute;
+  top: 0;
+  left: 0;
   z-index: 2;
+  width: calc(var(--tab-indicator-width, 0px) - 2 * var(--koyori-space-lg));
   height: 2px;
-  inset: auto var(--koyori-space-lg) 0;
+  transform: translate(calc(var(--tab-indicator-x, 0px) + var(--koyori-space-lg)), calc(var(--tab-indicator-bottom, 0px) - 100%));
+  opacity: var(--tab-indicator-opacity, 0);
   background: var(--koyori-color-selection-indicator);
+  pointer-events: none;
+  transition: var(--tab-indicator-transition,
+    transform var(--koyori-motion-base) var(--koyori-ease-out),
+    width var(--koyori-motion-base) var(--koyori-ease-out));
 }
 
 /* The hover surface can travel over the selected fill without hiding its underline. */
@@ -69,6 +77,10 @@
   overflow-wrap: anywhere;
 }
 .list[hidden], .panel[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator { transition: none; }
+}
 
 @media (forced-colors: active) {
   .tab[aria-selected='true'] { outline: 2px solid Highlight; outline-offset: -2px; }
