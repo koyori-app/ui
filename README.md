@@ -297,6 +297,17 @@ Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表�
 Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
 `TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
 
+## Skeleton
+
+`Skeleton` は読み込み中の場所を灰色の矩形で示す表示専用の部品です。一覧は DataList の `loading`、
+それ以外のサイドバー・設定セクション・フォームにはこちらを使います。
+`width`・`height`・`radius` で矩形、`lines` でテキスト行を並べます（小数は切り捨て、1 未満・非有限は 1 行）。
+`width` と `height` を同じにして `radius="50%"` を渡すとアバター用の円になります。
+自身は `aria-hidden="true"` の飾りで `role`・`aria-live` を持ちません。読み込み中であることは領域の `aria-busy="true"` と、
+必要に応じた `role="status"` の文言で伝えます。点滅は「動きを減らす」設定で止まり、強制配色では `GrayText` の枠線が付きます。
+塗りと縁は `--skeleton-background`・`--skeleton-border` で上書きできます。行数の計算は `components/Skeleton/skeleton.ts` にまとめ、
+`node scripts/check-skeleton.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/skeleton.mdx)を参照してください。
 ## Alert
 
 `Alert` はフォームやセクション単位の失敗・注意・案内を伝える部品です。入力欄ごとのエラーは Field の `error`、
@@ -315,7 +326,7 @@ Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作と
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Skeleton・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
