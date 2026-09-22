@@ -1,4 +1,4 @@
-import { onMount, onUpdate, useContext, useRef, useStore } from '@builder.io/mitosis';
+import { Slot, onMount, onUpdate, useContext, useRef, useStore } from '@builder.io/mitosis';
 import FieldContext from '../Field/field.context.lite';
 import { getFieldContext } from '../Field/field';
 import styles from '../Field/field.module.css';
@@ -24,6 +24,10 @@ export interface InputProps {
   onNumberCommit?: (value: number | null) => void;
   /** Number inputs only: native validation message when a commit is rejected. */
   onNumberInvalid?: (message: string) => void;
+  /** React: rendered element. Vue: use the prefix slot. Shown before the input. */
+  prefix?: any;
+  /** React: rendered element. Vue: use the suffix slot. Shown after the input, e.g. a toggle button. */
+  suffix?: any;
 }
 
 export default function Input(props: InputProps) {
@@ -74,8 +78,11 @@ export default function Input(props: InputProps) {
   onMount(() => { state.syncValidity(); });
   onUpdate(() => { state.syncValidity(); });
 
+  /* 枠と背景は常に外側の group が描く。未指定の前後要素は .affix:empty で消える。 */
   return (
-    <input
+    <span class={styles.group}>
+      <span class={styles.affix} data-affix="prefix"><Slot name="prefix" /></span>
+      <input
       ref={inputRef!}
       class={styles.control}
       id={state.context?.id ?? props.id}
@@ -98,6 +105,8 @@ export default function Input(props: InputProps) {
       onKeyDown={(event) => state.keydown(event)}
       onInput={(event) => state.change(event)}
       onChange={(event) => state.change(event)}
-    />
+      />
+      <span class={styles.affix} data-affix="suffix"><Slot name="suffix" /></span>
+    </span>
   );
 }

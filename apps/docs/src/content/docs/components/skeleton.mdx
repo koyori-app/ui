@@ -1,0 +1,79 @@
+---
+title: Skeleton
+description: 読み込み中の場所を矩形とテキスト行で示す表示専用のコンポーネント。
+---
+
+import SkeletonPreview from '../../../components/SkeletonPreview.astro';
+
+Skeleton は、サイドバー・設定セクション・フォームなど一覧以外の読み込み中表示に使います。
+届くはずの内容と同じ位置・大きさの灰色の矩形を置き、読み込みが終わったら本物の内容に差し替えます。
+一覧の読み込み中は [DataList](/components/data-list/) の `loading` を使ってください。
+
+## プレビュー
+
+「読み込み中」を切り替えると、同じ領域の中で Skeleton と内容が入れ替わります。
+
+<SkeletonPreview />
+
+## 使い方
+
+矩形は `width`・`height`・`radius`、テキストは `lines` で指定します。読み込み状態はアプリ側で持ちます。
+
+```tsx
+// React
+<div aria-busy={loading ? 'true' : undefined}>
+  <p role="status">{loading ? 'プロフィールを読み込み中' : ''}</p>
+  {loading ? <>
+    <Skeleton width="40px" height="40px" radius="50%" />
+    <Skeleton lines={3} />
+  </> : <Profile />}
+</div>
+```
+
+```vue
+<!-- Vue -->
+<div :aria-busy="loading ? 'true' : undefined">
+  <p role="status">{{ loading ? 'プロフィールを読み込み中' : '' }}</p>
+  <template v-if="loading">
+    <Skeleton width="40px" height="40px" radius="50%" />
+    <Skeleton :lines="3" />
+  </template>
+  <Profile v-else />
+</div>
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `width` | `string` | `'100%'` | CSS の長さ。親の幅いっぱいに広がる |
+| `height` | `string` | `var(--koyori-control-height-sm)`（`lines` 指定時は `1em`） | CSS の長さ。矩形の高さ、または 1 行の高さ |
+| `radius` | `string` | `var(--koyori-radius-md)` | 角丸。`'50%'` と `width` = `height` で円になる |
+| `lines` | `number` | — | テキスト用。指定すると行を並べる。小数は切り捨て、1 未満・非有限は 1 行 |
+
+`lines` を指定すると、`height` の行が `lines` 本並びます。2 行以上のときは最後の行だけ 60% の幅になり、段落の終わりに見えます。
+アバターの丸は `width` と `height` を同じ長さにし、`radius` に `'50%'` を渡します。
+
+## アクセシビリティ
+
+- Skeleton は `aria-hidden="true"` の飾りです。`role` も `aria-live` も持ちません。
+- 読み上げは領域単位で行います。読み込み中の領域に `aria-busy="true"` を付け、必要なら
+  `role="status"` の要素に「読み込み中」などの文言を置いてください。live region は常に DOM に残し、文言だけを入れ替えます。
+- 矩形ひとつずつを読み上げると、内容のない「読み込み中」が並んで通知が埋まります。数と形は見た目のためだけのものなので、読み上げからは外しています。
+- 点滅は `prefers-reduced-motion: reduce` で止まります。
+- 強制配色では、塗りが消えても位置が分かるように `GrayText` の枠線が付きます。
+
+## スタイル
+
+- 色は共通トークンの `--koyori-color-surface-disabled`（塗り）と `--koyori-color-border`（縁）です。
+  縁は `box-shadow: inset` で引くため、暗い背景・カードの中・白い背景のどこでも輪郭が残ります。
+- 個別に変える場合は、Skeleton を囲む要素か Skeleton 自身で `--skeleton-background`・`--skeleton-border` を上書きします。
+- 点滅は不透明度を 1 → 0.55 → 1 で往復する 1.6 秒のアニメーションです。`lines` を指定した行はまとめて点滅します。
+- 行の間隔は `--koyori-space-md`（8px）です。
+
+## 検証
+
+```sh
+pnpm build
+node scripts/check-skeleton.cjs
+```
