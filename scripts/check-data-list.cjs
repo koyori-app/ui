@@ -10,18 +10,35 @@ const port = process.env.DATA_LIST_TEST_PORT || '6284';
 const base = `http://127.0.0.1:${port}`;
 const server = spawn('python3', ['-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' });
 
-// 追加読み込みのボタンを出す条件はブラウザーなしで確かめる。
+// 並び順の遷移と追加読み込みの条件はブラウザーなしで確かめる。
 const compiled = mkdtempSync(join(tmpdir(), 'koyori-data-list-'));
-let paging;
+let sorting;
 try {
   execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--ignoreConfig',
     '--module', 'commonjs', '--target', 'ES2022', '--skipLibCheck', '--outDir', compiled,
     resolve(root, 'components/DataList/data-list.ts')], { stdio: 'inherit' });
-  paging = require(join(compiled, 'data-list.js'));
+  sorting = require(join(compiled, 'data-list.js'));
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { showLoadMore } = paging;
+const { nextSort, ariaSort, showLoadMore } = sorting;
+const ascending = { columnId: 'title', direction: 'ascending' };
+const descending = { columnId: 'title', direction: 'descending' };
+
+assert.deepEqual(nextSort(null, 'title'), ascending, '並べ替えなしからは昇順');
+assert.deepEqual(nextSort(undefined, 'title'), ascending, '未指定からも昇順');
+assert.deepEqual(nextSort(ascending, 'title'), descending, '同じ列の 2 回目は降順');
+assert.equal(nextSort(descending, 'title'), null, '同じ列の 3 回目で解除');
+assert.deepEqual(nextSort(descending, 'owner'), { columnId: 'owner', direction: 'ascending' }, '別の列は昇順から');
+assert.deepEqual(nextSort(ascending, 'owner'), { columnId: 'owner', direction: 'ascending' }, '別の列は向きを引き継がない');
+
+assert.equal(ariaSort({ id: 'title' }, ascending), undefined, '並べ替えできない列には付けない');
+assert.equal(ariaSort({ id: 'title', sortable: false }, ascending), undefined, '明示的な false も付けない');
+assert.equal(ariaSort({ id: 'title', sortable: true }, null), 'none', '対象でなければ none');
+assert.equal(ariaSort({ id: 'owner', sortable: true }, ascending), 'none', '別の列が対象なら none');
+assert.equal(ariaSort({ id: 'title', sortable: true }, ascending), 'ascending');
+assert.equal(ariaSort({ id: 'title', sortable: true }, descending), 'descending');
+
 
 assert.equal(showLoadMore(undefined, true, false), true, '未指定は ready と同じ扱い');
 assert.equal(showLoadMore('ready', true, false), true, '続きがあれば出す');
@@ -36,12 +53,15 @@ for (const status of ['empty', 'loading', 'error']) {
 
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/DataList/DataList.vue'], ['React', 'packages/react/src/generated/components/DataList/DataList.tsx']]) {
   const source = readFileSync(resolve(root, path), 'utf8');
+  assert.match(source, /aria-sort/, `${name} 版が並び順を読み上げ属性で伝える`);
+  assert.match(source, /ariaSort/, `${name} 版も同じ判定を通す`);
+  assert.match(source, /nextSort/, `${name} 版も同じ遷移を通す`);
   assert.match(source, /aria-disabled/, `${name} 版は取得中もボタンを残して押せなくする`);
   assert.match(source, /role="status"/, `${name} 版は取得中を読み上げる`);
   assert.match(source, /showLoadMore/, `${name} 版も同じ条件を通す`);
   assert.match(source, /aria-busy/, `${name} 版は取得中の行を伝える`);
 }
-console.log('DataList の追加読み込みの条件と生成物を確認しました。');
+console.log('DataList の並び順の遷移と読み上げ属性、追加読み込みの条件、生成物を確認しました。');
 
 let browser;
 (async () => {
@@ -211,6 +231,47 @@ let browser;
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.setViewportSize({ width: 900, height: 760 });
 
+      // 並べ替え。DataList は行を並べ替えず、状態の遷移と読み上げ属性だけを担う。
+      const sortStory = async name => {
+        await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-datalist--${name}&viewMode=story`);
+        await page.getByRole('columnheader', { name: 'タイトル' }).first().waitFor();
+      };
+      const headerSort = name => page.getByRole('columnheader', { name }).first().getAttribute('aria-sort');
+      const titles = () => page.getByRole('rowheader').allInnerTexts();
+
+      await sortStory('sortable');
+      assert.equal(await headerSort('タイトル'), 'ascending');
+      assert.equal(await headerSort('担当者'), 'none', '並べ替えできる列は none で伝える');
+      assert.equal(await headerSort('更新日'), null, '並べ替えできない列には付けない');
+      const ascendingTitles = await titles();
+      assert.deepEqual(ascendingTitles, ['レビューを受ける', '画面を実装', '設計を確認'], '昇順は利用側の並べ替えに従う');
+      const titleButton = page.getByRole('columnheader', { name: 'タイトル' }).first().getByRole('button');
+      await titleButton.click();
+      assert.equal(await headerSort('タイトル'), 'descending', '2 回目は降順');
+      assert.deepEqual(await titles(), [...ascendingTitles].reverse(), '降順は昇順の逆');
+      await titleButton.click();
+      assert.equal(await headerSort('タイトル'), 'none', '3 回目で解除');
+      await titleButton.press('Enter');
+      assert.equal(await headerSort('タイトル'), 'ascending', 'Enter でも進む');
+      await titleButton.press('Space');
+      assert.equal(await headerSort('タイトル'), 'descending', 'Space でも進む');
+      await page.getByRole('columnheader', { name: '担当者' }).first().getByRole('button').click();
+      assert.deepEqual([await headerSort('タイトル'), await headerSort('担当者')], ['none', 'ascending'], '別の列は昇順から始まる');
+      await accessibility();
+
+      // 同じ columns と sort を渡したグループは表示がそろう。
+      await sortStory('two-groups');
+      await page.getByRole('columnheader', { name: 'タイトル' }).first().getByRole('button').click();
+      const headers = page.getByRole('columnheader', { name: 'タイトル' });
+      assert.equal(await headers.count(), 2);
+      assert.deepEqual(await headers.evaluateAll(cells => cells.map(cell => cell.getAttribute('aria-sort'))), ['ascending', 'ascending']);
+      await accessibility();
+
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await sortStory('sortable');
+      assert.equal(await page.getByRole('columnheader', { name: 'タイトル' }).first().locator('span[aria-hidden="true"]').evaluate(el => getComputedStyle(el).transitionDuration), '0s');
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+
       // 追加読み込み。取得中もボタンを残し、読み終えたらフォーカスを領域へ移す。
       const moreStory = async name => {
         await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-datalist--${name}&viewMode=story`);
@@ -261,7 +322,7 @@ let browser;
 
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: DataList structure, checkbox multi-selection, collapse/focus/retention, status/retry, avatar assignees, compact rows, menus, scrolling, load more, motion and axe passed`);
+      console.log(`${framework}: DataList structure, checkbox multi-selection, collapse/focus/retention, status/retry, avatar assignees, compact rows, menus, scrolling, sorting, load more, motion and axe passed`);
     }
   } finally {
     await browser?.close();

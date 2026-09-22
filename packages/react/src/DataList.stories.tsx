@@ -59,6 +59,58 @@ export const Narrow: Story = { render: args => <div style={{ width: 280 }}><Exam
 export const LongTitle: Story = { args: { label: '長い名前のプロジェクトで進めている作業の一覧' } };
 export const NoColumns: Story = { args: { columns: [], status: 'empty', count: 0 } };
 
+/* ここからソート。並び替え自体は利用側が行う。 */
+const sortColumns = [{ id: 'title', label: 'タイトル', sortable: true }, { id: 'owner', label: '担当者', width: '9rem', sortable: true }, { id: 'updated', label: '更新日', width: '8rem' }];
+const tasks = [
+  { title: '設計を確認', owner: 'sousuke', updated: '2026-04-03' },
+  { title: '画面を実装', owner: 'yupix', updated: '2026-04-01' },
+  { title: 'レビューを受ける', owner: 'guest', updated: '2026-04-02' },
+];
+
+function sorted(sort: DataListProps['sort']) {
+  if (!sort) return tasks;
+  const key = sort.columnId as 'title' | 'owner';
+  const order = sort.direction === 'ascending' ? 1 : -1;
+  return [...tasks].sort((a, b) => a[key].localeCompare(b[key], 'ja') * order);
+}
+
+function SortableExample(args: DataListProps) {
+  const [sort, setSort] = useState<DataListProps['sort']>({ columnId: 'title', direction: 'ascending' });
+  return <div>
+    <DataList {...args} columns={sortColumns} sort={sort} onSortChange={setSort}>
+      {sorted(sort).map(task => <DataListRow key={task.title}>
+        <th scope="row">{task.title}</th>
+        <td>{task.owner}</td>
+        <td>{task.updated}</td>
+      </DataListRow>)}
+    </DataList>
+    <p role="status">並び順: {sort ? `${sort.columnId} / ${sort.direction}` : 'なし'}</p>
+  </div>;
+}
+
+export const Sortable: Story = { render: args => <SortableExample {...args} /> };
+
+/* 同じ columns と sort を渡すと、複数のグループで表示がそろう。 */
+function TwoGroupsExample(args: DataListProps) {
+  const [sort, setSort] = useState<DataListProps['sort']>(null);
+  const rows = (ids: string[]) => sorted(sort).filter(task => ids.includes(task.title)).map(task => (
+    <DataListRow key={task.title}>
+      <th scope="row">{task.title}</th>
+      <td>{task.owner}</td>
+      <td>{task.updated}</td>
+    </DataListRow>
+  ));
+  return <div style={{ display: 'grid', gap: 16 }}>
+    <DataList {...args} id="sort-group-doing" label="進行中" columns={sortColumns} sort={sort} onSortChange={setSort}>
+      {rows(['設計を確認', '画面を実装'])}
+    </DataList>
+    <DataList {...args} id="sort-group-done" label="完了" columns={sortColumns} sort={sort} onSortChange={setSort}>
+      {rows(['レビューを受ける'])}
+    </DataList>
+  </div>;
+}
+
+export const TwoGroups: Story = { render: args => <TwoGroupsExample {...args} /> };
 /* ここから追加読み込み。取得と件数はアプリ側が持つ。 */
 const moreColumns = [{ id: 'title', label: 'タイトル' }, { id: 'owner', label: '担当者', width: '9rem' }];
 const allRows = ['1件目', '2件目', '3件目', '4件目', '5件目', '6件目'];

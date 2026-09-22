@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { Field, Input, type InputProps } from './index';
+import { Button, EyeIcon, EyeOffIcon, Field, Input, type InputProps } from './index';
 
 const example = (args: InputProps, required = false) => ({
   components: { Field, Input },
@@ -49,3 +49,73 @@ export const Disabled: Story = { args: { value: '0', disabled: true } };
 export const ReadOnly: Story = { args: { value: '25', readOnly: true } };
 export const OutOfRange: Story = { args: { value: '101' } };
 export const Text: Story = { args: { type: 'text' } };
+
+/* ここから先頭・末尾の要素。枠は外側の group が 1 つだけ描く。 */
+const affixExample = (label: string, args: InputProps, slots = '', error = '') => ({
+  components: { Field, Input },
+  setup() {
+    const draft = ref(args.value ?? '');
+    return { args, label, error, draft, change: (value: string) => { draft.value = value; } };
+  },
+  template: `
+    <div style="max-width: 360px; display: grid; gap: 16px">
+      <Field id="affix-input" :label="label" :error="error">
+        <Input v-bind="args" :value="draft" :on-value-change="change">${slots}</Input>
+      </Field>
+      <button type="button">次の操作</button>
+    </div>`,
+});
+
+export const WithPrefix: Story = {
+  render: () => affixExample('金額', { type: 'number', min: 0, value: '1200' }, '<template #prefix>¥</template>'),
+};
+
+export const WithSuffix: Story = {
+  render: () => affixExample('在庫', { type: 'number', min: 0, value: '12' }, '<template #suffix>件</template>'),
+};
+
+export const AffixInvalid: Story = {
+  render: () => affixExample('金額', { type: 'number', min: 0, value: '-1' }, '<template #prefix>¥</template>', '0 以上の金額を入力してください。'),
+};
+
+export const AffixDisabled: Story = {
+  render: () => affixExample('金額', { type: 'number', value: '1200', disabled: true }, '<template #prefix>¥</template><template #suffix>円</template>'),
+};
+
+/* 表示の切り替えで値とカーソル位置を保つ。ボタンの状態は aria-pressed で伝える。 */
+export const PasswordToggle: Story = {
+  render: () => ({
+    components: { Button, EyeIcon, EyeOffIcon, Field, Input },
+    setup() {
+      const visible = ref(false);
+      const value = ref('p@ssw0rd');
+      const toggle = () => {
+        const input = document.getElementById('password-input') as HTMLInputElement | null;
+        const start = input?.selectionStart ?? null;
+        const end = input?.selectionEnd ?? null;
+        visible.value = !visible.value;
+        // type を変えると選択が失われるため、描画後に戻す。
+        requestAnimationFrame(() => {
+          if (!input || start === null || end === null) return;
+          input.focus();
+          input.setSelectionRange(start, end);
+        });
+      };
+      return { visible, value, toggle, change: (next: string) => { value.value = next; } };
+    },
+    template: `
+      <div style="max-width: 360px; display: grid; gap: 16px">
+        <Field id="password-input" label="パスワード">
+          <Input :type="visible ? 'text' : 'password'" :value="value" autocomplete="current-password" :on-value-change="change">
+            <template #suffix>
+              <Button variant="ghost" ariaLabel="パスワードを表示" :ariaPressed="visible ? 'true' : 'false'" :on-click="toggle">
+                <template #icon><EyeOffIcon v-if="visible" /><EyeIcon v-else /></template>
+              </Button>
+            </template>
+          </Input>
+        </Field>
+        <button type="button">次の操作</button>
+        <p>値: <output data-testid="password">{{ value }}</output></p>
+      </div>`,
+  }),
+};

@@ -1,0 +1,47 @@
+/* CSS Modules ではなく素の CSS。クラス名をハッシュ化せず、利用側の HTML にそのまま書ける。 */
+@import '../tokens.css';
+
+.koyori-card {
+  --koyori-card-padding: var(--koyori-space-xl);
+  display: grid;
+  box-sizing: border-box;
+  gap: var(--koyori-space-md);
+  /* 外側の角丸は「内側の角丸 + 外側の padding」。padding を上書きしても追従する。 */
+  padding: var(--koyori-card-padding);
+  border: 1px solid var(--koyori-color-border);
+  border-radius: calc(var(--koyori-radius-md) + var(--koyori-card-padding));
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text);
+  box-shadow: var(--koyori-shadow-panel);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.koyori-card-heading {
+  margin: 0;
+  font-size: var(--koyori-font-size-md);
+  font-weight: 600;
+}
+
+.koyori-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--koyori-space-md);
+}
+
+/* hr に付ける。既定の罫線を消してトークンの色で引き直す。 */
+.koyori-separator {
+  margin: var(--koyori-space-md) 0;
+  border: 0;
+  border-block-start: 1px solid var(--koyori-color-border);
+}
+
+.koyori-separator[aria-orientation='vertical'] {
+  align-self: stretch;
+  min-height: 1em;
+  margin: 0 var(--koyori-space-md);
+  border-block-start: 0;
+  border-inline-start: 1px solid var(--koyori-color-border);
+}
