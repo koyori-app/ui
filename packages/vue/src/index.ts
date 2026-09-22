@@ -44,3 +44,4 @@ export { default as Alert, type AlertProps } from './generated/components/Alert/
 export { default as Switch, type SwitchProps } from './generated/components/Switch/Switch.vue';
 export { default as EyeIcon, type EyeIconProps } from './generated/components/EyeIcon/EyeIcon.vue';
 export { default as EyeOffIcon, type EyeOffIconProps } from './generated/components/EyeOffIcon/EyeOffIcon.vue';
+export { default as IconPicker, type IconPickerProps } from './generated/components/IconPicker/IconPicker.vue';

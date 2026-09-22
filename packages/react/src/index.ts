@@ -44,3 +44,4 @@ export { default as Alert, type AlertProps } from './generated/components/Alert/
 export { default as Switch, type SwitchProps } from './generated/components/Switch/Switch.js';
 export { default as EyeIcon, type EyeIconProps } from './generated/components/EyeIcon/EyeIcon.js';
 export { default as EyeOffIcon, type EyeOffIconProps } from './generated/components/EyeOffIcon/EyeOffIcon.js';
+export { default as IconPicker, type IconPickerProps } from './generated/components/IconPicker/IconPicker.js';

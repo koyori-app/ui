@@ -71,5 +71,8 @@
   --koyori-color-info-subtle: #e6eaf5;
   --koyori-color-success: #2f6b4a;
   --koyori-color-success-subtle: #dfeae1;
+  /* danger のボタン。文字は背景とのコントラスト比 4.5:1 以上を保つ。 */
+  --koyori-color-danger-hover: #8e3350;
+  --koyori-color-on-danger: #fdf1f4;
   --koyori-shadow-panel: 0 8px 24px #4439580a, 0 2px 4px #44395805;
 }
