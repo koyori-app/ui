@@ -1,3 +1,5 @@
+// ユーティリティクラスは部品から読み込まれないため、Storybook では明示的に読み込む。
+import '../src/generated/components/shared/utilities.css';
 import type { Preview } from '@storybook/vue3-vite';
 
 const preview: Preview = {

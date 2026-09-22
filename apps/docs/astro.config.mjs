@@ -33,6 +33,7 @@ export default defineConfig({
             { label: 'Breadcrumb', slug: 'components/breadcrumb' },
             { label: 'Button', slug: 'components/button' },
             { label: 'ButtonGroup', slug: 'components/button-group' },
+            { label: 'Card・Separator', slug: 'components/card-separator' },
             { label: 'Calendar', slug: 'components/calendar' },
             { label: 'Checkbox', slug: 'components/checkbox' },
             { label: 'ContextMenu', slug: 'components/context-menu' },
