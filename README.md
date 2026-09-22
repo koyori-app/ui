@@ -297,10 +297,21 @@ Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表�
 Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
 `TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
 
+## Card・Separator
+
+カードと区切り線はコンポーネントではなく、グローバルなクラスで提供します（`components/shared/utilities.css`）。
+角丸・余白・影・罫線しか持たないため、`div` や `hr` に付けて Vue・React で同じマークアップになります。
+`koyori-card`・`koyori-card-heading`・`koyori-card-actions`・`koyori-separator` の 4 つで、配布 CSS に含まれます。
+カードの余白は `--koyori-card-padding`（既定 16px）で、外側の角丸は「内側の角丸 + 外側の padding」を calc するため、
+トークンを上書きしても中の Button や入れ子のカードと角がそろいます。
+区切りは `hr` に付けます（暗黙で `role="separator"`）。縦にするときは `aria-orientation="vertical"` も付けてください。
+`node scripts/check-card-separator.cjs` で配布 CSS とブラウザーでの見え方を検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/card-separator.mdx)を参照してください。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Avatar・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
