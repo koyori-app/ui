@@ -36,3 +36,4 @@ export type { InlineEditCommitReason } from './generated/components/InlineEdit/i
 export { default as Tag, type TagProps } from './generated/components/Tag/Tag.js';
 export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.js';
 export { default as SplitPane, type SplitPaneProps } from './generated/components/SplitPane/SplitPane.js';
+export { default as Alert, type AlertProps } from './generated/components/Alert/Alert.js';
