@@ -50,3 +50,60 @@ export const Groups: Story = { render: args => ({ components: { Example: example
 export const Narrow: Story = { render: args => ({ components: { Example: example(args) }, template: '<div style="width: 280px"><Example /></div>' }) };
 export const LongTitle: Story = { args: { label: '長い名前のプロジェクトで進めている作業の一覧' } };
 export const NoColumns: Story = { args: { columns: [], status: 'empty', count: 0 } };
+
+/* ここからソート。並び替え自体は利用側が行う。 */
+const sortColumns = [{ id: 'title', label: 'タイトル', sortable: true }, { id: 'owner', label: '担当者', width: '9rem', sortable: true }, { id: 'updated', label: '更新日', width: '8rem' }];
+const tasks = [
+  { title: '設計を確認', owner: 'sousuke', updated: '2026-04-03' },
+  { title: '画面を実装', owner: 'yupix', updated: '2026-04-01' },
+  { title: 'レビューを受ける', owner: 'guest', updated: '2026-04-02' },
+];
+
+function sorted(sort: DataListProps['sort']) {
+  if (!sort) return tasks;
+  const key = sort.columnId as 'title' | 'owner';
+  const order = sort.direction === 'ascending' ? 1 : -1;
+  return [...tasks].sort((a, b) => a[key].localeCompare(b[key], 'ja') * order);
+}
+
+const sortRows = `<DataListRow v-for="task in rows(titles)" :key="task.title">
+  <th scope="row">{{ task.title }}</th><td>{{ task.owner }}</td><td>{{ task.updated }}</td>
+</DataListRow>`;
+
+export const Sortable: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const sort = ref<DataListProps['sort']>({ columnId: 'title', direction: 'ascending' });
+      return { args, sortColumns, sort, sorted, change: (next: DataListProps['sort']) => { sort.value = next; } };
+    },
+    template: `<div>
+      <DataList v-bind="args" :columns="sortColumns" :sort="sort" :on-sort-change="change">
+        <DataListRow v-for="task in sorted(sort)" :key="task.title">
+          <th scope="row">{{ task.title }}</th><td>{{ task.owner }}</td><td>{{ task.updated }}</td>
+        </DataListRow>
+      </DataList>
+      <p role="status">並び順: {{ sort ? sort.columnId + ' / ' + sort.direction : 'なし' }}</p>
+    </div>`,
+  }),
+};
+
+/* 同じ columns と sort を渡すと、複数のグループで表示がそろう。 */
+export const TwoGroups: Story = {
+  render: args => ({
+    components: { DataList, DataListRow },
+    setup() {
+      const sort = ref<DataListProps['sort']>(null);
+      const rows = (titles: string[]) => sorted(sort.value).filter(task => titles.includes(task.title));
+      return { args, sortColumns, sort, rows, change: (next: DataListProps['sort']) => { sort.value = next; } };
+    },
+    template: `<div style="display: grid; gap: 16px">
+      <DataList v-bind="args" id="sort-group-doing" label="進行中" :columns="sortColumns" :sort="sort" :on-sort-change="change">
+        ${sortRows.replace('titles', "['設計を確認', '画面を実装']")}
+      </DataList>
+      <DataList v-bind="args" id="sort-group-done" label="完了" :columns="sortColumns" :sort="sort" :on-sort-change="change">
+        ${sortRows.replace('titles', "['レビューを受ける']")}
+      </DataList>
+    </div>`,
+  }),
+};
