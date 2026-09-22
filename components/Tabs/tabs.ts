@@ -45,7 +45,7 @@ function tabStop(list: HTMLElement, focused: Element | null) {
   }
 }
 
-/* One underline travels to the selected tab. Layout changes reposition it without animating. */
+/* One selection surface and underline travel to the selected tab. Layout changes reposition them without animating. */
 export function placeTabIndicator(list: HTMLElement | null, animate = true) {
   if (!list) return;
   const tab = list.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
@@ -55,8 +55,9 @@ export function placeTabIndicator(list: HTMLElement | null, animate = true) {
   }
   if (!animate) list.style.setProperty('--tab-indicator-transition', 'none');
   list.style.setProperty('--tab-indicator-x', `${tab.offsetLeft}px`);
-  list.style.setProperty('--tab-indicator-bottom', `${tab.offsetTop + tab.offsetHeight}px`);
+  list.style.setProperty('--tab-indicator-y', `${tab.offsetTop}px`);
   list.style.setProperty('--tab-indicator-width', `${tab.offsetWidth}px`);
+  list.style.setProperty('--tab-indicator-height', `${tab.offsetHeight}px`);
   list.style.setProperty('--tab-indicator-opacity', '1');
   if (!animate) {
     list.querySelector('[data-tab-indicator]')?.getBoundingClientRect();
