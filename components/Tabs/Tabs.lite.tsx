@@ -56,6 +56,8 @@ export default function Tabs(props: TabsProps) {
         <div ref={listRef!} role="tablist" aria-label={props.label} aria-orientation="horizontal"
           class={styles.list} hidden={props.items.length === 0} data-hover-group="" onKeyDown={(event) => state.navigate(event)}>
           <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
+          <span class={styles.selection} aria-hidden="true" />
+          <span class={styles.indicator} data-tab-indicator="" aria-hidden="true" />
           <For each={props.items}>
             {(item) => <button key={item.value} type="button" role="tab" id={tabId(props.id, item.value)}
               class={styles.tab} data-hover-item="" disabled={item.disabled}

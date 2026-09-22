@@ -35,16 +35,38 @@
 }
 
 .tab[aria-selected='true'] {
-  background: var(--koyori-color-selection);
   color: var(--koyori-color-text);
 }
 
-.tab[aria-selected='true']::after {
+/* 選択の塗りと下線はタブごとに描かず 1 組だけ置き、選択が変わると次のタブへ一緒に滑らせる。位置は tabs.ts が測る。
+   塗りは transform で stacking context を作るので、ホバー面より上に出す下線は別の要素にする。 */
+.selection, .indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--tab-indicator-width, 0px);
+  height: var(--tab-indicator-height, 0px);
+  transform: translate(var(--tab-indicator-x, 0px), var(--tab-indicator-y, 0px));
+  opacity: var(--tab-indicator-opacity, 0);
+  pointer-events: none;
+  transition: var(--tab-indicator-transition,
+    transform var(--koyori-motion-slow) var(--koyori-ease-out),
+    width var(--koyori-motion-slow) var(--koyori-ease-out),
+    height var(--koyori-motion-slow) var(--koyori-ease-out));
+}
+
+.selection {
+  border-radius: var(--koyori-radius-md);
+  background: var(--koyori-color-selection);
+}
+
+.indicator { z-index: 2; }
+
+.indicator::after {
   content: '';
   position: absolute;
-  z-index: 2;
-  height: 2px;
   inset: auto var(--koyori-space-lg) 0;
+  height: 2px;
   background: var(--koyori-color-selection-indicator);
 }
 
@@ -69,6 +91,10 @@
   overflow-wrap: anywhere;
 }
 .list[hidden], .panel[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .selection, .indicator { transition: none; }
+}
 
 @media (forced-colors: active) {
   .tab[aria-selected='true'] { outline: 2px solid Highlight; outline-offset: -2px; }

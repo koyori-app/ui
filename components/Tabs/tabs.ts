@@ -45,9 +45,37 @@ function tabStop(list: HTMLElement, focused: Element | null) {
   }
 }
 
+/* One selection surface and underline travel to the selected tab. Layout changes reposition them without animating. */
+export function placeTabIndicator(list: HTMLElement | null, animate = true) {
+  if (!list) return;
+  const tab = list.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+  if (!tab) {
+    list.style.setProperty('--tab-indicator-opacity', '0');
+    return;
+  }
+  if (!animate) list.style.setProperty('--tab-indicator-transition', 'none');
+  list.style.setProperty('--tab-indicator-x', `${tab.offsetLeft}px`);
+  list.style.setProperty('--tab-indicator-y', `${tab.offsetTop}px`);
+  list.style.setProperty('--tab-indicator-width', `${tab.offsetWidth}px`);
+  list.style.setProperty('--tab-indicator-height', `${tab.offsetHeight}px`);
+  list.style.setProperty('--tab-indicator-opacity', '1');
+  if (!animate) {
+    list.querySelector('[data-tab-indicator]')?.getBoundingClientRect();
+    list.style.removeProperty('--tab-indicator-transition');
+  }
+}
+
 export function listenToTabs(list: HTMLElement | null) {
   if (!list) return () => {};
   const highlight = listenToSidebar(list);
+  const sizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => placeTabIndicator(list, false));
+  const observeSizes = () => {
+    sizes?.disconnect();
+    sizes?.observe(list);
+    list.querySelectorAll('[role="tab"]').forEach(tab => sizes?.observe(tab));
+  };
+  observeSizes();
+  placeTabIndicator(list, false);
   let focusedTab: HTMLButtonElement | null = null;
   const focus = () => {
     focusedTab = list.querySelector<HTMLButtonElement>('[role="tab"]:focus');
@@ -63,18 +91,25 @@ export function listenToTabs(list: HTMLElement | null) {
       tabStop(list, null);
     }
   };
-  const items = new MutationObserver(() => {
+  const items = new MutationObserver((records) => {
+    if (records.some(record => record.type === 'childList')) {
+      observeSizes();
+      placeTabIndicator(list, false);
+    } else if (records.some(record => record.attributeName === 'aria-selected')) {
+      placeTabIndicator(list, true);
+    }
     if (!focusedTab || (list.contains(focusedTab) && !focusedTab.disabled)) return;
     const active = list.ownerDocument.activeElement;
     const restore = active === list.ownerDocument.body || active === focusedTab;
     focusedTab = null;
     if (restore) list.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]:not(:disabled)')?.focus();
   });
-  items.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+  items.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-selected'] });
   list.addEventListener('focusin', focus);
   list.addEventListener('focusout', blur);
   return () => {
     highlight();
+    sizes?.disconnect();
     items.disconnect();
     list.removeEventListener('focusin', focus);
     list.removeEventListener('focusout', blur);
