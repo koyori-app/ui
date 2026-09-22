@@ -118,6 +118,13 @@ Picker ではトリガーに Field の `id` が付き、`requiredText` を名前
 説明・エラーの `aria-describedby` はトリガーにだけ付けます。一覧は `aria-required` と `aria-invalid` で状態を伝えます。必須チェックと送信値の管理はアプリ側で行います。
 Input・Textarea の値は `value` と `onValueChange(value)` で扱い、入力のたびに呼ばれます。Field の外で使う場合は `ariaLabel` で名前を付けます。
 入力欄の枠線は `--koyori-color-border-strong`（背景比 3:1 以上）、エラーは `--koyori-color-danger`（4.5:1 以上）を使います。
+Input には `prefix` / `suffix`（Vue は同名スロット）で入力欄の前後に要素を置けます。単位・通貨記号のほか、
+パスワードの表示切り替えのようなボタンも置けます。入力欄と前後の要素はひとつの枠に収まり、枠・背景・ホバー・エラー・無効の
+見た目は外側の要素が描きます。`id`・`aria-describedby`・`aria-invalid` は入力欄だけに付き、Tab は入力欄 → 末尾のボタンの順です。
+フォーカス枠は `:has()` で入力欄だけを見るため、末尾のボタンにフォーカスしても枠が二重になりません。
+前後の要素の高さ・角丸は「外側の値 − 余白」で計算し、トークンの上書きにも追従します。
+トグルボタンには Button の `ariaPressed`（`'true' | 'false'`）を使います。
+`node scripts/check-input.cjs` に先頭・末尾の要素の検証も含めています。
 
 Dropdown はアクションメニューです。`label` と `items: { value, label, disabled? }[]` を渡し、
 項目を実行すると閉じて `onSelect(value)` を呼び出します。選択状態は持ちません。`value` は一覧内で一意にしてください。
@@ -185,8 +192,8 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 ブラウザー検証は Storybook のビルド後に `node scripts/check-picker.cjs` で実行します（Dropdown と同じ実行環境）。
 
 アイコンは [Lucide](https://lucide.dev/) の必要な SVG を Mitosis の共通コンポーネントとして取り込みます。
-`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon`・`MenuIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
-`XIcon` はダイアログの閉じるボタンなどに使います。`MenuIcon` は Drawer を開くボタンに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
+`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon`・`MenuIcon`・`EyeIcon`・`EyeOffIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
+`XIcon` はダイアログの閉じるボタンなどに使います。`EyeIcon`・`EyeOffIcon` はパスワードの表示切り替えに使います。`MenuIcon` は Drawer を開くボタンに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
 `size` で縦横のサイズを指定できます（既定値: 16px）。色は親の `color` を引き継ぎます。
 装飾用として読み上げから除外するため、アイコンだけのボタンにはボタン側で `aria-label` を付けてください。
 アイコンを追加するときは出典・コミット・ライセンスを `THIRD_PARTY_NOTICES.md` に記録します。
