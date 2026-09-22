@@ -58,3 +58,63 @@ export const Groups: Story = { render: args => <div style={{ display: 'grid', ga
 export const Narrow: Story = { render: args => <div style={{ width: 280 }}><Example {...args} /></div> };
 export const LongTitle: Story = { args: { label: '長い名前のプロジェクトで進めている作業の一覧' } };
 export const NoColumns: Story = { args: { columns: [], status: 'empty', count: 0 } };
+
+/* ここから追加読み込み。取得と件数はアプリ側が持つ。 */
+const moreColumns = [{ id: 'title', label: 'タイトル' }, { id: 'owner', label: '担当者', width: '9rem' }];
+const allRows = ['1件目', '2件目', '3件目', '4件目', '5件目', '6件目'];
+
+function MoreRows({ count }: { count: number }) {
+  return <>{allRows.slice(0, count).map(title => (
+    <DataListRow key={title}><th scope="row">{title}</th><td>yupix</td></DataListRow>
+  ))}</>;
+}
+
+function LoadMoreExample(args: DataListProps) {
+  const [count, setCount] = useState(2);
+  const [loading, setLoading] = useState(false);
+  const [calls, setCalls] = useState(0);
+  const load = () => {
+    setCalls(value => value + 1);
+    setLoading(true);
+    setTimeout(() => { setCount(value => Math.min(value + 2, allRows.length)); setLoading(false); }, 800);
+  };
+  return <div>
+    <DataList {...args} columns={moreColumns} count={allRows.length}
+      hasMore={count < allRows.length} loadingMore={loading} onLoadMore={load}>
+      <MoreRows count={count} />
+    </DataList>
+    <p>読み込み要求: <output>{calls}</output></p>
+  </div>;
+}
+
+export const LoadMore: Story = { render: args => <LoadMoreExample {...args} /> };
+
+/* 2 ページ目で失敗し、再試行で成功する。行はそのまま残る。 */
+function LoadMoreErrorExample(args: DataListProps) {
+  const [count, setCount] = useState(2);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [tried, setTried] = useState(false);
+  const load = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (!tried) { setTried(true); setFailed(true); return; }
+      setFailed(false);
+      setCount(value => Math.min(value + 2, allRows.length));
+    }, 800);
+  };
+  return <DataList {...args} columns={moreColumns} count={allRows.length}
+    status={failed ? 'error' : 'ready'} message="次のページを取得できませんでした" onRetry={load}
+    hasMore loadingMore={loading} onLoadMore={load}>
+    <MoreRows count={count} />
+  </DataList>;
+}
+
+export const LoadMoreError: Story = { render: args => <LoadMoreErrorExample {...args} /> };
+
+/* 候補が 0 件なら、追加読み込みのボタンは出さず空の表示だけにする。 */
+export const LoadMoreEmpty: Story = {
+  args: { columns: moreColumns, status: 'empty', count: 0, hasMore: true },
+  render: args => <DataList {...args} onLoadMore={() => {}} />,
+};

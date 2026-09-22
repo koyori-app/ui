@@ -31,6 +31,11 @@ import DataListPreview from '../../../components/DataListPreview.astro';
 | `status` | `'ready'` / `'empty'` / `'loading'` / `'error'` | `'ready'` | 一覧の状態 |
 | `message` | `string` | 状態ごとの文言 | 空・読み込み中・エラーの説明を上書き |
 | `onRetry` | `() => void` | — | エラー表示に再試行ボタンを追加 |
+| `hasMore` | `boolean` | `false` | 追加で取得できる行があることを示す |
+| `loadingMore` | `boolean` | `false` | 次のページを取得中。ボタンは残したまま押せなくする |
+| `onLoadMore` | `() => void` | — | 追加読み込みのボタンの押下を通知 |
+| `loadMoreLabel` | `string` | `'さらに読み込む'` | 追加読み込みのボタンの文言 |
+| `loadingMoreMessage` | `string` | `'読み込み中…'` | 取得中に読み上げる文言 |
 | 子要素 | `DataListRow` | — | 表示する行。Vue は既定スロット |
 
 `collapsible` が無効なら常に開きます。折り畳みは DOM を保持するため、セル内の入力や Picker の選択は残ります。
@@ -61,6 +66,35 @@ API の取得・更新、ソート、グループ分け、ページングはア�
 - `error`: 渡した行を残し、エラー文言を表示します。`onRetry` があれば再試行できます。
 
 状態の切り替えと二重送信の防止はアプリ側で管理します。再試行を開始したら `status="loading"` に切り替えてください。
+
+## 追加読み込み
+
+`hasMore` を渡すと、行の下に「さらに読み込む」ボタンが出ます。押すと `onLoadMore` が呼ばれます。
+取得・件数・行の追加はアプリ側で行います。自動で読み込む仕組み（スクロール連動）は持ちません。
+
+```tsx
+// React
+<DataList columns={columns} count={total}
+  hasMore={rows.length < total} loadingMore={loading} onLoadMore={fetchNextPage}>
+  {rows.map(row => <DataListRow key={row.id}>…</DataListRow>)}
+</DataList>
+```
+
+```vue
+<!-- Vue -->
+<DataList :columns="columns" :count="total"
+  :has-more="rows.length < total" :loading-more="loading" :on-load-more="fetchNextPage">
+  <DataListRow v-for="row in rows" :key="row.id">…</DataListRow>
+</DataList>
+```
+
+- 取得中は **ボタンを消さず** `aria-disabled="true"` にします。消すとフォーカスが外れてしまうためです。この間の押下は無視します。
+- 取得中は行の `tbody` に `aria-busy="true"` が付き、`role="status"` の「読み込み中…」が読み上げられます。すでに表示している行はそのまま残ります。
+- 最後のページを読み終えて `hasMore` を `false` にするとボタンが消えます。ボタンにフォーカスがあった場合は、一覧の領域（横スクロールできる `region`）へフォーカスを移します。
+  追加された行へフォーカスを移すかどうかは、必要に応じてアプリ側で決めてください。
+- 取得に失敗したら `status="error"` にしてください。追加読み込みのボタンの代わりに、既存のエラー表示と `onRetry` の再試行ボタンが出ます。
+  すでに表示している行は残るので、`onRetry` には次のページを取り直す処理を渡します。
+- `status` が `'empty'`・`'loading'`・`'error'` のときは追加読み込みのボタンを出しません。
 
 ## 操作とアクセシビリティ
 
