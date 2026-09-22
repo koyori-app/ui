@@ -29,10 +29,13 @@ let browser;
         await page.locator('#storybook-root > *').first().waitFor();
         await settle();
       };
+      // Input は枠・背景・フォーカス枠を包む要素が描く。Textarea と Button はその要素自身。
       const ring = locator => locator.evaluate(el => {
-        const css = getComputedStyle(el);
+        const target = el.tagName === 'INPUT' ? el.parentElement : el;
+        const css = getComputedStyle(target);
         return [css.outlineWidth, css.outlineColor, css.outlineOffset];
       });
+      const shellStyle = (locator, property) => locator.evaluate((el, property) => getComputedStyle(el.tagName === 'INPUT' ? el.parentElement : el)[property], property);
       const surface = locator => locator.evaluate(el => {
         const css = getComputedStyle(el.firstElementChild);
         return [css.padding, css.gap, css.backgroundColor, css.transitionDuration, getComputedStyle(el).color];
@@ -84,7 +87,7 @@ let browser;
       const disabledBackground = (await surface(page.getByRole('button')))[2];
       assert.notEqual(disabledBackground, enabledBackground);
       await story('field', 'disabled');
-      assert.equal(await page.getByRole('textbox').evaluate(el => getComputedStyle(el).backgroundColor), disabledBackground);
+      assert.equal(await shellStyle(page.getByRole('textbox'), 'backgroundColor'), disabledBackground);
       let inputBorder;
       for (const name of ['required', 'with-textarea']) {
         await story('field', name);
@@ -92,7 +95,7 @@ let browser;
         await page.keyboard.press('Tab');
         await page.mouse.move(799, 699);
         await page.waitForTimeout(200);
-        inputBorder = await input.evaluate(el => getComputedStyle(el).borderTopColor);
+        inputBorder = await shellStyle(input, 'borderTopColor');
         assert.deepEqual(await ring(input), focus);
         const id = await input.getAttribute('id');
         assert.equal(await page.locator('label').getAttribute('for'), id);
@@ -102,7 +105,7 @@ let browser;
         assert(await input.evaluate(el => el === document.activeElement));
       }
       await story('field', 'invalid');
-      const errorBorder = await page.getByRole('textbox').evaluate(el => getComputedStyle(el).borderTopColor);
+      const errorBorder = await shellStyle(page.getByRole('textbox'), 'borderTopColor');
       await story('dropdown', 'localized');
       assert.equal(await page.getByRole('menuitem').innerText(), 'No actions available');
       await story('picker', 'localized');

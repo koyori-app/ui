@@ -5,6 +5,7 @@ description: ラベル・説明・エラーを入力欄に関連付けるフォ�
 
 import FieldPreview from '../../../components/FieldPreview.astro';
 import NumberInputPreview from '../../../components/NumberInputPreview.astro';
+import PasswordInputPreview from '../../../components/PasswordInputPreview.astro';
 
 Field は、ラベル・説明・エラーを中の Input・Textarea・Picker に関連付けます。
 Input は1行の文字・数値入力、Textarea は複数行の文字入力です。
@@ -53,6 +54,7 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 | `onNumberInvalid` | `(message: string) => void` | — | 数値の確定を拒否したとき、ブラウザーの検証メッセージを通知 |
 | `autocomplete` | `string` | — | Input のみ。自動入力の種類。例: `email`、`name` |
 | `rows` | `number` | `3` | Textarea のみ。表示する行数 |
+| `prefix` / `suffix` | React: 要素 / Vue: 同名スロット | — | Input のみ。入力欄の前後に置く要素。下の「先頭・末尾の要素」を参照 |
 
 ## 数値入力
 
@@ -76,6 +78,47 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 ネイティブの数値入力は spinbutton として公開され、上下矢印で値を増減できます。Tabで移動し、通常の文字編集キーはブラウザーに任せます。Home/Endなどの挙動もブラウザー標準です。
 設計の参照は [APG Spinbutton](https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/) と[デジタル庁の導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)です。
 
+## 先頭・末尾の要素
+
+Input には `prefix`（React は要素、Vue は同名スロット）と `suffix` を渡せます。
+単位や通貨記号のような文字のほか、パスワードの表示切り替えのようなボタンも置けます。
+入力欄と前後の要素はひとつの枠に収まり、枠・背景・ホバー・エラー・無効の見た目は外側の要素が描きます。
+
+<PasswordInputPreview />
+
+```tsx
+// React
+<Field id="password" label="パスワード">
+  <Input type={visible ? 'text' : 'password'} value={value} onValueChange={setValue}
+    suffix={<Button variant="ghost" ariaLabel="パスワードを表示" ariaPressed={visible ? 'true' : 'false'}
+      icon={visible ? <EyeOffIcon /> : <EyeIcon />} onClick={toggle} />} />
+</Field>
+```
+
+```vue
+<!-- Vue -->
+<Field id="password" label="パスワード">
+  <Input :type="visible ? 'text' : 'password'" :value="value" :on-value-change="(next) => (value = next)">
+    <template #suffix>
+      <Button variant="ghost" aria-label="パスワードを表示" :aria-pressed="visible ? 'true' : 'false'" :on-click="toggle">
+        <template #icon><EyeOffIcon v-if="visible" /><EyeIcon v-else /></template>
+      </Button>
+    </template>
+  </Input>
+</Field>
+```
+
+`id`・`aria-describedby`・`aria-invalid` は入力欄だけに付きます。Tab は入力欄のあと末尾のボタンへ進みます。
+フォーカス枠は入力欄にフォーカスがあるときだけ外側の枠に出ます（`focus-within` ではなく `:has()` で入力欄だけを見ています）。
+末尾のボタンにフォーカスしたときはボタン自身の枠だけが出るので、枠が二重になりません。
+
+パスワードの表示切り替えでは、`type` を `password` と `text` で入れ替えます。値は利用側が持つため消えませんが、
+カーソル位置は切り替えで失われます。上の例のように `selectionStart` / `selectionEnd` を控えて、描画後に `setSelectionRange` で戻してください。
+ボタンの名前は「パスワードを表示」で固定し、状態は `ariaPressed` で伝えます（名前と状態の両方を変えると読み上げが分かりにくくなります）。
+
+前後の要素の高さと角丸は「外側の値 − 余白」で計算するので、`--koyori-control-height-sm` や `--koyori-radius-md` を上書きしても枠からはみ出しません。
+文字だけを置く場合は読み上げから除かれません。単位を読み上げたくない場合は `aria-hidden="true"` を付けた要素を渡してください。
+
 ## アクセシビリティ
 
 - ラベルは `label` 要素で入力欄に関連付けます。ラベルを押すと入力欄にフォーカスが移ります。
@@ -88,6 +131,7 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 - 「必須」の表示は読み上げから除き、入力欄の必須状態として伝えます。
 - 名前やメールアドレスなど利用者自身の情報を入力する欄には、`autocomplete` を指定してください。
 - Field の外で使う場合は、`ariaLabel` などで必ず名前を付けてください。
+- Input の `prefix` / `suffix` に置いたボタンは入力欄の外にあります。名前を付け、Tab で順に到達できるようにしてください。
 
 ## スタイル
 
