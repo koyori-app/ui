@@ -49,6 +49,7 @@ Pagination は、一覧の下に「1–20 / 120 件」のような範囲と、`�
 | `label` | `string` | `'ページ送り'` | `nav` の `aria-label` |
 | `previousLabel` | `string` | `'前へ'` | 前へボタンの文言 |
 | `nextLabel` | `string` | `'次へ'` | 次へボタンの文言 |
+| `ellipsisLabel` | `string` | `'省略'` | 省略記号の読み上げの文言 |
 | `pageLabel` | `(page: number) => string` | `` `${page} ページ目` `` | ページ番号のボタンの名前。見えている数字を含める |
 | `formatRange` | `(range: { from, to, total }) => string` | `` `${from}–${to} / ${total} 件` `` | 範囲の文。既定では 0 件のとき `'0 件'` |
 | `hideRange` | `boolean` | `false` | 範囲の文を出さない |
@@ -82,7 +83,7 @@ Pagination から `onPageChange` を呼ぶことはありません（前へ・�
 - 全体は `nav` のランドマークで、名前は `label`（既定 `ページ送り`）です。一覧ごとに置く場合は「タスクのページ送り」のように区別できる名前にしてください。
 - ページ番号は `role="list"` を付けた `ul` に並べます。番号のボタンの名前は「5 ページ目」のようにし、現在ページには `aria-current="page"` を付けます。
   現在ページも `button` のまま残すので、番号を押して現在ページになってもフォーカスは消えません。
-- 省略記号「…」は `aria-hidden` で読み上げから外します。末尾のページ番号で全体のページ数は伝わります。
+- 省略記号「…」は記号を `aria-hidden` にし、代わりに見えない文言「省略」（`ellipsisLabel` で変更可）を読ませます。間のページが飛んでいることが読み上げでも分かります。
 - 端のボタンや取得中のボタンは `disabled` ではなく `aria-disabled="true"` にし、押下を無視します。
   `disabled` にすると、押した直後にフォーカスが消えてページの先頭に戻ってしまうためです（DataList の「さらに読み込む」と同じ扱いです）。
 - 範囲の文は `aria-live="polite"`・`aria-atomic="true"` のライブ領域です。ページを変えた直後もフォーカスはボタンに残るので、
@@ -96,6 +97,7 @@ Pagination から `onPageChange` を呼ぶことはありません（前へ・�
 - ページ番号は `--koyori-color-text-secondary`、現在ページは `--koyori-color-accent` の面に `--koyori-color-on-accent` の太字です。色だけに頼らないよう太字も付けています。
   アクセントの色はテーマの `--koyori-color-accent` を上書きすると変わります。
 - ホバーの背景は Tabs・Sidebar と同じく、一つの面が項目間を移ります（`shared/highlight` を再利用）。`aria-disabled` の上では出しません。
+  キーボードで番号を押して並びが変わったときも、面はフォーカス中のボタンへ付いていきます。
 - `aria-disabled` のときは `--koyori-color-text-disabled` の文字になり、取得中の現在ページは無効の面になります。
 - 範囲の文は `--koyori-color-text-secondary` で、数字は等幅（`tabular-nums`）にしてページを変えても幅がぶれにくくしています。
 - 範囲の文は左、ページ送りは右に置きます。`hideRange` のときはページ送りを中央に置きます。狭い幅では折り返します。

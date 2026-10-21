@@ -1,8 +1,9 @@
-import { For, Show, onMount, onUnMount, useRef, useStore } from '@builder.io/mitosis';
+import { For, Show, onMount, onUnMount, onUpdate, useRef, useStore } from '@builder.io/mitosis';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
 import { listenToSidebar } from '../Sidebar/sidebar';
 import highlights from '../shared/highlight.module.css';
 import { canGoNext, canGoPrevious, clampPage, formatPageLabel, formatPageRange, pageItems, pageRange } from './pagination';
+import { syncPaginationHighlight } from './pagination-highlight';
 import type { PaginationRange } from './pagination';
 import styles from './pagination.module.css';
 
@@ -25,6 +26,8 @@ export interface PaginationProps {
   previousLabel?: string;
   /** 既定 '次へ'。 */
   nextLabel?: string;
+  /** 省略記号の読み上げの文言。既定 '省略'。 */
+  ellipsisLabel?: string;
   /** ページ番号のボタンの名前。既定 `${page} ページ目`。見えている数字を含める。 */
   pageLabel?: (page: number) => string;
   /** 範囲の文。既定 `${from}–${to} / ${total} 件`（en dash）。0 件は '0 件'。 */
@@ -81,6 +84,8 @@ export default function Pagination(props: PaginationProps) {
   /* ホバーの背景は Tabs・Sidebar と同じく一つの面が項目間を移る。 */
   onMount(() => { cleanupRef = listenToSidebar(controlsRef); });
   onUnMount(() => { cleanupRef?.(); });
+  /* 項目数が変わらず大きさの監視では測り直されないため、ページを変えたあとに面を置き直す。 */
+  onUpdate(() => { syncPaginationHighlight(controlsRef); });
 
   /* ページを変えた直後もフォーカスはボタンに残るため、範囲の文を polite で読ませて結果を伝える。 */
   return (
@@ -104,7 +109,7 @@ export default function Pagination(props: PaginationProps) {
           <ul class={styles.pages} role="list">
             <For each={state.items}>
               {(item) => (
-                <li key={item.key} class={styles.item} aria-hidden={item.page === null ? 'true' : undefined}>
+                <li key={item.key} class={styles.item}>
                   <Show when={item.page !== null}>
                     <button type="button" class={styles.page} data-hover-item=""
                       aria-label={state.pageLabel(item.page)}
@@ -114,7 +119,8 @@ export default function Pagination(props: PaginationProps) {
                     >{item.page}</button>
                   </Show>
                   <Show when={item.page === null}>
-                    <span class={styles.ellipsis}>…</span>
+                    {/* 間が飛んでいることを読み上げでも伝える。記号の読みは環境で揺れるため文言に置き換える。 */}
+                    <span class={styles.ellipsis}><span aria-hidden="true">…</span><span class={styles.srOnly}>{props.ellipsisLabel ?? '省略'}</span></span>
                   </Show>
                 </li>
               )}

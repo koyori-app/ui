@@ -106,7 +106,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Pagin
   assert.match(source, /aria-busy/, `${name} 版は取得中を伝える`);
   assert.match(source, /aria-current/, `${name} 版は現在ページに aria-current を付ける`);
   assert.match(source, /data-hover-group/, `${name} 版はホバーの面を項目間で動かす`);
-  for (const helper of ['pageRange', 'canGoPrevious', 'canGoNext', 'formatPageRange', 'clampPage', 'pageItems', 'formatPageLabel', 'listenToSidebar']) {
+  for (const helper of ['pageRange', 'canGoPrevious', 'canGoNext', 'formatPageRange', 'clampPage', 'pageItems', 'formatPageLabel', 'listenToSidebar', 'syncPaginationHighlight']) {
     assert.match(source, new RegExp(helper), `${name} 版も ${helper} の計算に通す`);
   }
 }
@@ -179,7 +179,7 @@ let browser;
       assert.equal(await previous.evaluate((el) => el.disabled), false, 'disabled にはしない');
       assert.equal(await next.getAttribute('aria-disabled'), null);
       const pageButton = (number) => nav.getByRole('button', { name: `${number} ページ目`, exact: true });
-      const numbers = () => nav.locator('li').evaluateAll((items) => items.map((item) => item.textContent.trim()).join(' '));
+      const numbers = () => nav.locator('li').evaluateAll((items) => items.map((item) => item.querySelector('button')?.textContent.trim() ?? '…').join(' '));
       assert.equal(await numbers(), '1 2 3 4 5 6', '6 ページなら全部の番号を出す');
       assert.equal(await pageButton(1).getAttribute('aria-current'), 'page', '現在ページに aria-current');
       assert.equal(await pageButton(2).getAttribute('aria-current'), null);
@@ -224,10 +224,22 @@ let browser;
 
       await story('many-pages');
       assert.equal(await numbers(), '1 2 3 4 5 6 7 … 32', '多いときは間を省略する');
-      assert.equal(await nav.locator('li[aria-hidden="true"]').count(), 1, '省略記号は読ませない');
-      await pageButton(7).click();
+      assert.equal(await nav.getByRole('listitem').filter({ hasText: '省略' }).count(), 1, '省略記号は「省略」と読ませる');
+      // キーボードで番号を押すと並びが変わってボタンが動く。ホバーの面もフォーカス中のボタンへ付いていく。
+      await page.mouse.move(0, 0);
+      await pageButton(6).focus();
+      await page.keyboard.press('Tab');
+      assert(await focused(pageButton(7)));
+      await page.keyboard.press('Enter');
       assert.equal(await numbers(), '1 … 5 6 7 8 9 … 32', '現在ページの前後を出す');
       assert(await focused(pageButton(7)), '並びが変わってもフォーカスは押した番号に残る');
+      const placed = await nav.locator('[data-hover-group]').evaluate((group) => {
+        const button = document.activeElement;
+        return { x: group.style.getPropertyValue('--highlight-x'), left: `${button.getBoundingClientRect().left - group.getBoundingClientRect().left - group.clientLeft}px`, opacity: group.style.getPropertyValue('--highlight-opacity') };
+      });
+      assert.equal(placed.opacity, '1', 'フォーカス中のボタンに面を出す');
+      // offsetLeft は整数に丸められるため 1px 未満の差は許す。
+      assert(Math.abs(parseFloat(placed.x) - parseFloat(placed.left)) < 1, `面はフォーカス中のボタンの位置へ移る（面 ${placed.x}、ボタン ${placed.left}）`);
       await pageButton(32).click();
       assert.equal(await numbers(), '1 … 26 27 28 29 30 31 32');
       assert.equal(await next.getAttribute('aria-disabled'), 'true');
