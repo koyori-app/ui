@@ -57,3 +57,38 @@ export function canGoNext(page: number, pageSize: number, total: number | undefi
 export function formatPageRange(range: PaginationRange) {
   return range.total === 0 ? '0 件' : `${range.from}–${range.to} / ${range.total} 件`;
 }
+
+/** ページ番号の並びの 1 項目。page が null なら省略記号。key は描画の key に使う。 */
+export interface PaginationItem {
+  key: string;
+  page: number | null;
+}
+
+/* 前後に出すページ数。非有限・負は既定の 2、小数は切り捨てる。 */
+function normalizeSiblingCount(siblingCount: number | undefined) {
+  return siblingCount !== undefined && Number.isFinite(siblingCount) && siblingCount >= 0 ? Math.floor(siblingCount) : 2;
+}
+
+/* 先頭・末尾のページと現在ページの前後 siblingCount ページを出し、間を省略記号にまとめる。
+   省略記号が 1 ページしか隠さないときはそのページを出すので、項目数は常に 2 * siblingCount + 5 以下になり、
+   ページを移っても並びの幅がぶれにくい。total が無い（カーソル式）・0 件なら空。 */
+export function pageItems(page: number, pageSize: number, total: number | undefined, siblingCount?: number): PaginationItem[] {
+  const count = pageCount(total, pageSize);
+  if (count === 0) return [];
+  const siblings = normalizeSiblingCount(siblingCount);
+  const pageItem = (value: number): PaginationItem => ({ key: `page-${value}`, page: value });
+  if (count <= 2 * siblings + 5) return Array.from({ length: count }, (_, index) => pageItem(index + 1));
+  const current = clampPage(page, pageSize, total);
+  // 端に寄っても前後の幅を保つよう、反対側へ広げる。
+  const start = Math.max(Math.min(current - siblings, count - 2 * siblings - 2), 3);
+  const end = Math.min(Math.max(current + siblings, 2 * siblings + 3), count - 2);
+  const items = [pageItem(1), start > 3 ? { key: 'ellipsis-start', page: null } : pageItem(2)];
+  for (let value = start; value <= end; value++) items.push(pageItem(value));
+  items.push(end < count - 2 ? { key: 'ellipsis-end', page: null } : pageItem(count - 1), pageItem(count));
+  return items;
+}
+
+/* ページ番号のボタンの名前。数字だけでは何の番号か伝わらないため「ページ目」を付ける。 */
+export function formatPageLabel(page: number) {
+  return `${page} ページ目`;
+}

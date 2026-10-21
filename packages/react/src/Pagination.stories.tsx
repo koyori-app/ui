@@ -7,7 +7,7 @@ const meta = {
   component: Pagination,
   parameters: { layout: 'padded' },
   args: { page: 1, pageSize: 20, total: 120 },
-  render: args => <div style={{ width: 480 }}><Pagination {...args} /></div>,
+  render: args => <div style={{ width: 640 }}><Pagination {...args} /></div>,
 } satisfies Meta<typeof Pagination>;
 
 export default meta;
@@ -17,13 +17,28 @@ type Story = StoryObj<typeof meta>;
 function DefaultExample() {
   const [page, setPage] = useState(1);
   return (
-    <div style={{ width: 480 }}>
+    <div style={{ width: 640 }}>
       <Pagination page={page} pageSize={20} total={120} onPageChange={setPage} />
     </div>
   );
 }
 
 export const Default: Story = { render: () => <DefaultExample /> };
+
+/* ページが多いときは先頭・末尾と現在ページの前後を出し、間を省略記号にまとめる。 */
+function ManyPagesExample() {
+  const [page, setPage] = useState(5);
+  return (
+    <div style={{ width: 640 }}>
+      <Pagination page={page} pageSize={20} total={640} onPageChange={setPage} hideRange />
+    </div>
+  );
+}
+
+export const ManyPages: Story = { render: () => <ManyPagesExample /> };
+
+/* 狭い場所では前後に出すページ数を減らす。 */
+export const FewerSiblings: Story = { args: { page: 16, total: 640, siblingCount: 1 } };
 
 export const FirstPage: Story = {};
 export const LastPage: Story = { args: { page: 6 } };
@@ -33,7 +48,7 @@ export const Empty: Story = { args: { total: 0 } };
 function UnknownTotalExample() {
   const [page, setPage] = useState(1);
   return (
-    <div style={{ display: 'grid', gap: 8, width: 480 }}>
+    <div style={{ display: 'grid', gap: 8, width: 640 }}>
       <output>{page} ページ目</output>
       <Pagination page={page} pageSize={20} hasNext={page < 4} onPageChange={setPage} />
     </div>

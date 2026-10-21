@@ -405,14 +405,15 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 
 ## Pagination
 
-`Pagination` は「1–20 / 120 件」の範囲と 前へ・次へ のボタンで、一覧をページ単位で行き来する部品です。
+`Pagination` は「1–20 / 120 件」の範囲、ページ番号、前へ・次へ のボタンで、一覧をページ単位で行き来する部品です。
+ページ番号は先頭・末尾と現在ページの前後 `siblingCount`（既定 2）ページを出し、間を「…」にまとめます。現在ページは `aria-current="page"` です。
 下に読み足す方式は DataList の `hasMore`、ページ単位の往復はこちらを使います。現在のページ・URL 同期・取得は利用側で持ちます。
-`page`（1 始まり、制御のみ）・`pageSize`・`total`・`onPageChange` を渡します。`total` が未取得（カーソル式）なら省略し、範囲は出さず次へは `hasNext` に従います。
+`page`（1 始まり、制御のみ）・`pageSize`・`total`・`onPageChange` を渡します。`total` が未取得（カーソル式）なら省略し、範囲とページ番号は出さず次へは `hasNext` に従います。
 `total` を超えたページは末尾ページとして表示し、`onPageChange` を自動では呼びません。`pageSize` の非有限・0 以下は 1、`total` の非有限は 0 として扱います。
-`label`（`nav` の名前、既定 `ページ送り`）・`previousLabel`・`nextLabel`・`formatRange`（既定 `{from}–{to} / {total} 件`、0 件は `0 件`）・`hideRange` で表示を変えられます。
+`label`（`nav` の名前、既定 `ページ送り`）・`previousLabel`・`nextLabel`・`pageLabel`（既定 `{page} ページ目`）・`formatRange`（既定 `{from}–{to} / {total} 件`、0 件は `0 件`）・`hideRange` で表示を変えられます。
 端と `loading` の間はボタンを `disabled` ではなく `aria-disabled` にして押下を無視し、フォーカスを保ちます（DataList の「さらに読み込む」と同じ）。
 範囲の文は `aria-live="polite"` で、ページを変えた直後に新しい範囲が読まれます。取得中は `aria-busy` を付けます。
-aria-disabled の見た目は Pagination の CSS で付け、共有の `shared/control.module.css` は変えません。
+ホバーの背景は Tabs と同じく `shared/highlight` の面が項目間を移ります。
 計算と文言は `components/Pagination/pagination.ts` にまとめ、`node scripts/check-pagination.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/pagination.mdx)を参照してください。
 

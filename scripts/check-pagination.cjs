@@ -17,7 +17,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { pageCount, clampPage, pageRange, canGoPrevious, canGoNext, formatPageRange } = pagination;
+const { pageCount, clampPage, pageRange, canGoPrevious, canGoNext, formatPageRange, pageItems, formatPageLabel } = pagination;
 const { NaN: nan, POSITIVE_INFINITY: infinity } = Number;
 
 // ページ数: 端数は 1 ページに数える。0 で割らない。
@@ -69,6 +69,29 @@ assert.equal(formatPageRange({ from: 1, to: 20, total: 120 }), '1–20 / 120 件
 assert.equal(formatPageRange({ from: 0, to: 0, total: 0 }), '0 件');
 assert.equal(formatPageRange(pageRange(7, 20, 121)), '121–121 / 121 件');
 
+// ページ番号: 先頭・末尾と現在ページの前後 2 ページ。省略記号が 1 ページしか隠さないならそのページを出す。
+const labels = (items) => items.map((item) => item.page ?? '…').join(' ');
+assert.equal(labels(pageItems(5, 20, 640)), '1 2 3 4 5 6 7 … 32', '先頭寄りは末尾側だけ省略する');
+assert.equal(labels(pageItems(1, 20, 640)), '1 2 3 4 5 6 7 … 32', '先頭でも項目数を保つ');
+assert.equal(labels(pageItems(6, 20, 640)), '1 … 4 5 6 7 8 … 32', '途中は両側を省略する');
+assert.equal(labels(pageItems(28, 20, 640)), '1 … 26 27 28 29 30 31 32', '末尾寄りは先頭側だけ省略する');
+assert.equal(labels(pageItems(32, 20, 640)), '1 … 26 27 28 29 30 31 32', '末尾でも項目数を保つ');
+assert.equal(labels(pageItems(40, 20, 640)), '1 … 26 27 28 29 30 31 32', '範囲外は末尾ページとして並べる');
+assert.equal(labels(pageItems(3, 20, 180)), '1 2 3 4 5 6 7 8 9', '9 ページ以下は省略しない');
+assert.equal(labels(pageItems(5, 20, 200)), '1 2 3 4 5 6 7 … 10');
+assert.equal(labels(pageItems(16, 20, 640, 1)), '1 … 15 16 17 … 32', 'siblingCount で前後の数を変える');
+assert.equal(labels(pageItems(16, 20, 640, 0)), '1 … 16 … 32', 'siblingCount 0 は現在ページだけ');
+assert.equal(labels(pageItems(16, 20, 640, -1)), labels(pageItems(16, 20, 640)), '負の siblingCount は既定の 2');
+assert.equal(labels(pageItems(16, 20, 640, nan)), labels(pageItems(16, 20, 640)), 'NaN の siblingCount は既定の 2');
+for (const page of [1, 2, 3, 4, 5, 6, 10, 16, 27, 28, 29, 30, 31, 32]) {
+  assert.equal(pageItems(page, 20, 640).length, 9, `${page} ページ目でも項目数は 9`);
+}
+assert.deepEqual(pageItems(1, 20, 0), [], '0 件はページ番号を出さない');
+assert.deepEqual(pageItems(1, 20, undefined), [], '総件数が分からなければページ番号を出さない');
+const keys = pageItems(16, 20, 640).map((item) => item.key);
+assert.equal(new Set(keys).size, keys.length, 'key は重ならない');
+assert.equal(formatPageLabel(5), '5 ページ目');
+
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Pagination/Pagination.vue'], ['React', 'packages/react/src/generated/components/Pagination/Pagination.tsx']]) {
@@ -81,8 +104,9 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Pagin
   assert.match(source, /aria-live="polite"/, `${name} 版は範囲を polite で読ませる`);
   assert.match(source, /aria-atomic="true"/, `${name} 版は範囲をまとめて読ませる`);
   assert.match(source, /aria-busy/, `${name} 版は取得中を伝える`);
-  assert.match(source, /data-variant="tertiary"/, `${name} 版のボタンは tertiary`);
-  for (const helper of ['pageRange', 'canGoPrevious', 'canGoNext', 'formatPageRange', 'clampPage']) {
+  assert.match(source, /aria-current/, `${name} 版は現在ページに aria-current を付ける`);
+  assert.match(source, /data-hover-group/, `${name} 版はホバーの面を項目間で動かす`);
+  for (const helper of ['pageRange', 'canGoPrevious', 'canGoNext', 'formatPageRange', 'clampPage', 'pageItems', 'formatPageLabel', 'listenToSidebar']) {
     assert.match(source, new RegExp(helper), `${name} 版も ${helper} の計算に通す`);
   }
 }
@@ -92,11 +116,10 @@ assert.doesNotMatch(read('components/shared/control.module.css'), /aria-disabled
 
 for (const framework of ['vue', 'react']) {
   const css = read(`packages/${framework}/dist/style.css`);
-  assert.ok(/_buttons[^{]*>\s*\[aria-disabled=['"]?true['"]?\]\[data-variant\]\{[^}]*--button-hover-background:var\(--koyori-color-surface-disabled\)/.test(css), `${framework}: aria-disabled はホバーの背景を変えない`);
-  assert.ok(/_buttons[^{]*>\s*\[aria-disabled=['"]?true['"]?\]\[data-variant\]\{[^}]*--button-press-scale:1/.test(css), `${framework}: aria-disabled は押下で縮まない`);
-  assert.ok(/_buttons[^{]*>\s*\[aria-disabled=['"]?true['"]?\]\[data-variant\]\{[^}]*cursor:not-allowed/.test(css), `${framework}: aria-disabled は押せない見た目`);
-  assert.ok(/_buttons[^{]*>\s*\[aria-disabled=['"]?true['"]?\]>span\{[^}]*background:var\(--koyori-color-surface-disabled\)/.test(css), `${framework}: aria-disabled は無効の背景`);
+  assert.ok(/_page[^{]*\[aria-current=['"]?page['"]?\][^,{]*\{[^}]*background:var\(--koyori-color-accent\)[^}]*font-weight:600/.test(css), `${framework}: 現在ページはアクセントの面と太字`);
+  assert.ok(/_step[^{]*\[aria-disabled=['"]?true['"]?\][^{]*\{[^}]*color:var\(--koyori-color-text-disabled\)[^}]*cursor:not-allowed/.test(css), `${framework}: aria-disabled は押せない見た目`);
   assert.ok(/forced-colors[^{]*\{[^@]*?aria-disabled[^{]*\{[^}]*graytext/i.test(css), `${framework}: 強制配色で aria-disabled を GrayText にする`);
+  assert.ok(/forced-colors[^{]*\{[^@]*?aria-current[^{]*\{[^}]*highlight/i.test(css), `${framework}: 強制配色で現在ページを枠で示す`);
   assert.match(css, /tabular-nums/, `${framework}: 数字の幅をそろえる`);
 }
 
@@ -155,34 +178,63 @@ let browser;
       assert.equal(await previous.getAttribute('aria-disabled'), 'true', '先頭では前へを aria-disabled にする');
       assert.equal(await previous.evaluate((el) => el.disabled), false, 'disabled にはしない');
       assert.equal(await next.getAttribute('aria-disabled'), null);
-      // Tab は 前へ → 次へ。端でも前へに到達できる。
+      const pageButton = (number) => nav.getByRole('button', { name: `${number} ページ目`, exact: true });
+      const numbers = () => nav.locator('li').evaluateAll((items) => items.map((item) => item.textContent.trim()).join(' '));
+      assert.equal(await numbers(), '1 2 3 4 5 6', '6 ページなら全部の番号を出す');
+      assert.equal(await pageButton(1).getAttribute('aria-current'), 'page', '現在ページに aria-current');
+      assert.equal(await pageButton(2).getAttribute('aria-current'), null);
+      // Tab は 前へ → 1〜6 → 次へ。端でも前へに到達できる。
       await page.keyboard.press('Tab');
       assert(await focused(previous), '最初の Tab は前へ');
       await page.keyboard.press('Enter');
       assert.equal(await range.textContent(), '1–20 / 120 件', '端では押しても動かない');
+      for (let number = 1; number <= 6; number++) {
+        await page.keyboard.press('Tab');
+        assert(await focused(pageButton(number)), `Tab で ${number} ページ目へ`);
+      }
       await page.keyboard.press('Tab');
-      assert(await focused(next), '次の Tab は次へ');
+      assert(await focused(next), '番号の次は次へ');
       await page.keyboard.press('Enter');
       assert.equal(await range.textContent(), '21–40 / 120 件', '次のページへ移る');
       assert(await focused(next), 'フォーカスはボタンに残る');
+      assert.equal(await pageButton(2).getAttribute('aria-current'), 'page', '現在ページが移る');
       assert.equal(await previous.getAttribute('aria-disabled'), null, '2 ページ目からは前へ戻れる');
+      await pageButton(4).focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await range.textContent(), '61–80 / 120 件', '番号のページへ移る');
+      assert(await focused(pageButton(4)), '押した番号にフォーカスが残る');
+      await pageButton(4).click();
+      assert.equal(await range.textContent(), '61–80 / 120 件', '現在ページを押しても動かない');
       // aria-disabled は Playwright では押せない扱いになるため force で押し、押下が無視されることを確かめる。
       for (let i = 0; i < 6; i++) await next.click({ force: true });
       assert.equal(await range.textContent(), '101–120 / 120 件', '末尾で止まる');
       assert.equal(await next.getAttribute('aria-disabled'), 'true', '末尾では次へを aria-disabled にする');
       assert(await focused(next), '末尾に着いてもフォーカスは消えない');
-      // 背景色は遷移するので、終わってから比べる。
-      await page.waitForTimeout(400);
-      const looks = await next.evaluate((el) => {
-        const before = getComputedStyle(el.firstElementChild).backgroundColor;
-        return { color: getComputedStyle(el).color, cursor: getComputedStyle(el).cursor, before };
-      });
-      await next.hover({ force: true });
-      await page.waitForTimeout(400);
-      assert.equal(await next.evaluate((el) => getComputedStyle(el.firstElementChild).backgroundColor), looks.before, 'aria-disabled はホバーで背景を変えない');
+      const looks = await next.evaluate((el) => ({ color: getComputedStyle(el).color, cursor: getComputedStyle(el).cursor }));
       assert.equal(looks.cursor, 'not-allowed');
+      // ホバーの面は番号の上に出て、aria-disabled の上では隠れる。
+      const highlight = () => nav.locator('[data-hover-group]').evaluate((el) => el.style.getPropertyValue('--highlight-opacity'));
+      await pageButton(2).hover();
+      assert.equal(await highlight(), '1', '番号にホバーすると面が出る');
+      await next.hover({ force: true });
+      assert.equal(await highlight(), '0', 'aria-disabled の上では面を出さない');
       await previous.click();
       assert.equal(await range.textContent(), '81–100 / 120 件', '前のページへ戻る');
+      await a11y();
+
+      await story('many-pages');
+      assert.equal(await numbers(), '1 2 3 4 5 6 7 … 32', '多いときは間を省略する');
+      assert.equal(await nav.locator('li[aria-hidden="true"]').count(), 1, '省略記号は読ませない');
+      await pageButton(7).click();
+      assert.equal(await numbers(), '1 … 5 6 7 8 9 … 32', '現在ページの前後を出す');
+      assert(await focused(pageButton(7)), '並びが変わってもフォーカスは押した番号に残る');
+      await pageButton(32).click();
+      assert.equal(await numbers(), '1 … 26 27 28 29 30 31 32');
+      assert.equal(await next.getAttribute('aria-disabled'), 'true');
+      await a11y();
+
+      await story('fewer-siblings');
+      assert.equal(await numbers(), '1 … 15 16 17 … 32', 'siblingCount で前後の数を変える');
       await a11y();
 
       await story('last-page');
@@ -192,12 +244,14 @@ let browser;
 
       await story('empty');
       assert.equal(await range.textContent(), '0 件', '0 件は範囲を出さない');
+      assert.equal(await nav.locator('ul').count(), 0, '0 件は番号を出さない');
       assert.equal(await previous.getAttribute('aria-disabled'), 'true');
       assert.equal(await next.getAttribute('aria-disabled'), 'true');
       await a11y();
 
       await story('unknown-total');
       assert.equal(await range.count(), 0, '総件数が分からなければ範囲を出さない');
+      assert.equal(await nav.locator('ul').count(), 0, '総件数が分からなければ番号を出さない');
       const output = page.locator('#storybook-root output');
       for (let i = 0; i < 5; i++) await next.click({ force: true });
       assert.equal(await output.textContent(), '4 ページ目', 'hasNext が false になったら止まる');
@@ -208,6 +262,7 @@ let browser;
       assert.equal(await range.getAttribute('aria-busy'), 'true', '取得中は範囲に aria-busy');
       assert.equal(await previous.getAttribute('aria-disabled'), 'true', '取得中は前へも止める');
       assert.equal(await next.getAttribute('aria-disabled'), 'true', '取得中は次へも止める');
+      assert.equal(await pageButton(3).getAttribute('aria-disabled'), 'true', '取得中は番号も止める');
       await a11y();
 
       await story('custom-format');
@@ -216,7 +271,7 @@ let browser;
 
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Pagination の範囲の文、端と取得中の aria-disabled、フォーカスの維持、Tab の順、axe を確認しました。`);
+      console.log(`${framework}: Pagination の範囲の文、ページ番号と省略、端と取得中の aria-disabled、フォーカスの維持、Tab の順、ホバーの面、axe を確認しました。`);
     }
   } finally {
     await browser?.close();
