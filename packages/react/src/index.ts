@@ -46,3 +46,5 @@ export { default as EyeIcon, type EyeIconProps } from './generated/components/Ey
 export { default as EyeOffIcon, type EyeOffIconProps } from './generated/components/EyeOffIcon/EyeOffIcon.js';
 export { default as IconPicker, type IconPickerProps } from './generated/components/IconPicker/IconPicker.js';
 export { default as Spinner, type SpinnerProps } from './generated/components/Spinner/Spinner.js';
+export { default as Meter, type MeterProps } from './generated/components/Meter/Meter.js';
+export type { MeterTone } from './generated/components/Meter/meter.js';

@@ -271,6 +271,16 @@ ProgressBar は達成率や進捗を横棒で示す表示専用の部品です�
 満たしたときは `data-complete="true"` が付きます。値の計算は `components/ProgressBar/progress.ts` にまとめ、
 `node scripts/check-progress-bar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 
+Meter は強度・残量・レベルなど「有限の段階」を区切った横棒で示す表示専用の部品です。進捗率は ProgressBar を使います。
+`label`・`value`（満たした段の数。小数は切り捨て、0..max に収め、非有限は 0）・`max`（段の数。既定 3、非有限・1 未満は 3、上限 20）を受け取り、
+`valueText` で「弱い」のような右上の表示と `aria-valuetext` を渡します。`hideLabel`・`hideValue` で表示を省けます。
+`role="meter"` と `aria-valuenow`・`aria-valuemax`・`aria-valuetext` で値を伝え、値の変化は読み上げません。
+通知が要る場合は利用側が段の変わった時だけ `role="status"` で出してください（打鍵ごとの通知を避けるため）。
+`tone`（既定 `auto`）は 0 段で neutral、1/3 以下 danger、2/3 以下 warning、それ以上 success です。残量のように多いほど良いとは限らない場合は明示します。
+高さは `--koyori-progress-height`、色は棒の要素で `--meter-fill`・`--meter-track` を上書きします。どの tone の塗りも溝に対して 3:1 以上を保ちます。
+段と色の計算は `components/Meter/meter.ts` にまとめ、`node scripts/check-meter.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/meter.mdx)を参照してください。
+
 ContextMenu は右クリック（キーボードは Shift+F10・メニューキー）で開く操作メニューです。`open`・`x`・`y`・`label`・`items`・`onSelect`・`onClose` を受け取り、
 座標と開閉はアプリが持ちます。座標は `contextMenuPosition(event)` で取得し、キーボード起動のときは対象の左下を返します。
 配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
@@ -386,7 +396,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

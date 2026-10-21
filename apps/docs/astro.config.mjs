@@ -44,6 +44,7 @@ export default defineConfig({
             { label: 'Dropdown', slug: 'components/dropdown' },
             { label: 'IconPicker', slug: 'components/icon-picker' },
             { label: 'InlineEdit', slug: 'components/inline-edit' },
+            { label: 'Meter', slug: 'components/meter' },
             { label: 'Picker', slug: 'components/picker' },
             { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },

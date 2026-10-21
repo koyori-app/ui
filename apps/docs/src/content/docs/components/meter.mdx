@@ -1,0 +1,74 @@
+---
+title: Meter
+description: 強度・残量・レベルなど有限の段階を、区切った横棒で示す表示専用のコンポーネント。
+---
+
+import MeterPreview from '../../../components/MeterPreview.astro';
+
+Meter は、パスワードの強度や残り枠のように「いくつかの段階のうちどこにいるか」を区切った横棒で示します。
+作業の進み具合（達成率・進捗）は [ProgressBar](/components/progress-bar/) を使ってください。
+値の計算はアプリ側で行い、Meter は表示だけを受け持ちます。
+
+## プレビュー
+
+パスワードを入力すると、長さに応じて段と色が変わります（長さだけの簡易判定です）。
+
+<MeterPreview />
+
+## 使い方
+
+`label` と `value`（満たした段の数）を渡し、必要なら `max`（段の数）と `valueText` を足します。
+
+```tsx
+// React
+<Meter label="パスワードの強度" value={level} valueText={['未入力', '弱い', '普通', '強い'][level]} />
+<Meter label="今月の残り枠" value={4} max={5} valueText="残り 4 / 5" tone="success" />
+```
+
+```vue
+<!-- Vue -->
+<Meter label="パスワードの強度" :value="level" :value-text="['未入力', '弱い', '普通', '強い'][level]" />
+<Meter label="今月の残り枠" :value="4" :max="5" value-text="残り 4 / 5" tone="success" />
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 読み上げ名。`hideLabel` でなければ左上に表示する |
+| `hideLabel` | `boolean` | `false` | 読み上げ名を保ったまま、表示ラベルを隠す |
+| `value` | `number` | 必須 | 満たした段の数。小数は切り捨て、`0`〜`max` に収める。非有限は `0` |
+| `max` | `number` | `3` | 段の数。小数は切り捨て、上限 20。非有限・1 未満は `3` |
+| `valueText` | `string` | — | 右上の表示と `aria-valuetext`（例: `'弱い'`）。無ければ右上は出ない |
+| `hideValue` | `boolean` | `false` | 右上の `valueText` を隠す。読み上げには残る |
+| `tone` | `'auto' \| 'neutral' \| 'danger' \| 'warning' \| 'success'` | `'auto'` | 塗りの色 |
+
+`tone` の `auto` は「多いほど良い」前提で、0 段は `neutral`、満たした割合が 1/3 以下は `danger`、2/3 以下は `warning`、それ以上は `success` です。
+残量のように少ないことが悪いとは限らない場合や、色の意味を固定したい場合は明示してください。
+
+## アクセシビリティ
+
+- 棒は `role="meter"` で、`aria-valuemin="0"`・`aria-valuemax`（段の数）・`aria-valuenow`（満たした段の数）を持ちます。
+  `valueText` を渡すと `aria-valuetext` になり、「2」ではなく「普通」と読まれます。段の意味が数で伝わらない場合は必ず渡してください。
+- 読み上げ名は `label` です。`hideLabel` で表示を隠しても名前は残ります。
+- 値の変化は読み上げません（ProgressBar と同じ）。パスワード入力中に打鍵のたびに通知するとうるさいためです。
+  通知が要る場合は、プレビューの例のように利用側で `role="status"` の要素を置き、段が変わった時だけ文を変えてください。
+  文が変わらなければ読み上げられないので、打鍵のたびには読まれません。
+- 色だけに意味を頼らないよう、段の数と `valueText` の文字でも状態を伝えます。
+- 強制配色では各段に `CanvasText` の枠が付き、満たした段は `Highlight` で塗ります。
+- 色の遷移は `prefers-reduced-motion: reduce` で止まります。
+
+## スタイル
+
+- 高さは ProgressBar と同じ `--koyori-progress-height`（8px）、段の間隔は `--koyori-space-xs` です。
+- 溝は `--koyori-color-accent-subtle`、塗りは `tone` ごとに `--koyori-color-selection-indicator`（neutral）／
+  `-danger`／`-warning`／`-success` です。どの塗りも溝に対してコントラスト比 3:1 以上を保っています。
+- 個別に変える場合は、棒の要素（`[role="meter"]`）を囲む要素から指して `--meter-fill`・`--meter-track` を上書きします（例: `.quota [role="meter"] { --meter-fill: … }`）。
+  `tone` ごとの塗りより優先されます。上書きするときも 3:1 以上を保ってください。
+
+## 検証
+
+```sh
+pnpm build
+node scripts/check-meter.cjs
+```

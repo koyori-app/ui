@@ -1,0 +1,63 @@
+@import '../tokens.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--koyori-space-xs);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--koyori-space-md);
+}
+
+.label { min-width: 0; overflow-wrap: anywhere; }
+
+/* ラベルを隠しても、値は右に寄せたままにする。 */
+.value {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  color: var(--koyori-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 色はここで変えられる。溝と塗りのコントラストは 3:1 以上を保つこと。高さは ProgressBar と揃える。 */
+.track {
+  --meter-track: var(--koyori-color-accent-subtle);
+  --meter-fill: var(--koyori-color-selection-indicator);
+  display: flex;
+  gap: var(--koyori-space-xs);
+  height: var(--koyori-progress-height);
+}
+
+/* 詳細度を .track と同じに保ち、利用側が棒の要素で --meter-fill を上書きできるようにする。 */
+:where(.root[data-tone='danger']) .track { --meter-fill: var(--koyori-color-danger); }
+:where(.root[data-tone='warning']) .track { --meter-fill: var(--koyori-color-warning); }
+:where(.root[data-tone='success']) .track { --meter-fill: var(--koyori-color-success); }
+
+.segment {
+  flex: 1 1 0;
+  box-sizing: border-box;
+  border-radius: calc(var(--koyori-progress-height) / 2);
+  background: var(--meter-track);
+  transition: background-color var(--koyori-motion-base) var(--koyori-ease-out);
+}
+
+.segment[data-filled='true'] {
+  background: var(--meter-fill);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment { transition: none; }
+}
+
+/* 色が落ちても、枠で段の数が、強調色で満たした段が分かるようにする。 */
+@media (forced-colors: active) {
+  .segment { border: 1px solid CanvasText; }
+  .segment[data-filled='true'] { forced-color-adjust: none; background: Highlight; }
+}
