@@ -45,3 +45,9 @@ export { default as Switch, type SwitchProps } from './generated/components/Swit
 export { default as EyeIcon, type EyeIconProps } from './generated/components/EyeIcon/EyeIcon.js';
 export { default as EyeOffIcon, type EyeOffIconProps } from './generated/components/EyeOffIcon/EyeOffIcon.js';
 export { default as IconPicker, type IconPickerProps } from './generated/components/IconPicker/IconPicker.js';
+export { default as Spinner, type SpinnerProps } from './generated/components/Spinner/Spinner.js';
+export { default as Meter, type MeterProps } from './generated/components/Meter/Meter.js';
+export type { MeterTone } from './generated/components/Meter/meter.js';
+export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.js';
+export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.js';
+export { type PaginationRange } from './generated/components/Pagination/pagination.js';

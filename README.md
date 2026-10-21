@@ -28,7 +28,7 @@ pnpm build-storybook
 Storybook 起動中もこのコマンドで変更を反映できます。生成物は直接編集・コミットしません。
 Story は各パッケージの `src/*.stories.*` に追加します。
 
-角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
+角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置・スピナーの周期の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
 Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
 配色はくすんだラベンダーとセージを使い、背景に色を持たせながら文字は濃く保ちます。
@@ -125,6 +125,16 @@ Input には `prefix` / `suffix`（Vue は同名スロット）で入力欄の�
 前後の要素の高さ・角丸は「外側の値 − 余白」で計算し、トークンの上書きにも追従します。
 トグルボタンには Button の `ariaPressed`（`'true' | 'false'`）を使います。
 `node scripts/check-input.cjs` に先頭・末尾の要素の検証も含めています。
+
+PasswordInput は上の組み立て（Input + 末尾の表示切り替えボタン）を部品にしたパスワード欄です。
+`value`・`onValueChange`・`autocomplete`（`current-password` か `new-password` を推奨）・`disabled`・`readOnly` は Input と同じで、
+Field の中では `id`・`aria-describedby`・`aria-invalid`・`required` を入力欄だけに受け取ります。Field の外では `ariaLabel` を付けます。
+表示状態は `visible` / `onVisibleChange` で親が持つか、省略して内部で持ちます（初期値は `defaultVisible`）。
+切り替えボタンの名前は `toggleLabel`（既定 `パスワードを表示`）で固定し、状態は `aria-pressed` で伝えます。
+切り替えでは `type` を `password` と `text` で入れ替え、切り替え前のカーソル位置を描画後に戻します。フォーカスはボタンに残ります。
+Input を合成せず、同じ markup を `Field/field.module.css` で組んでいます（親から子の `suffix` スロットへ要素を渡せないため）。
+カーソル位置の控えと復元は `components/PasswordInput/password-input.ts` にまとめ、`node scripts/check-password-input.cjs` で検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/password-input.mdx)を参照してください。
 
 Dropdown はアクションメニューです。`label` と `items: { value, label, disabled? }[]` を渡し、
 項目を実行すると閉じて `onSelect(value)` を呼び出します。選択状態は持ちません。`value` は一覧内で一意にしてください。
@@ -271,6 +281,16 @@ ProgressBar は達成率や進捗を横棒で示す表示専用の部品です�
 満たしたときは `data-complete="true"` が付きます。値の計算は `components/ProgressBar/progress.ts` にまとめ、
 `node scripts/check-progress-bar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 
+Meter は強度・残量・レベルなど「有限の段階」を区切った横棒で示す表示専用の部品です。進捗率は ProgressBar を使います。
+`label`・`value`（満たした段の数。小数は切り捨て、0..max に収め、非有限は 0）・`max`（段の数。既定 3、非有限・1 未満は 3、上限 20）を受け取り、
+`valueText` で「弱い」のような右上の表示と `aria-valuetext` を渡します。`hideLabel`・`hideValue` で表示を省けます。
+`role="meter"` と `aria-valuenow`・`aria-valuemax`・`aria-valuetext` で値を伝え、値の変化は読み上げません。
+通知が要る場合は利用側が段の変わった時だけ `role="status"` で出してください（打鍵ごとの通知を避けるため）。
+`tone`（既定 `auto`）は 0 段で neutral、1/3 以下 danger、2/3 以下 warning、それ以上 success です。残量のように多いほど良いとは限らない場合は明示します。
+高さは `--koyori-progress-height`、色は棒の要素で `--meter-fill`・`--meter-track` を上書きします。どの tone の塗りも溝に対して 3:1 以上を保ちます。
+段と色の計算は `components/Meter/meter.ts` にまとめ、`node scripts/check-meter.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/meter.mdx)を参照してください。
+
 ContextMenu は右クリック（キーボードは Shift+F10・メニューキー）で開く操作メニューです。`open`・`x`・`y`・`label`・`items`・`onSelect`・`onClose` を受け取り、
 座標と開閉はアプリが持ちます。座標は `contextMenuPosition(event)` で取得し、キーボード起動のときは対象の左下を返します。
 配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
@@ -324,6 +344,18 @@ Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作と
 塗りと縁は `--skeleton-background`・`--skeleton-border` で上書きできます。行数の計算は `components/Skeleton/skeleton.ts` にまとめ、
 `node scripts/check-skeleton.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/skeleton.mdx)を参照してください。
+## Spinner
+
+`Spinner` は読み込み中を回転するリングと文字で示す表示専用の部品です。場所取りは Skeleton、
+操作の結果待ちや一覧・コメントの取得中はこちらを使います。`label`（既定 `読み込み中`、空白だけなら既定に戻る）・
+`hideLabel`・`size`（直径 px、既定 16。非有限・0 以下は 16）を受け取ります。
+ルートは `role="status"` で、暗黙の `aria-live` に任せて `aria-live` は重ねません。リングは `aria-hidden` の飾りで、
+`hideLabel` でも文字は見た目だけ隠して読み上げに残します。領域全体の読み込み中は親に `aria-busy="true"` を付けてください。
+Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボタンのラベルを「保存中」に変えて状態を伝えます。
+色は親の文字色を継ぎ（Button の中ではボタンの文字色）、`--spinner-color` で上書きできます。周期は `--koyori-spinner-duration`（900ms）です。
+回転は「動きを減らす」設定で止まり、強制配色では弧を `CanvasText`、溝を `GrayText` で描きます。
+文言と直径の補正は `components/Spinner/spinner.ts` にまとめ、`node scripts/check-spinner.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/spinner.mdx)を参照してください。
 ## Alert
 
 `Alert` はフォームやセクション単位の失敗・注意・案内を伝える部品です。入力欄ごとのエラーは Field の `error`、
@@ -371,10 +403,23 @@ Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作と
 `node scripts/check-icon-picker.cjs` で計算・生成物・ブラウザー操作を検証します（Storybook のビルド後に実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/icon-picker.mdx)を参照してください。
 
+## Pagination
+
+`Pagination` は「1–20 / 120 件」の範囲と 前へ・次へ のボタンで、一覧をページ単位で行き来する部品です。
+下に読み足す方式は DataList の `hasMore`、ページ単位の往復はこちらを使います。現在のページ・URL 同期・取得は利用側で持ちます。
+`page`（1 始まり、制御のみ）・`pageSize`・`total`・`onPageChange` を渡します。`total` が未取得（カーソル式）なら省略し、範囲は出さず次へは `hasNext` に従います。
+`total` を超えたページは末尾ページとして表示し、`onPageChange` を自動では呼びません。`pageSize` の非有限・0 以下は 1、`total` の非有限は 0 として扱います。
+`label`（`nav` の名前、既定 `ページ送り`）・`previousLabel`・`nextLabel`・`formatRange`（既定 `{from}–{to} / {total} 件`、0 件は `0 件`）・`hideRange` で表示を変えられます。
+端と `loading` の間はボタンを `disabled` ではなく `aria-disabled` にして押下を無視し、フォーカスを保ちます（DataList の「さらに読み込む」と同じ）。
+範囲の文は `aria-live="polite"` で、ページを変えた直後に新しい範囲が読まれます。取得中は `aria-busy` を付けます。
+aria-disabled の見た目は Pagination の CSS で付け、共有の `shared/control.module.css` は変えません。
+計算と文言は `components/Pagination/pagination.ts` にまとめ、`node scripts/check-pagination.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/pagination.mdx)を参照してください。
+
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・IconPicker・Switch・Skeleton・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Pagination・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

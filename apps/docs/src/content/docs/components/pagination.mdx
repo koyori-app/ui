@@ -1,0 +1,87 @@
+---
+title: Pagination
+description: 「1–20 / 120 件」の範囲と前へ・次へのボタンで、一覧をページ単位で行き来するコンポーネント。
+---
+
+import PaginationPreview from '../../../components/PaginationPreview.astro';
+
+Pagination は、一覧の下に「1–20 / 120 件」のような範囲と 前へ・次へ のボタンを並べます。
+ページ単位で行き来する一覧に使います。下に読み足していく「さらに読み込む」方式は [DataList](/components/data-list/) の `hasMore` を使ってください。
+現在のページ、URL との同期、データの取得は利用側で持ちます。
+
+## プレビュー
+
+47 件を 10 件ずつ表示します。「次へ」を押すと一覧と範囲の文が切り替わり、フォーカスはボタンに残ります。
+
+<PaginationPreview />
+
+## 使い方
+
+`page`（1 始まり）・`pageSize`・`total` を渡し、`onPageChange` で移りたいページを受け取ります。
+
+```tsx
+// React
+<Pagination page={page} pageSize={20} total={total} onPageChange={setPage} loading={isFetching} />
+
+// 総件数が分からない（カーソル式）とき
+<Pagination page={page} pageSize={20} hasNext={!!nextCursor} onPageChange={setPage} />
+```
+
+```vue
+<!-- Vue -->
+<Pagination :page="page" :page-size="20" :total="total" :on-page-change="(next) => (page = next)" :loading="isFetching" />
+
+<!-- 総件数が分からない（カーソル式）とき -->
+<Pagination :page="page" :page-size="20" :has-next="!!nextCursor" :on-page-change="(next) => (page = next)" />
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `page` | `number` | 必須 | 1 始まりの現在ページ。制御のみ |
+| `pageSize` | `number` | 必須 | 1 ページの件数。非有限・1 未満は 1 |
+| `total` | `number` | — | 総件数。未取得なら省略する（範囲は出さず、次へは `hasNext` に従う）。非有限は 0 件 |
+| `hasNext` | `boolean` | `false` | `total` が無いときに次のページがあるか |
+| `onPageChange` | `(page: number) => void` | — | 前へ・次へで移りたいページを通知する |
+| `label` | `string` | `'ページ送り'` | `nav` の `aria-label` |
+| `previousLabel` | `string` | `'前へ'` | 前へボタンの文言 |
+| `nextLabel` | `string` | `'次へ'` | 次へボタンの文言 |
+| `formatRange` | `(range: { from, to, total }) => string` | `` `${from}–${to} / ${total} 件` `` | 範囲の文。既定では 0 件のとき `'0 件'` |
+| `hideRange` | `boolean` | `false` | 範囲の文を出さない |
+| `loading` | `boolean` | `false` | 取得中。ボタンは残して `aria-disabled` にし、範囲に `aria-busy` を付ける |
+
+`total` を超えたページを渡すと、末尾のページとして範囲を表示します。ページを直すかどうかは利用側が決めるため、
+Pagination から `onPageChange` を呼ぶことはありません（前へ・次へは表示中のページを基準に動きます）。
+
+## キーボード操作
+
+| キー | 動作 |
+| --- | --- |
+| Tab | 前へ → 次へ の順に移動する。端でも両方のボタンに到達できる |
+| Enter / Space | 押したボタンの向きへページを移す。端や取得中は何もしない |
+
+## アクセシビリティ
+
+- 全体は `nav` のランドマークで、名前は `label`（既定 `ページ送り`）です。一覧ごとに置く場合は「タスクのページ送り」のように区別できる名前にしてください。
+- 端のボタンや取得中のボタンは `disabled` ではなく `aria-disabled="true"` にし、押下を無視します。
+  `disabled` にすると、押した直後にフォーカスが消えてページの先頭に戻ってしまうためです（DataList の「さらに読み込む」と同じ扱いです）。
+- 範囲の文は `aria-live="polite"`・`aria-atomic="true"` のライブ領域です。ページを変えた直後もフォーカスはボタンに残るので、
+  新しい範囲が読まれて操作の結果が分かります。同じ内容を別の `aria-live` 領域や `role="status"` で出さないでください。二重に通知されます。
+- 取得中は範囲に `aria-busy="true"` を付け、取得が終わって範囲が変わってから読ませます。
+- 総件数が分からないときは範囲を出しません。その場合はページの移動を一覧の見出しなど別の手段でも伝えてください。
+
+## スタイル
+
+- ボタンは Button の `tertiary` と同じ見た目です。`aria-disabled` のときは無効のボタンと同じ色になり、ホバーの背景と押下の縮小も止まります。
+  共通のボタン用 CSS は DataList と共有しているため変えず、Pagination の CSS で上書きしています。
+- 範囲の文は `--koyori-color-text-secondary` で、数字は等幅（`tabular-nums`）にしてページを変えても幅がぶれにくくしています。
+- 狭い幅では範囲とボタンが折り返します。全体は右寄せです。
+- 強制配色では `aria-disabled` のボタンが `GrayText` になります。
+
+## 検証
+
+```sh
+pnpm build
+node scripts/check-pagination.cjs
+```

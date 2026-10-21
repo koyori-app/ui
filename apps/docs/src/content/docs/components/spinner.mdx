@@ -1,0 +1,77 @@
+---
+title: Spinner
+description: 読み込み中を回転するリングと文字で示す表示専用のコンポーネント。
+---
+
+import SpinnerPreview from '../../../components/SpinnerPreview.astro';
+
+Spinner は、操作の結果を待っている間や、一覧・コメントなどを取得している間に「読み込み中」を示します。
+届く内容の位置と大きさが分かっていて、その場所を取っておきたい場合は [Skeleton](/components/skeleton/) を使ってください。
+一覧の読み込み中は [DataList](/components/data-list/) の `loading` が使えます。
+
+## プレビュー
+
+「コメントを読み込む」を押すと、カードの中央に Spinner が出て、読み込みが終わると内容に入れ替わります。
+
+<SpinnerPreview />
+
+## 使い方
+
+読み込み中の間だけ置きます。読み込み状態はアプリ側で持ちます。
+
+```tsx
+// React
+<div aria-busy={loading ? 'true' : undefined}>
+  {loading ? <Spinner label="コメントを読み込み中" /> : <CommentList />}
+</div>
+
+// 送信中のボタン。ラベルを「保存中」に変えて状態を伝える
+<Button label="保存中" disabled icon={<Spinner hideLabel />} />
+```
+
+```vue
+<!-- Vue -->
+<div :aria-busy="loading ? 'true' : undefined">
+  <Spinner v-if="loading" label="コメントを読み込み中" />
+  <CommentList v-else />
+</div>
+
+<!-- 送信中のボタン。ラベルを「保存中」に変えて状態を伝える -->
+<Button label="保存中" disabled><template #icon><Spinner hide-label /></template></Button>
+```
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | `'読み込み中'` | 読み上げ文。`hideLabel` でなければリングの右に表示する。空文字・空白だけなら既定に戻る |
+| `hideLabel` | `boolean` | `false` | 文字を見た目だけ隠し、読み上げには残す |
+| `size` | `number` | `16` | リングの直径（px）。アイコンの既定と同じ。非有限・0 以下は 16 |
+
+## アクセシビリティ
+
+- ルートは `role="status"` です。暗黙の `aria-live="polite"` に任せ、`aria-live` は重ねていません。
+  Spinner が現れると `label` の文が、進行中の読み上げを待ってから読まれます。
+- リングは `aria-hidden="true"` の飾りです。状態は `label` の文字で伝えます。`hideLabel` でも読み上げ名は残ります。
+- Button の中で使うときは、ボタンのラベルを「保存中」のように変えて状態を伝えてください。
+  Button の `icon` は読み上げから外れるため、中の Spinner の status は読まれません。
+- 領域全体を読み込んでいる間は、その領域に `aria-busy="true"` を付けてください（[Skeleton](/components/skeleton/) と同じ言い方です）。
+  読み込みが終わったら外します。
+- 短時間で終わる読み込みで一瞬だけ Spinner が出ると、ちらつきと余計な読み上げになります。
+  表示を少し遅らせるかどうかは利用側で判断してください。
+- 回転は `prefers-reduced-motion: reduce` で止まります。止まっていても 3/4 のリングと文字で読み込み中が伝わります。
+- 強制配色では、弧を `CanvasText`、溝を `GrayText` で描き分けます。
+
+## スタイル
+
+- 色は親の文字色（`currentColor`）を継ぎます。単体では `--koyori-color-text-secondary`、Button の中ではボタンの文字色と同じになります。
+- 個別に変える場合は、Spinner を囲む要素か Spinner 自身で `--spinner-color` を上書きします。
+- 回転の周期は `--koyori-spinner-duration`（既定 900ms）です。
+- 文字は `sm` のトークン、リングと文字の間は `--koyori-space-sm` です。
+
+## 検証
+
+```sh
+pnpm build
+node scripts/check-spinner.cjs
+```

@@ -30,6 +30,7 @@
   --koyori-dialog-height: auto;
   --koyori-sidebar-width: 240px;
   --koyori-progress-height: 8px;
+  --koyori-spinner-duration: 900ms;
   --koyori-sidebar-rail-width: 64px;
   --koyori-sidebar-height: 240px;
   --koyori-drawer-width: 280px;

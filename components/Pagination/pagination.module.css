@@ -1,0 +1,45 @@
+@import '../tokens.css';
+
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--koyori-space-md);
+  color: var(--koyori-color-text-secondary);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.range {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.buttons {
+  display: flex;
+  gap: var(--koyori-space-sm);
+}
+
+/* aria-disabled のボタンを :disabled と同じ見た目にする。shared/control.module.css は DataList と共有なので触らず、
+   ボタンの変数を上書きしてホバーの背景と押下の縮小も止める。[data-variant] は tertiary の変数より詳細度を上げるため。 */
+.buttons > [aria-disabled='true'][data-variant] {
+  --button-background: var(--koyori-color-surface-disabled);
+  --button-hover-background: var(--koyori-color-surface-disabled);
+  --button-border: transparent;
+  --button-color: var(--koyori-color-text-disabled);
+  --button-press-scale: 1;
+  color: var(--koyori-color-text-disabled);
+  cursor: not-allowed;
+}
+
+.buttons > [aria-disabled='true'] > span {
+  border-color: transparent;
+  background: var(--koyori-color-surface-disabled);
+}
+
+@media (forced-colors: active) {
+  .buttons > [aria-disabled='true'][data-variant] { color: GrayText; }
+  .buttons > [aria-disabled='true'] > span { border-color: GrayText; }
+}

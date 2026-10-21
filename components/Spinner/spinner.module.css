@@ -1,0 +1,62 @@
+@import '../tokens.css';
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--koyori-space-sm);
+  color: var(--koyori-color-text-secondary);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+/* Button の中では文字色と同じ色にする。無効のボタンなら無効の文字色になる。 */
+:where(button) .root {
+  color: inherit;
+}
+
+/* 色はここで変えられる。既定は親の文字色を継ぐ。 */
+.ring {
+  color: var(--spinner-color, currentColor);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: koyori-spinner-rotate var(--koyori-spinner-duration) linear infinite;
+}
+
+.track {
+  stroke-opacity: 0.25;
+}
+
+/* 円周（2π × 10 ≈ 62.8）の 3/4 だけを描く。止まっていても「途中」に見える形にする。 */
+.arc {
+  stroke-dasharray: 47 16;
+}
+
+.label {
+  overflow-wrap: anywhere;
+}
+
+/* Sidebar の rail と同じ「見た目だけ隠す」書き方。読み上げには残す。 */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes koyori-spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton と同じく動きを止める。静止した 3/4 のリングと文字で読み込み中を伝える。 */
+@media (prefers-reduced-motion: reduce) {
+  .ring { animation: none; }
+}
+
+/* 薄い溝は強制配色で消えるため、溝と弧を別のシステム色で描き分ける。 */
+@media (forced-colors: active) {
+  .ring { forced-color-adjust: none; color: CanvasText; }
+  .track { stroke: GrayText; stroke-opacity: 1; }
+}
