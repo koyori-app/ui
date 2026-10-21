@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Field, Input, Meter } from '@koyori-app/ui-react';
+import { Field, Meter, PasswordInput } from '@koyori-app/ui-react';
 import '@koyori-app/ui-react/style.css';
 
 // 文字は見た目だけ隠し、読み上げには残す。
@@ -13,7 +13,7 @@ export default function MeterDemo() {
 
   return <div style={{ display: 'grid', gap: 8, maxWidth: 360 }}>
     <Field id="meter-demo-password" label="新しいパスワード" description="12 文字以上で「強い」になります。">
-      <Input type="password" autocomplete="new-password" value={password} onValueChange={setPassword} />
+      <PasswordInput autocomplete="new-password" value={password} onValueChange={setPassword} />
     </Field>
     <Meter label="パスワードの強度" value={level} valueText={text} />
     {/* 文は段が変わった時だけ変わるので、打鍵ごとには読み上げない。 */}

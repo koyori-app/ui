@@ -126,6 +126,16 @@ Input には `prefix` / `suffix`（Vue は同名スロット）で入力欄の�
 トグルボタンには Button の `ariaPressed`（`'true' | 'false'`）を使います。
 `node scripts/check-input.cjs` に先頭・末尾の要素の検証も含めています。
 
+PasswordInput は上の組み立て（Input + 末尾の表示切り替えボタン）を部品にしたパスワード欄です。
+`value`・`onValueChange`・`autocomplete`（`current-password` か `new-password` を推奨）・`disabled`・`readOnly` は Input と同じで、
+Field の中では `id`・`aria-describedby`・`aria-invalid`・`required` を入力欄だけに受け取ります。Field の外では `ariaLabel` を付けます。
+表示状態は `visible` / `onVisibleChange` で親が持つか、省略して内部で持ちます（初期値は `defaultVisible`）。
+切り替えボタンの名前は `toggleLabel`（既定 `パスワードを表示`）で固定し、状態は `aria-pressed` で伝えます。
+切り替えでは `type` を `password` と `text` で入れ替え、切り替え前のカーソル位置を描画後に戻します。フォーカスはボタンに残ります。
+Input を合成せず、同じ markup を `Field/field.module.css` で組んでいます（親から子の `suffix` スロットへ要素を渡せないため）。
+カーソル位置の控えと復元は `components/PasswordInput/password-input.ts` にまとめ、`node scripts/check-password-input.cjs` で検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/password-input.mdx)を参照してください。
+
 Dropdown はアクションメニューです。`label` と `items: { value, label, disabled? }[]` を渡し、
 項目を実行すると閉じて `onSelect(value)` を呼び出します。選択状態は持ちません。`value` は一覧内で一意にしてください。
 `disabled` で全体を無効化し、`defaultOpen` で初期表示を開けます。`emptyMessage` で空表示を変更できます。
@@ -396,7 +406,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

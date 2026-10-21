@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { Field, Input, Meter } from './index';
+import { Field, Meter, PasswordInput } from './index';
 
 const meta = {
   title: 'Components/Meter',
@@ -48,7 +48,7 @@ function PasswordStrengthExample() {
   return (
     <div style={{ display: 'grid', gap: 8, width: 320 }}>
       <Field id="meter-password" label="新しいパスワード" description="12 文字以上で「強い」になります。">
-        <Input type="password" autocomplete="new-password" value={password} onValueChange={setPassword} />
+        <PasswordInput autocomplete="new-password" value={password} onValueChange={setPassword} />
       </Field>
       <Meter label="パスワードの強度" value={level} valueText={text} />
       <p role="status" style={hidden}>{level ? `パスワードの強度: ${text}` : ''}</p>

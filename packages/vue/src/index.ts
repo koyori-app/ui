@@ -48,3 +48,4 @@ export { default as IconPicker, type IconPickerProps } from './generated/compone
 export { default as Spinner, type SpinnerProps } from './generated/components/Spinner/Spinner.vue';
 export { default as Meter, type MeterProps } from './generated/components/Meter/Meter.vue';
 export type { MeterTone } from './generated/components/Meter/meter.js';
+export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.vue';

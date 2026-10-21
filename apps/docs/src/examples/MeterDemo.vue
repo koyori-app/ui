@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Field, Input, Meter } from '@koyori-app/ui-vue';
+import { Field, Meter, PasswordInput } from '@koyori-app/ui-vue';
 import '@koyori-app/ui-vue/style.css';
 
 const password = ref('');
@@ -15,7 +15,7 @@ const text = computed(() => ['未入力', '弱い', '普通', '強い'][level.va
 <template>
   <div style="display: grid; gap: 8px; max-width: 360px">
     <Field id="meter-demo-password" label="新しいパスワード" description="12 文字以上で「強い」になります。">
-      <Input type="password" autocomplete="new-password" :value="password" :on-value-change="(next) => (password = next)" />
+      <PasswordInput autocomplete="new-password" :value="password" :on-value-change="(next) => (password = next)" />
     </Field>
     <Meter label="パスワードの強度" :value="level" :value-text="text" />
     <!-- 文は段が変わった時だけ変わるので、打鍵ごとには読み上げない。 -->

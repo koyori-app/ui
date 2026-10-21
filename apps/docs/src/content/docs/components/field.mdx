@@ -5,7 +5,7 @@ description: ラベル・説明・エラーを入力欄に関連付けるフォ�
 
 import FieldPreview from '../../../components/FieldPreview.astro';
 import NumberInputPreview from '../../../components/NumberInputPreview.astro';
-import PasswordInputPreview from '../../../components/PasswordInputPreview.astro';
+import InputAffixPreview from '../../../components/InputAffixPreview.astro';
 
 Field は、ラベル・説明・エラーを中の Input・Textarea・Picker に関連付けます。
 Input は1行の文字・数値入力、Textarea は複数行の文字入力です。
@@ -84,7 +84,7 @@ Input には `prefix`（React は要素、Vue は同名スロット）と `suffi
 単位や通貨記号のような文字のほか、パスワードの表示切り替えのようなボタンも置けます。
 入力欄と前後の要素はひとつの枠に収まり、枠・背景・ホバー・エラー・無効の見た目は外側の要素が描きます。
 
-<PasswordInputPreview />
+<InputAffixPreview />
 
 ```tsx
 // React
@@ -115,6 +115,7 @@ Input には `prefix`（React は要素、Vue は同名スロット）と `suffi
 パスワードの表示切り替えでは、`type` を `password` と `text` で入れ替えます。値は利用側が持つため消えませんが、
 カーソル位置は切り替えで失われます。上の例のように `selectionStart` / `selectionEnd` を控えて、描画後に `setSelectionRange` で戻してください。
 ボタンの名前は「パスワードを表示」で固定し、状態は `ariaPressed` で伝えます（名前と状態の両方を変えると読み上げが分かりにくくなります）。
+この組み立てとカーソル位置の復元をまとめた部品が [PasswordInput](/components/password-input/) です。パスワード欄にはそちらを使ってください。
 
 前後の要素の高さと角丸は「外側の値 − 余白」で計算するので、`--koyori-control-height-sm` や `--koyori-radius-md` を上書きしても枠からはみ出しません。
 文字だけを置く場合は読み上げから除かれません。単位を読み上げたくない場合は `aria-hidden="true"` を付けた要素を渡してください。

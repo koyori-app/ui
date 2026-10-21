@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, ref } from 'vue';
-import { Field, Input, Meter } from './index';
+import { Field, Meter, PasswordInput } from './index';
 
 const meta = {
   title: 'Components/Meter',
@@ -46,7 +46,7 @@ export const FiveSegments: Story = {
 /* 長さだけの簡易判定。段が変わった時だけ status の文が変わるので、打鍵ごとには読み上げない。 */
 export const PasswordStrength: Story = {
   render: () => ({
-    components: { Field, Input, Meter },
+    components: { Field, Meter, PasswordInput },
     setup() {
       const password = ref('');
       const level = computed(() => (password.value.length === 0 ? 0 : password.value.length < 8 ? 1 : password.value.length < 12 ? 2 : 3));
@@ -55,7 +55,7 @@ export const PasswordStrength: Story = {
     },
     template: `<div style="display: grid; gap: 8px; width: 320px">
       <Field id="meter-password" label="新しいパスワード" description="12 文字以上で「強い」になります。">
-        <Input type="password" autocomplete="new-password" :value="password" :on-value-change="(next) => (password = next)" />
+        <PasswordInput autocomplete="new-password" :value="password" :on-value-change="(next) => (password = next)" />
       </Field>
       <Meter label="パスワードの強度" :value="level" :value-text="text" />
       <p role="status" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap">{{ level ? \`パスワードの強度: \${text}\` : '' }}</p>
