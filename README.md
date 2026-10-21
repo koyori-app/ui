@@ -28,7 +28,7 @@ pnpm build-storybook
 Storybook 起動中もこのコマンドで変更を反映できます。生成物は直接編集・コミットしません。
 Story は各パッケージの `src/*.stories.*` に追加します。
 
-角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
+角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置・スピナーの周期の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
 Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
 配色はくすんだラベンダーとセージを使い、背景に色を持たせながら文字は濃く保ちます。
@@ -324,6 +324,18 @@ Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作と
 塗りと縁は `--skeleton-background`・`--skeleton-border` で上書きできます。行数の計算は `components/Skeleton/skeleton.ts` にまとめ、
 `node scripts/check-skeleton.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/skeleton.mdx)を参照してください。
+## Spinner
+
+`Spinner` は読み込み中を回転するリングと文字で示す表示専用の部品です。場所取りは Skeleton、
+操作の結果待ちや一覧・コメントの取得中はこちらを使います。`label`（既定 `読み込み中`、空白だけなら既定に戻る）・
+`hideLabel`・`size`（直径 px、既定 16。非有限・0 以下は 16）を受け取ります。
+ルートは `role="status"` で、暗黙の `aria-live` に任せて `aria-live` は重ねません。リングは `aria-hidden` の飾りで、
+`hideLabel` でも文字は見た目だけ隠して読み上げに残します。領域全体の読み込み中は親に `aria-busy="true"` を付けてください。
+Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボタンのラベルを「保存中」に変えて状態を伝えます。
+色は親の文字色を継ぎ（Button の中ではボタンの文字色）、`--spinner-color` で上書きできます。周期は `--koyori-spinner-duration`（900ms）です。
+回転は「動きを減らす」設定で止まり、強制配色では弧を `CanvasText`、溝を `GrayText` で描きます。
+文言と直径の補正は `components/Spinner/spinner.ts` にまとめ、`node scripts/check-spinner.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/spinner.mdx)を参照してください。
 ## Alert
 
 `Alert` はフォームやセクション単位の失敗・注意・案内を伝える部品です。入力欄ごとのエラーは Field の `error`、
@@ -374,7 +386,7 @@ Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作と
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・IconPicker・Switch・Skeleton・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

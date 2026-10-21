@@ -48,6 +48,7 @@ export default defineConfig({
             { label: 'ProgressBar', slug: 'components/progress-bar' },
             { label: 'Sidebar', slug: 'components/sidebar' },
             { label: 'Skeleton', slug: 'components/skeleton' },
+            { label: 'Spinner', slug: 'components/spinner' },
             { label: 'Switch', slug: 'components/switch' },
             { label: 'Tag・Badge', slug: 'components/tag-badge' },
             { label: 'Tabs', slug: 'components/tabs' },

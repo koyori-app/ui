@@ -45,3 +45,4 @@ export { default as Switch, type SwitchProps } from './generated/components/Swit
 export { default as EyeIcon, type EyeIconProps } from './generated/components/EyeIcon/EyeIcon.vue';
 export { default as EyeOffIcon, type EyeOffIconProps } from './generated/components/EyeOffIcon/EyeOffIcon.vue';
 export { default as IconPicker, type IconPickerProps } from './generated/components/IconPicker/IconPicker.vue';
+export { default as Spinner, type SpinnerProps } from './generated/components/Spinner/Spinner.vue';
