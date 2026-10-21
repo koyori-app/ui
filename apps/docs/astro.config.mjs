@@ -45,6 +45,7 @@ export default defineConfig({
             { label: 'IconPicker', slug: 'components/icon-picker' },
             { label: 'InlineEdit', slug: 'components/inline-edit' },
             { label: 'Meter', slug: 'components/meter' },
+            { label: 'Pagination', slug: 'components/pagination' },
             { label: 'PasswordInput', slug: 'components/password-input' },
             { label: 'Picker', slug: 'components/picker' },
             { label: 'ProgressBar', slug: 'components/progress-bar' },

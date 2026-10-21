@@ -49,3 +49,5 @@ export { default as Spinner, type SpinnerProps } from './generated/components/Sp
 export { default as Meter, type MeterProps } from './generated/components/Meter/Meter.vue';
 export type { MeterTone } from './generated/components/Meter/meter.js';
 export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.vue';
+export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.vue';
+export { type PaginationRange } from './generated/components/Pagination/pagination.js';
