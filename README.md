@@ -2,6 +2,10 @@
 
 Koyori のプロジェクトで共有する UI。Mitosis の共通ソースから Vue・React 向けのコンポーネントを生成します。
 
+## 公開
+
+`@koyori-app/ui-vue` は npm に公開します。`packages/vue/package.json` の `version` を上げて main に取り込み、`v<version>` の tag を push すると `tag-release.yml` が GitHub Release の draft を作ります。内容を確認して Release を公開すると `release.yml` が npm に publish します（npmjs.com に Trusted Publisher として登録済みのリポジトリ + workflow から OIDC で認証）。初版だけは手元で `pnpm --filter @koyori-app/ui-vue publish` を実行してから Trusted Publisher を登録します。
+
 ## 開発
 
 Node.js 24 と pnpm 12.4.1 を使います。
