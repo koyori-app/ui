@@ -15,6 +15,7 @@ export interface TextareaProps {
   disabled?: boolean;
   readOnly?: boolean;
   onValueChange?: (value: string) => void;
+  onBlur?: () => void;
 }
 
 export default function Textarea(props: TextareaProps) {
@@ -45,6 +46,7 @@ export default function Textarea(props: TextareaProps) {
       aria-invalid={state.context?.invalid || undefined}
       onInput={(event) => state.change(event)}
       onChange={(event) => state.change(event)}
+      onBlur={() => props.onBlur?.()}
     />
   );
 }

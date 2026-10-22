@@ -35,6 +35,14 @@ export const WithTextarea: Story = {
     template: '<Field v-bind="args"><Textarea :rows="4" /></Field>',
   }),
 };
+export const WithAside: Story = {
+  args: { id: 'password', label: 'パスワード', description: undefined, required: true },
+  render: (args) => ({
+    components: { Field, Input },
+    setup: () => ({ args }),
+    template: '<Field v-bind="args"><template #aside><a href="#">パスワードをお忘れですか?</a></template><Input type="password" /></Field>',
+  }),
+};
 export const StandaloneInput: Story = {
   render: () => ({
     components: { Input },

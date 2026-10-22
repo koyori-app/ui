@@ -10,14 +10,22 @@
   line-height: var(--koyori-line-height-sm);
 }
 
-/* ラベルの横の余白を押しても入力欄へ移らないよう、文字の幅に収める。 */
+/* ラベルの横の余白を押しても入力欄へ移らないよう、label は伸ばさず文字の幅に収める。 */
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--koyori-space-md);
+}
+
 .label {
   display: inline-flex;
-  align-self: flex-start;
   align-items: center;
   gap: var(--koyori-space-xs);
   font-weight: 600;
 }
+
+.aside:empty { display: none; }
 
 .required {
   color: var(--koyori-color-danger);

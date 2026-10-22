@@ -49,6 +49,33 @@ export const Disabled: Story = { args: { value: '0', disabled: true } };
 export const ReadOnly: Story = { args: { value: '25', readOnly: true } };
 export const OutOfRange: Story = { args: { value: '101' } };
 export const Text: Story = { args: { type: 'text' } };
+export const Date: Story = { args: { type: 'date', value: '2026-10-22' } };
+export const InputMode: Story = { args: { type: 'text', inputMode: 'numeric' } };
+
+/* フォーカスが外れるたびに 1 回通知する。数値の確定通知が先に届く。 */
+export const Blur: Story = {
+  render: () => ({
+    components: { Field, Input },
+    setup() {
+      const draft = ref('');
+      const events = ref<(number | null | 'blur')[]>([]);
+      return {
+        draft, events,
+        change(value: string) { draft.value = value; },
+        commit(value: number | null) { events.value.push(value); },
+        blur() { events.value.push('blur'); },
+      };
+    },
+    template: `
+      <div style="max-width: 360px; display: grid; gap: 16px">
+        <Field id="number-input" label="数値">
+          <Input type="number" :value="draft" :on-value-change="change" :on-number-commit="commit" @blur="blur" />
+        </Field>
+        <button type="button">次の操作</button>
+        <p>通知: <output data-testid="events">{{ JSON.stringify(events) }}</output></p>
+      </div>`,
+  }),
+};
 
 /* ここから先頭・末尾の要素。枠は外側の group が 1 つだけ描く。 */
 const affixExample = (label: string, args: InputProps, slots = '', error = '') => ({

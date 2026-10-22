@@ -119,9 +119,13 @@ ConfirmDialog は Dialog と Button を組み合わせた二択の確認です�
 Field は `id`・`label`・`description`・`error`・`required` を受け取り、中の Input（1行）・Textarea（複数行）・Picker（選択）に渡します。Field 内には対象を1つだけ置きます。
 `id` は入力欄に付き、ラベルの `for` と説明・エラーの `aria-describedby` に使います。エラーがあると `aria-invalid="true"` を付けます。
 エラー領域は常設の `aria-live="polite"` で、後から出たエラーも通知します。`requiredText` で「必須」の表示を差し替えられます。
+`aside`（Vue は `#aside` スロット）でラベルの行の右端にリンクや小さなボタンを置けます。`label` の外に置くため、ラベルのクリックや読み上げ名に混ざりません。
 Picker ではトリガーに Field の `id` が付き、`requiredText` を名前に含めて閉じた状態でも必須を伝えます。
 説明・エラーの `aria-describedby` はトリガーにだけ付けます。一覧は `aria-required` と `aria-invalid` で状態を伝えます。必須チェックと送信値の管理はアプリ側で行います。
 Input・Textarea の値は `value` と `onValueChange(value)` で扱い、入力のたびに呼ばれます。Field の外で使う場合は `ariaLabel` で名前を付けます。
+Input・Textarea の `onBlur()` はフォーカスが外れるたびに引数なしで 1 回呼ばれます。数値入力では確定通知（`onNumberCommit`）の後です。
+Input の `type` には `date` も指定できます。`min` / `max` / `step` と確定通知は `number` のときだけ使います。
+Input の `inputMode`（`text`・`decimal`・`numeric`・`tel`・`search`・`email`・`url`）は仮想キーボードの種類を指定するだけで、値は検証しません。
 入力欄の枠線は `--koyori-color-border-strong`（背景比 3:1 以上）、エラーは `--koyori-color-danger`（4.5:1 以上）を使います。
 Input には `prefix` / `suffix`（Vue は同名スロット）で入力欄の前後に要素を置けます。単位・通貨記号のほか、
 パスワードの表示切り替えのようなボタンも置けます。入力欄と前後の要素はひとつの枠に収まり、枠・背景・ホバー・エラー・無効の

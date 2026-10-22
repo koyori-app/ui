@@ -169,6 +169,14 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Butto
       assert.deepEqual(await notifications('changes'), ['文字列-0.5']);
       assert.deepEqual(await commits(), [], 'text input does not send numeric notifications');
       for (const attribute of ['min', 'max', 'step']) assert.equal(await input.getAttribute(attribute), null);
+      // onBlur は blur のたびに 1 回、数値の確定通知の後に呼ばれる。確定を拒んだ blur でも呼ばれる。
+      await story('blur');
+      await input.fill('5'); await input.press('Tab');
+      assert.deepEqual(await notifications('events'), [5, 'blur'], 'blur commits first, then notifies once');
+      await input.focus(); await input.press('Enter'); await input.press('Tab');
+      assert.deepEqual(await notifications('events'), [5, 'blur', 5, 'blur'], 'Enter then blur: one commit and one blur notification');
+      await input.fill('0.5'); await input.press('Tab');
+      assert.deepEqual(await notifications('events'), [5, 'blur', 5, 'blur', 'blur'], 'rejected commit still notifies blur');
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await story('progress');
       assert.equal(await input.evaluate(el => getComputedStyle(el.parentElement).transitionDuration), '0s');
@@ -241,7 +249,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Butto
 
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Input numeric boundaries, partial edits, notifications, IME, labels, focus, disabled/readonly, reduced motion, prefix/suffix affixes, password toggle and axe passed`);
+      console.log(`${framework}: Input numeric boundaries, partial edits, notifications, blur, IME, labels, focus, disabled/readonly, reduced motion, prefix/suffix affixes, password toggle and axe passed`);
     }
   } finally {
     await browser?.close();

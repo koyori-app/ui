@@ -9,7 +9,7 @@ export interface InputProps {
   /** Required when not inside Field. */
   ariaLabel?: string;
   name?: string;
-  type?: 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
+  type?: 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number' | 'date';
   /** Numeric constraints use native HTML validation; values are not clamped. */
   min?: number;
   max?: number;
@@ -17,6 +17,8 @@ export interface InputProps {
   value?: string;
   placeholder?: string;
   autocomplete?: string;
+  /** Virtual keyboard hint. Does not validate the value. */
+  inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url';
   disabled?: boolean;
   readOnly?: boolean;
   onValueChange?: (value: string) => void;
@@ -24,6 +26,8 @@ export interface InputProps {
   onNumberCommit?: (value: number | null) => void;
   /** Number inputs only: native validation message when a commit is rejected. */
   onNumberInvalid?: (message: string) => void;
+  /** Called on every blur, after the number commit. */
+  onBlur?: () => void;
   /** React: rendered element. Vue: use the prefix slot. Shown before the input. */
   prefix?: any;
   /** React: rendered element. Vue: use the suffix slot. Shown after the input, e.g. a toggle button. */
@@ -94,6 +98,7 @@ export default function Input(props: InputProps) {
       value={props.value}
       placeholder={props.placeholder}
       autoComplete={props.autocomplete}
+      inputMode={props.inputMode}
       disabled={props.disabled}
       readOnly={props.readOnly}
       required={state.context?.required}
@@ -101,7 +106,7 @@ export default function Input(props: InputProps) {
       aria-describedby={state.context?.describedBy}
       aria-invalid={state.context?.invalid || (props.type === 'number' && state.numberInvalid) || undefined}
       onFocus={() => { numberCommitted = false; }}
-      onBlur={(event) => state.commit(event)}
+      onBlur={(event) => { state.commit(event); props.onBlur?.(); }}
       onKeyDown={(event) => state.keydown(event)}
       onInput={(event) => state.change(event)}
       onChange={(event) => state.change(event)}
