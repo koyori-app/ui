@@ -44,6 +44,27 @@ export const Disabled: Story = { args: { value: '0', disabled: true } };
 export const ReadOnly: Story = { args: { value: '25', readOnly: true } };
 export const OutOfRange: Story = { args: { value: '101' } };
 export const Text: Story = { args: { type: 'text' } };
+export const Date: Story = { args: { type: 'date', value: '2026-10-22' } };
+export const InputMode: Story = { args: { type: 'text', inputMode: 'numeric' } };
+
+/* フォーカスが外れるたびに 1 回通知する。数値の確定通知が先に届く。 */
+function BlurExample() {
+  const [draft, setDraft] = useState('');
+  const [events, setEvents] = useState<(number | null | 'blur')[]>([]);
+  return (
+    <div style={{ maxWidth: 360, display: 'grid', gap: 16 }}>
+      <Field id="number-input" label="数値">
+        <Input type="number" value={draft} onValueChange={setDraft}
+          onNumberCommit={(value) => setEvents((list) => [...list, value])}
+          onBlur={() => setEvents((list) => [...list, 'blur'])} />
+      </Field>
+      <button type="button">次の操作</button>
+      <p>通知: <output data-testid="events">{JSON.stringify(events)}</output></p>
+    </div>
+  );
+}
+
+export const Blur: Story = { render: () => <BlurExample /> };
 
 /* ここから先頭・末尾の要素。枠は外側の group が 1 つだけ描く。 */
 function AffixExample(args: InputProps & { label: string; error?: string }) {

@@ -27,6 +27,10 @@ export const WithTextarea: Story = {
   args: { id: 'note', label: 'メモ', description: '担当者に共有したい補足を書きます。' },
   render: (args) => <Field {...args}><Textarea rows={4} /></Field>,
 };
+export const WithAside: Story = {
+  args: { id: 'password', label: 'パスワード', description: undefined, required: true },
+  render: (args) => <Field {...args} aside={<a href="#">パスワードをお忘れですか?</a>}><Input type="password" /></Field>,
+};
 export const StandaloneInput: Story = {
   render: () => <Input type="search" ariaLabel="タスクを検索" placeholder="検索" />,
 };
