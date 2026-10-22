@@ -37,16 +37,17 @@
   pointer-events: none;
 }
 .mark { display: block; width: 100%; height: 100%; overflow: visible; }
-.check {
+.check,
+.dash {
   stroke: currentColor;
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
   opacity: 0;
 }
-.input:checked + .box {
+.check { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.input:checked + .box,
+.input:indeterminate + .box {
   border-color: var(--koyori-color-selection-indicator);
   background: var(--koyori-color-selection);
 }
@@ -55,6 +56,9 @@
   opacity: 1;
   transition: stroke-dashoffset var(--koyori-motion-base) var(--koyori-ease-out);
 }
+/* 混在の状態では、下の checked に関わらず横棒だけを出す。 */
+.input:indeterminate + .box .check { opacity: 0; }
+.input:indeterminate + .box .dash { opacity: 1; }
 .root:hover .input:not(:disabled) + .box { border-color: var(--koyori-color-text); }
 .input:focus-visible + .box {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
@@ -71,7 +75,8 @@
 }
 @media (forced-colors: active) {
   .box { forced-color-adjust: none; background: Canvas; border-color: ButtonText; color: CanvasText; }
-  .input:checked + .box { background: Highlight; border-color: Highlight; color: HighlightText; }
+  .input:checked + .box,
+  .input:indeterminate + .box { background: Highlight; border-color: Highlight; color: HighlightText; }
   .root:hover .input:not(:disabled) + .box { border-color: Highlight; }
   .input:focus-visible + .box { outline-color: Highlight; }
   .input:disabled + .box { background: Canvas; border-color: GrayText; color: GrayText; }

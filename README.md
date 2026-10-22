@@ -271,8 +271,9 @@ Calendarと同じ範囲制限とキーボード操作を使い、選択・取消
 `Checkbox` は `label` を必須にし、`hideLabel` で読み上げ名を保ったまま表示ラベルを隠せます。
 `checked` と `onCheckedChange` で状態を管理でき、省略時は標準の入力要素に任せます。
 チェック時は SVG の線を描画し、外枠や操作領域のサイズは変えません。動きを減らす設定にも対応します。
+`indeterminate` が true の間は混在の状態（横棒と `aria-checked="mixed"`）を出します。クリックでは反転した `checked` を `onCheckedChange` で知らせるので、全選択などでは子の状態から `checked` と `indeterminate` を導いて渡します。
 [使い方とプレビュー](apps/docs/src/content/docs/components/checkbox.mdx)を参照してください。
-Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描画を検証できます。
+Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描画を検証できます（`CHECKBOX_TEST_FRAMEWORK=vue` で片方だけ）。
 
 ## DataList
 

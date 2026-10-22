@@ -9,7 +9,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "generate": "mitosis build --config mitosis.config.cjs && node scripts/copy-css.mjs",
+    "generate": "mitosis build --config mitosis.config.cjs && node scripts/copy-css.mjs && node scripts/patch-vue-inject.mjs",
     "typecheck": "pnpm generate && tsc -p tsconfig.mitosis.json && pnpm --filter './packages/*' build && pnpm -r typecheck",
     "build": "pnpm generate && pnpm -r build",
     "storybook:vue": "pnpm generate && pnpm --filter @koyori-app/ui-vue storybook",
