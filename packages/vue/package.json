@@ -1,9 +1,12 @@
 {
   "name": "@koyori-app/ui-vue",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Koyori UI components for Vue",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koyori-app/ui.git",
@@ -11,6 +14,7 @@
   },
   "files": [
     "dist",
+    "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md"
   ],

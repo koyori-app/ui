@@ -1,0 +1,46 @@
+name: Release
+
+# 初版は手元で publish し、npmjs.com でこのリポジトリ + この workflow を
+# Trusted Publisher として登録する。以降は GitHub Release の公開で自動 publish。
+# tag-release.yml が draft Release を作る → 確認して Publish → この workflow が動く。
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # OIDC trusted publishing + provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate, build and typecheck @koyori-app/ui-vue
+        run: |
+          pnpm generate
+          pnpm --filter @koyori-app/ui-vue build
+          pnpm --filter @koyori-app/ui-vue typecheck
+
+      # pnpm は publish を npm に委ねる。trusted publishing (OIDC) には npm >= 11.5.1 が要る。
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
+      # NODE_AUTH_TOKEN は不要。OIDC の id-token が自動で交換される。
+      - name: Publish @koyori-app/ui-vue to npm
+        run: pnpm --filter @koyori-app/ui-vue publish --provenance --access public --no-git-checks

@@ -1,0 +1,69 @@
+name: Tag Release
+
+# tag push → git-cliff で変更履歴 → GitHub Release の draft を作る。
+# npm publish は release.yml（Release published 時）だけ。二重発火を防ぐため --draft 必須。
+# workflow_dispatch は既存 tag の draft を作り直す手動復旧用（tag の移動はしない）。
+on:
+  push:
+    tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'draft Release を作る既存の tag（例: v0.1.0）'
+        required: true
+        type: string
+
+permissions:
+  contents: write # gh release create
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0 # git-cliff は全履歴が要る
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Resolve release tag
+        id: release_tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "name=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$REF_NAME" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify tag on remote
+        env:
+          TAG: ${{ steps.release_tag.outputs.name }}
+        run: |
+          git fetch --tags origin
+          git rev-parse "refs/tags/$TAG"
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
+        with:
+          tool: git-cliff
+
+      - name: Generate changelog
+        run: git-cliff --latest --strip header -o CHANGELOG_RELEASE.md
+
+      - name: Create GitHub Release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release_tag.outputs.name }}
+        run: |
+          TARGET="$(git rev-list -n 1 "$TAG")"
+          gh release create "$TAG" \
+            --verify-tag \
+            --target "$TARGET" \
+            --draft \
+            --title "$TAG" \
+            --notes-file CHANGELOG_RELEASE.md
