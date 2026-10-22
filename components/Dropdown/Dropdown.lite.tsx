@@ -40,6 +40,8 @@ interface DropdownOptions {
   onSelect?: (value: string) => void;
   /** Called when the menu opens or closes, e.g. to load items on open. */
   onOpenChange?: (open: boolean) => void;
+  /** トリガーが overflow: hidden / auto の中にあるとき true。パネルを Popover API の top layer に出して切れないようにする。 */
+  topLayer?: boolean;
 }
 
 /** A visible label or an accessible name is required. Without label, the trigger shows only the icon. */
@@ -123,7 +125,8 @@ export default function Dropdown(props: DropdownProps) {
     if (state.open) state.show(false);
   });
   onUpdate(() => {
-    requestAnimationFrame(() => state.position());
+    /* Vue では依存付き onUpdate が setup 中にも走るが、SSR には requestAnimationFrame が無い。 */
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => state.position());
   }, [state.open, props.items, props.disabled, props.label]);
   /* 通知は open の変化から出す。外側クリックの close は閉じていても呼ばれ、React では mount 時の props を掴んでいるため。 */
   onUpdate(() => {
@@ -135,7 +138,7 @@ export default function Dropdown(props: DropdownProps) {
   onUnMount(() => cleanupRef?.());
 
   return (
-    <div ref={rootRef!} class={styles.root}>
+    <div ref={rootRef!} class={styles.root} data-menu-top-layer={props.topLayer ? '' : undefined}>
       <button ref={triggerRef!} type="button" class={controls.button} data-variant={props.variant || 'ghost'}
         data-icon-only={!props.label} aria-label={props.ariaLabel || props.label}
         disabled={props.disabled} aria-expanded={state.open && !props.disabled}

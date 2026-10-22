@@ -1,4 +1,5 @@
 // Run after build-storybook. Uses the same browser setup as check-dropdown.cjs.
+// PICKER_TEST_FRAMEWORK=vue などで片方だけを検証できる。
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { resolve } = require('node:path');
@@ -7,6 +8,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = resolve(__dirname, '..');
 const port = process.env.PICKER_TEST_PORT || '6237';
 const base = `http://127.0.0.1:${port}`;
+const frameworks = ['react', 'vue'].filter((name) => !process.env.PICKER_TEST_FRAMEWORK || name === process.env.PICKER_TEST_FRAMEWORK);
+assert(frameworks.length, 'PICKER_TEST_FRAMEWORK は vue か react');
 const server = spawn('python3', ['-u', '-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'ignore'] });
 let browser;
 (async () => {
@@ -17,7 +20,7 @@ let browser;
       server.once('exit', code => reject(new Error(`Picker test server exited (${code}); check port ${port}`)));
     });
     browser = await chromium.launch({ headless: true });
-    for (const framework of ['react', 'vue']) {
+    for (const framework of frameworks) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -268,6 +271,46 @@ let browser;
       assert.equal(await options.nth(1).getAttribute('data-grow-top'), 'false');
       await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
       assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
+
+      // 色の点と説明は装飾。option の名前は label だけ、トリガーは文字だけにする。
+      const runAxe = async () => {
+        await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
+        assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
+      };
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--color-dots&viewMode=story`);
+      const statuses = page.getByRole('listbox', { name: 'ステータス' }).getByRole('option');
+      await statuses.first().waitFor();
+      await settle();
+      const dots = page.getByRole('listbox', { name: 'ステータス' }).locator('[style*="background-color"]');
+      assert.equal(await dots.count(), 4);
+      for (const dot of await dots.all()) {
+        assert.equal(await dot.getAttribute('aria-hidden'), 'true');
+        assert.deepEqual(await dot.evaluate(el => [getComputedStyle(el).width, getComputedStyle(el).height]), ['8px', '8px']);
+      }
+      assert.equal(await dots.nth(1).evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(59, 130, 246)');
+      assert.equal(await page.getByRole('listbox', { name: 'ステータス' }).getByRole('option', { name: '進行中', exact: true, selected: true }).count(), 1);
+      assert.equal(await page.getByRole('button', { name: /^ステータス/ }).innerText(), '進行中');
+      await runAxe();
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--descriptions&viewMode=story`);
+      const roles = page.getByRole('listbox', { name: '役割' });
+      await roles.getByRole('option').first().waitFor();
+      await settle();
+      assert.equal(await page.getByRole('searchbox').count(), 0);
+      for (const name of ['オーナー', '管理者', 'メンバー']) assert.equal(await roles.getByRole('option', { name, exact: true }).count(), 1, `${name} の名前に説明を混ぜない`);
+      const admin = roles.getByRole('option', { name: '管理者', exact: true });
+      assert(await admin.getByText('メンバーの追加と削除ができます').isVisible());
+      assert.equal(await admin.getByText('メンバーの追加と削除ができます').getAttribute('aria-hidden'), 'true');
+      const adminHeight = (await admin.boundingBox()).height;
+      assert(adminHeight > 36, '説明の分だけ行が伸びる');
+      assert(Number.isInteger(adminHeight), '端数の高さは隣接選択の背景に継ぎ目の線を出す');
+      assert.equal(await page.getByRole('button', { name: /^役割/ }).innerText(), 'メンバー');
+      await roles.press('Home');
+      await roles.press('Enter');
+      await settle();
+      assert.equal(await page.getByRole('button', { name: /^役割/ }).innerText(), 'オーナー');
+      await page.getByRole('button', { name: /^役割/ }).click();
+      await settle();
+      await runAxe();
 
       await story('controlled-without-search');
       await trigger.click();

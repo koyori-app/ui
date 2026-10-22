@@ -6,14 +6,14 @@ const emojis = ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪'];
 const sample = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23c4b5df"/></svg>';
 
 /* 選択も画像もアプリ側が持つ。ここでは受け取った通知を反映するだけ。 */
-const example = (args: IconPickerProps) => ({
+const example = (args: IconPickerProps, images = true) => ({
   components: { IconPicker },
   setup() {
     const emoji = ref(args.emoji);
     const imageUrl = ref(args.imageUrl);
     const picked = ref('なし');
     return {
-      args, emoji, imageUrl, picked,
+      args, emoji, imageUrl, picked, images,
       change(value: string) { emoji.value = value; imageUrl.value = undefined; },
       select(file: File) { picked.value = `${file.name} / ${file.type}`; imageUrl.value = sample; },
       remove() { imageUrl.value = undefined; },
@@ -21,7 +21,7 @@ const example = (args: IconPickerProps) => ({
   },
   template: `<div style="display: grid; gap: 12px; width: 320px">
     <IconPicker v-bind="args" :emoji="emoji" :image-url="imageUrl"
-      :on-emoji-change="change" :on-image-select="select" :on-image-remove="remove" />
+      :on-emoji-change="change" :on-image-select="images ? select : undefined" :on-image-remove="images ? remove : undefined" />
     <p>選んだファイル: <output>{{ picked }}</output></p>
   </div>`,
 });
@@ -40,7 +40,9 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = { args: { emoji: '📘' }, render: args => example(args) };
 export const WithImage: Story = { args: { emoji: '📘', imageUrl: sample }, render: args => example(args) };
 export const ImageError: Story = { args: { emoji: '📘', imageUrl: '/koyori-missing-icon.png' }, render: args => example(args) };
-export const Disabled: Story = { args: { emoji: '📘', disabled: true } };
+export const Disabled: Story = { args: { emoji: '📘', disabled: true }, render: args => example(args) };
+/* 画像を受け取らない利用側。画像のボタンは出さない。 */
+export const EmojiOnly: Story = { args: { emoji: '📘' }, render: args => example(args, false) };
 
 /* 折り返しが起きる数で、↑ ↓ の移動を確かめる。 */
 export const ManyEmojis: Story = {

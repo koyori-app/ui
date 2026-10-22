@@ -112,18 +112,23 @@ export default function IconPicker(props: IconPickerProps) {
           )}
         </For>
       </div>
-      <div class={styles.actions}>
-        <input ref={fileRef!} type="file" class={styles.file} accept={props.accept ?? 'image/*'}
-          tabIndex={-1} aria-hidden="true"
-          onChange={(event) => state.select(event)}
-        />
-        <Button variant="secondary" label={props.uploadLabel ?? '画像を選ぶ'} disabled={props.disabled}
-          onClick={() => fileRef?.click()} />
-        <Show when={props.imageUrl && props.onImageRemove}>
-          <Button variant="danger" label={props.removeLabel ?? '画像を削除'} disabled={props.disabled}
-            onClick={() => props.onImageRemove?.()} />
-        </Show>
-      </div>
+      {/* 画像を受け取らない利用側（絵文字だけ）にはボタンを出さない。両方無ければ grid の隙間も作らない。 */}
+      <Show when={props.onImageSelect || (props.imageUrl && props.onImageRemove)}>
+        <div class={styles.actions}>
+          <Show when={props.onImageSelect}>
+            <input ref={fileRef!} type="file" class={styles.file} accept={props.accept ?? 'image/*'}
+              tabIndex={-1} aria-hidden="true"
+              onChange={(event) => state.select(event)}
+            />
+            <Button variant="secondary" label={props.uploadLabel ?? '画像を選ぶ'} disabled={props.disabled}
+              onClick={() => fileRef?.click()} />
+          </Show>
+          <Show when={props.imageUrl && props.onImageRemove}>
+            <Button variant="danger" label={props.removeLabel ?? '画像を削除'} disabled={props.disabled}
+              onClick={() => props.onImageRemove?.()} />
+          </Show>
+        </div>
+      </Show>
     </div>
   );
 }
