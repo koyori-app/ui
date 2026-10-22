@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { ref } from 'vue';
-import { Dropdown, EllipsisIcon } from './index';
+import { computed, ref } from 'vue';
+import { Avatar, Dropdown, EllipsisIcon, type DropdownItem } from './index';
 
 const meta = {
   title: 'Components/Dropdown',
@@ -96,5 +96,81 @@ export const TwoMenus: Story = {
   render: (args) => ({
     components: { Dropdown }, setup: () => ({ args }),
     template: '<div><Dropdown v-bind="args" /><Dropdown v-bind="args" label="別の操作" /></div>',
+  }),
+};
+
+const columns: DropdownItem[] = [
+  { value: 'status', label: 'ステータス', kind: 'checkbox', checked: true },
+  { value: 'assignee', label: '担当者', kind: 'checkbox', checked: true },
+  { value: 'due', label: '期限', kind: 'checkbox', checked: false },
+  { value: 'labels', label: 'ラベル（変更不可）', kind: 'checkbox', checked: false, disabled: true },
+];
+/* 選んでも閉じない。checked はアプリが items を更新して反転する。開閉の通知も表示する。 */
+export const Checkboxes: Story = {
+  args: { label: '表示する列', defaultOpen: true, items: columns },
+  render: (args) => ({
+    components: { Dropdown },
+    setup() {
+      const items = ref(args.items as DropdownItem[]);
+      const changes = ref<string[]>([]);
+      const toggle = (value: string) => {
+        items.value = items.value.map((item) => item.value === value ? { ...item, checked: !item.checked } : item);
+        args.onSelect?.(value);
+      };
+      const openChange = (open: boolean) => { changes.value = [...changes.value, open ? '開' : '閉']; };
+      return { args, items, toggle, changes, openChange };
+    },
+    template: `<div>
+      <output style="display: block; margin-bottom: 12px">開閉: {{ changes.join('、') }}</output>
+      <Dropdown v-bind="args" :items="items" :on-select="toggle" :on-open-change="openChange" />
+    </div>`,
+  }),
+};
+export const Radios: Story = {
+  args: { label: '並び順', variant: 'tertiary', defaultOpen: true },
+  render: (args) => ({
+    components: { Dropdown },
+    setup() {
+      const sort = ref('updated');
+      const items = computed(() => [
+        { value: 'updated', label: '更新日' },
+        { value: 'created', label: '作成日' },
+        { value: 'title', label: 'タイトル' },
+      ].map((item): DropdownItem => ({ ...item, kind: 'radio', checked: item.value === sort.value })));
+      const select = (value: string) => { sort.value = value; args.onSelect?.(value); };
+      return { args, items, select };
+    },
+    template: '<Dropdown v-bind="args" :items="items" :on-select="select" />',
+  }),
+};
+export const Sections: Story = {
+  args: {
+    label: 'アカウント',
+    defaultOpen: true,
+    items: [
+      { heading: 'テナント', items: [{ value: 'koyori', label: 'Koyori' }, { value: 'personal', label: '個人' }] },
+      { items: [{ value: 'settings', label: '設定' }] },
+      { items: [{ value: 'logout', label: 'ログアウト', destructive: true }] },
+    ],
+  },
+};
+export const IconOnlyTrigger: Story = {
+  args: {
+    label: undefined,
+    ariaLabel: 'タスクの操作',
+    items: [{ value: 'edit', label: '編集' }, { value: 'delete', label: 'タスクを削除', destructive: true }],
+  },
+  render: (args) => ({
+    components: { Dropdown, EllipsisIcon },
+    setup: () => ({ args }),
+    template: '<Dropdown v-bind="args"><template #icon><EllipsisIcon /></template></Dropdown>',
+  }),
+};
+export const CustomTrigger: Story = {
+  args: { label: 'アカウント' },
+  render: (args) => ({
+    components: { Avatar, Dropdown },
+    setup: () => ({ args }),
+    template: '<Dropdown v-bind="args"><template #trigger><Avatar name="yupix" :size="20" />yupix</template></Dropdown>',
   }),
 };

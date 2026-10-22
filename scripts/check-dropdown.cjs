@@ -1,4 +1,5 @@
 // Run after build-storybook. PLAYWRIGHT_MODULE may point to an existing Playwright installation.
+// DROPDOWN_TEST_FRAMEWORK=vue などで片方だけを検証できる。
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { resolve } = require('node:path');
@@ -7,6 +8,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = resolve(__dirname, '..');
 const port = process.env.DROPDOWN_TEST_PORT || '6183';
 const base = `http://127.0.0.1:${port}`;
+const frameworks = ['react', 'vue'].filter((name) => !process.env.DROPDOWN_TEST_FRAMEWORK || name === process.env.DROPDOWN_TEST_FRAMEWORK);
+assert(frameworks.length, 'DROPDOWN_TEST_FRAMEWORK は vue か react');
 const server = spawn('python3', ['-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' });
 let browser;
 (async () => {
@@ -16,7 +19,7 @@ let browser;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     browser = await chromium.launch({ headless: true });
-    for (const framework of ['react', 'vue']) {
+    for (const framework of frameworks) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -245,9 +248,121 @@ let browser;
       await page.getByRole('menu', { name: '別の操作' }).waitFor();
       await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
       assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
+
+      // Item kinds, sections and replaced triggers.
+      const visit = async (name, button) => {
+        await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-dropdown--${name}&viewMode=story`);
+        const element = page.getByRole('button', { name: button });
+        await element.waitFor();
+        return element;
+      };
+      const audit = async () => {
+        await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
+        assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id)), []);
+      };
+      const activeText = () => page.evaluate(() => document.activeElement.textContent);
+      let button = await visit('checkboxes', '表示する列');
+      let menu = page.getByRole('menu', { name: '表示する列' });
+      await menu.waitFor();
+      await page.waitForTimeout(60);
+      const log = page.locator('output');
+      assert.equal(await log.innerText(), '開閉: 開');
+      const boxes = menu.getByRole('menuitemcheckbox');
+      assert.equal(await boxes.count(), 4);
+      assert.equal(await menu.getByRole('menuitem').count(), 0);
+      // The check keeps its width when unchecked, so labels line up.
+      const labelX = async (item) => (await item.locator('span').last().boundingBox()).x;
+      assert.equal(await labelX(boxes.nth(0)), await labelX(boxes.nth(2)));
+      const due = menu.getByRole('menuitemcheckbox', { name: '期限' });
+      assert.equal(await due.getAttribute('aria-checked'), 'false');
+      await due.click();
+      assert.equal(await due.getAttribute('aria-checked'), 'true');
+      assert.equal(await button.getAttribute('aria-expanded'), 'true');
+      assert(await due.evaluate(el => el === document.activeElement));
+      await page.keyboard.press('Space');
+      assert.equal(await due.getAttribute('aria-checked'), 'false');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('Enter');
+      assert.equal(await menu.getByRole('menuitemcheckbox', { name: '担当者' }).getAttribute('aria-checked'), 'false');
+      assert.equal(await activeText(), '担当者');
+      const locked = menu.getByRole('menuitemcheckbox', { name: 'ラベル（変更不可）' });
+      await locked.click({ force: true });
+      assert.equal(await locked.getAttribute('aria-checked'), 'false');
+      assert.equal(await button.getAttribute('aria-expanded'), 'true');
+      await audit();
+      await page.keyboard.press('Escape');
+      assert.equal(await button.getAttribute('aria-expanded'), 'false');
+      // Outside clicks while closed must not notify again.
+      await page.mouse.click(700, 600);
+      assert.equal(await log.innerText(), '開閉: 開、閉');
+      await button.click();
+      await menu.waitFor();
+      assert.equal(await log.innerText(), '開閉: 開、閉、開');
+      await page.mouse.click(700, 600);
+      assert.equal(await log.innerText(), '開閉: 開、閉、開、閉');
+
+      button = await visit('radios', '並び順');
+      assert.equal(await button.getAttribute('data-variant'), 'tertiary');
+      menu = page.getByRole('menu', { name: '並び順' });
+      await menu.waitFor();
+      await page.waitForTimeout(60);
+      const radios = menu.getByRole('menuitemradio');
+      const radioStates = () => radios.evaluateAll(els => els.map(el => el.getAttribute('aria-checked')));
+      assert.deepEqual(await radioStates(), ['true', 'false', 'false']);
+      await audit();
+      await page.keyboard.press('End');
+      await page.keyboard.press('Enter');
+      assert.equal(await button.getAttribute('aria-expanded'), 'false');
+      assert(await button.evaluate(el => el === document.activeElement));
+      await button.click();
+      await menu.waitFor();
+      assert.deepEqual(await radioStates(), ['false', 'false', 'true']);
+      await radios.first().click();
+      assert.equal(await button.getAttribute('aria-expanded'), 'false');
+
+      button = await visit('sections', 'アカウント');
+      menu = page.getByRole('menu', { name: 'アカウント' });
+      await menu.waitFor();
+      await page.waitForTimeout(60);
+      assert.equal(await menu.getByRole('group').count(), 3);
+      assert.equal(await menu.getByRole('group', { name: 'テナント' }).getByRole('menuitem').count(), 2);
+      assert.equal(await menu.getByRole('separator').count(), 2);
+      // Arrow keys move across sections and skip headings and separators.
+      const visited = [];
+      for (let i = 0; i < 5; i++) {
+        visited.push(await activeText());
+        await page.keyboard.press('ArrowDown');
+      }
+      assert.deepEqual(visited, ['Koyori', '個人', '設定', 'ログアウト', 'Koyori']);
+      await page.keyboard.press('Home');
+      await page.keyboard.press('ArrowUp');
+      assert.equal(await activeText(), 'ログアウト');
+      const logout = menu.getByRole('menuitem', { name: 'ログアウト' });
+      assert.equal(await logout.getAttribute('data-destructive'), 'true');
+      const color = (item) => item.evaluate(el => getComputedStyle(el).color);
+      assert.notEqual(await color(logout), await color(menu.getByRole('menuitem', { name: '設定' })));
+      await audit();
+
+      button = await visit('icon-only-trigger', 'タスクの操作');
+      assert.equal(await button.getAttribute('data-icon-only'), 'true');
+      assert.equal(await button.locator('svg circle').count(), 3);
+      const square = await button.boundingBox();
+      assert.equal(square.width, square.height);
+      await button.click();
+      await page.getByRole('menu', { name: 'タスクの操作' }).waitFor();
+      await audit();
+
+      button = await visit('custom-trigger', 'アカウント');
+      assert.equal(await button.getAttribute('data-icon-only'), 'false');
+      assert.equal(await button.getByRole('img', { name: 'yupix' }).count(), 1);
+      assert((await button.innerText()).includes('yupix'));
+      assert.equal(await button.locator('svg').count(), 1);
+      await button.click();
+      await page.getByRole('menu', { name: 'アカウント' }).waitFor();
+      await audit();
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: action menus, ARIA, focus/Tab, icons, placement, hover, keyboard, disabled/empty, reduced motion and axe passed`);
+      console.log(`${framework}: action menus, ARIA, focus/Tab, icons, placement, hover, keyboard, disabled/empty, reduced motion, checkbox/radio items, sections, triggers and axe passed`);
     }
   } finally {
     await browser?.close();

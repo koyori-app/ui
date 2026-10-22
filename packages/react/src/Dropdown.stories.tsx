@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { Dropdown, EllipsisIcon, type DropdownProps } from './index';
+import { Avatar, Dropdown, EllipsisIcon, type DropdownItem, type DropdownProps } from './index';
 
 const meta = {
   title: 'Components/Dropdown',
@@ -77,4 +77,65 @@ export const Actions: Story = {
 };
 export const TwoMenus: Story = {
   render: (args) => <div><Dropdown {...args} /><Dropdown {...args} label="別の操作" /></div>,
+};
+
+const columns: DropdownItem[] = [
+  { value: 'status', label: 'ステータス', kind: 'checkbox', checked: true },
+  { value: 'assignee', label: '担当者', kind: 'checkbox', checked: true },
+  { value: 'due', label: '期限', kind: 'checkbox', checked: false },
+  { value: 'labels', label: 'ラベル（変更不可）', kind: 'checkbox', checked: false, disabled: true },
+];
+/* 選んでも閉じない。checked はアプリが items を更新して反転する。開閉の通知も表示する。 */
+function CheckboxExample(args: DropdownProps) {
+  const [items, setItems] = useState(args.items as DropdownItem[]);
+  const [changes, setChanges] = useState<string[]>([]);
+  return <div>
+    <output style={{ display: 'block', marginBottom: 12 }}>開閉: {changes.join('、')}</output>
+    <Dropdown {...args} items={items}
+      onSelect={(value) => {
+        setItems((current) => current.map((item) => item.value === value ? { ...item, checked: !item.checked } : item));
+        args.onSelect?.(value);
+      }}
+      onOpenChange={(open) => setChanges((current) => [...current, open ? '開' : '閉'])} />
+  </div>;
+}
+export const Checkboxes: Story = {
+  args: { label: '表示する列', defaultOpen: true, items: columns },
+  render: (args) => <CheckboxExample {...args} />,
+};
+function RadioExample(args: DropdownProps) {
+  const [sort, setSort] = useState('updated');
+  const items = [
+    { value: 'updated', label: '更新日' },
+    { value: 'created', label: '作成日' },
+    { value: 'title', label: 'タイトル' },
+  ].map((item): DropdownItem => ({ ...item, kind: 'radio', checked: item.value === sort }));
+  return <Dropdown {...args} items={items} onSelect={(value) => { setSort(value); args.onSelect?.(value); }} />;
+}
+export const Radios: Story = {
+  args: { label: '並び順', variant: 'tertiary', defaultOpen: true },
+  render: (args) => <RadioExample {...args} />,
+};
+export const Sections: Story = {
+  args: {
+    label: 'アカウント',
+    defaultOpen: true,
+    items: [
+      { heading: 'テナント', items: [{ value: 'koyori', label: 'Koyori' }, { value: 'personal', label: '個人' }] },
+      { items: [{ value: 'settings', label: '設定' }] },
+      { items: [{ value: 'logout', label: 'ログアウト', destructive: true }] },
+    ],
+  },
+};
+export const IconOnlyTrigger: Story = {
+  args: {
+    label: undefined,
+    ariaLabel: 'タスクの操作',
+    items: [{ value: 'edit', label: '編集' }, { value: 'delete', label: 'タスクを削除', destructive: true }],
+  },
+  render: (args) => <Dropdown {...args} icon={<EllipsisIcon />} />,
+};
+export const CustomTrigger: Story = {
+  args: { label: 'アカウント' },
+  render: (args) => <Dropdown {...args} trigger={<><Avatar name="yupix" size={20} />yupix</>} />,
 };

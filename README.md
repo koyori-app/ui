@@ -153,6 +153,11 @@ Enter・Space・↓ は先頭、↑ は最後へフォーカスを移して開�
 無効な項目も矢印キーでフォーカスできますが、実行はできません。
 Tab / Shift + Tab は閉じて次・前の操作へ移動し、Escape は閉じてトリガーへ戻ります。外側クリックでも閉じます。
 Storybook の Actions で実行通知と Tab 移動を確認できます。
+項目の `kind` は `item`（既定）・`checkbox`・`radio` です。`checkbox`（`menuitemcheckbox`）は選んでも閉じずに `onSelect` を呼び、`radio`（`menuitemradio`）は選ぶと閉じます。
+`checked` はアプリが持ち、`onSelect` を受けて `items` を更新します。`destructive` は ContextMenu と同じ danger の色です（ラベルにも結果を書くこと）。
+`items` に `{ heading?, items }[]` を渡すと節に分かれ、節は `group`、節の間には `separator` が入ります。矢印キーは節をまたいで移動し、見出しと区切りは飛ばします。
+`ariaLabel` だけを渡すとアイコンだけの正方形のトリガーになります。`variant`（既定 `ghost`）は Button と同じです。
+`trigger`（React は要素、Vue は `#trigger` スロット）でトリガーの文字をアバターなどに差し替えられます。読み上げ名は `ariaLabel`、なければ `label` です。開閉は `onOpenChange(open)` で通知します。
 
 Picker は単一・複数選択用です。`label` と `items: { value, label, disabled? }[]` を渡します。
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
