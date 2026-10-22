@@ -1,10 +1,11 @@
 @import '../tokens.css';
 
+/* 範囲の文は左、ページ送りは右。範囲を出さないときはページ送りを中央に置く。 */
 .root {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: var(--koyori-space-md);
   color: var(--koyori-color-text-secondary);
   font-family: var(--koyori-font-family);
@@ -13,33 +14,124 @@
 }
 
 .range {
-  margin: 0;
+  margin-block: 0;
+  margin-inline: 0 auto;
   font-variant-numeric: tabular-nums;
 }
 
-.buttons {
+.controls {
+  --highlight-opacity: 0;
+  --highlight-background: var(--koyori-color-surface-hover);
+  position: relative;
   display: flex;
-  gap: var(--koyori-space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--koyori-space-xs);
 }
 
-/* aria-disabled のボタンを :disabled と同じ見た目にする。shared/control.module.css は DataList と共有なので触らず、
-   ボタンの変数を上書きしてホバーの背景と押下の縮小も止める。[data-variant] は tertiary の変数より詳細度を上げるため。 */
-.buttons > [aria-disabled='true'][data-variant] {
-  --button-background: var(--koyori-color-surface-disabled);
-  --button-hover-background: var(--koyori-color-surface-disabled);
-  --button-border: transparent;
-  --button-color: var(--koyori-color-text-disabled);
-  --button-press-scale: 1;
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--koyori-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item { display: flex; }
+
+/* ホバーの面より手前に描く。背景は透明にして、移動する面を透かす。 */
+.step, .page {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: var(--koyori-control-height-sm);
+  border: 0;
+  border-radius: var(--koyori-radius-md);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--koyori-motion-fast) var(--koyori-ease-out), background-color var(--koyori-motion-fast) var(--koyori-ease-out);
+}
+
+/* 前へ・次へはアクセントの濃い色の文字とシェブロンで、枠を持たない。 */
+.step {
+  gap: var(--koyori-space-xs);
+  padding: var(--koyori-space-sm) var(--koyori-space-lg);
+  color: var(--koyori-color-selection-indicator);
+  white-space: nowrap;
+}
+
+.step:first-of-type { padding-inline-start: var(--koyori-space-sm); }
+.step:last-of-type { padding-inline-end: var(--koyori-space-sm); }
+
+.previousIcon, .nextIcon { display: inline-flex; }
+.previousIcon { transform: rotate(90deg); }
+.nextIcon { transform: rotate(-90deg); }
+
+/* 数字は等幅にして、ページを変えても並びの幅がぶれにくくする。 */
+.page {
+  min-width: var(--koyori-control-height-sm);
+  padding: var(--koyori-space-sm);
+  color: var(--koyori-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.page:hover { color: var(--koyori-color-text); }
+
+/* 現在ページはアクセントの面で塗る。色だけに頼らないよう太字も付ける。 */
+.page[aria-current='page'] {
+  background: var(--koyori-color-accent);
+  color: var(--koyori-color-on-accent);
+  font-weight: 600;
+  cursor: default;
+}
+
+.ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--koyori-control-height-sm);
+  min-height: var(--koyori-control-height-sm);
+  color: var(--koyori-color-text-muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.step:focus-visible, .page:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+/* aria-disabled のボタンは無効のボタンと同じ色にし、ホバーの面も出さない（highlight.ts が隠す）。 */
+.step[aria-disabled='true'], .page[aria-disabled='true'] {
   color: var(--koyori-color-text-disabled);
   cursor: not-allowed;
 }
 
-.buttons > [aria-disabled='true'] > span {
-  border-color: transparent;
+.page[aria-current='page'][aria-disabled='true'] {
   background: var(--koyori-color-surface-disabled);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .step, .page { transition: none; }
+}
+
 @media (forced-colors: active) {
-  .buttons > [aria-disabled='true'][data-variant] { color: GrayText; }
-  .buttons > [aria-disabled='true'] > span { border-color: GrayText; }
+  .page[aria-current='page'] { outline: 2px solid Highlight; outline-offset: -2px; }
+  .step[aria-disabled='true'], .page[aria-disabled='true'] { color: GrayText; }
 }

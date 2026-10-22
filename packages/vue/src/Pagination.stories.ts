@@ -10,7 +10,7 @@ const meta = {
   render: args => ({
     components: { Pagination },
     setup: () => ({ args }),
-    template: '<div style="width: 480px"><Pagination v-bind="args" /></div>',
+    template: '<div style="width: 640px"><Pagination v-bind="args" /></div>',
   }),
 } satisfies Meta<typeof Pagination>;
 
@@ -22,11 +22,25 @@ export const Default: Story = {
   render: () => ({
     components: { Pagination },
     setup: () => ({ page: ref(1) }),
-    template: `<div style="width: 480px">
+    template: `<div style="width: 640px">
       <Pagination :page="page" :page-size="20" :total="120" :on-page-change="(next) => (page = next)" />
     </div>`,
   }),
 };
+
+/* ページが多いときは先頭・末尾と現在ページの前後を出し、間を省略記号にまとめる。 */
+export const ManyPages: Story = {
+  render: () => ({
+    components: { Pagination },
+    setup: () => ({ page: ref(5) }),
+    template: `<div style="width: 640px">
+      <Pagination :page="page" :page-size="20" :total="640" :on-page-change="(next) => (page = next)" hide-range />
+    </div>`,
+  }),
+};
+
+/* 狭い場所では前後に出すページ数を減らす。 */
+export const FewerSiblings: Story = { args: { page: 16, total: 640, siblingCount: 1 } };
 
 export const FirstPage: Story = {};
 export const LastPage: Story = { args: { page: 6 } };
@@ -37,7 +51,7 @@ export const UnknownTotal: Story = {
   render: () => ({
     components: { Pagination },
     setup: () => ({ page: ref(1) }),
-    template: `<div style="display: grid; gap: 8px; width: 480px">
+    template: `<div style="display: grid; gap: 8px; width: 640px">
       <output>{{ page }} ページ目</output>
       <Pagination :page="page" :page-size="20" :has-next="page < 4" :on-page-change="(next) => (page = next)" />
     </div>`,
