@@ -7,9 +7,10 @@ declare module '@builder.io/mitosis/jsx-runtime' {
       scope?: 'col' | 'row' | 'colgroup' | 'rowgroup';
     }
 
-    // Mitosis 0.14 omits the dialog cancel event, which Escape fires before close.
+    // Mitosis 0.14 omits the dialog cancel and close events. Escape fires cancel before close.
     interface HTMLAttributes<T> {
-      onCancel?: (event: { target: EventTarget | null; preventDefault: Function }) => void;
+      onCancel?: (event: { target: EventTarget | null; cancelable: boolean; preventDefault: Function }) => void;
+      onClose?: (event: { target: EventTarget | null }) => void;
       inert?: boolean;
     }
   }

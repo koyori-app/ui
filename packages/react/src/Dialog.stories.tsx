@@ -38,6 +38,25 @@ function TriggerExample(args: DialogProps) {
 
 export const Default: Story = { args: { open: false }, render: (args) => <TriggerExample {...args} /> };
 export const Open: Story = {};
+/* onClose で open を変えない例（処理中は閉じないなど）。Escape を続けて押し、ブラウザーが閉じても開き直す。 */
+function KeepOpenExample(args: DialogProps) {
+  const [open, setOpen] = useState(false);
+  const [requests, setRequests] = useState(0);
+  return (
+    <div>
+      <Button label="ダイアログを開く" onClick={() => setOpen(true)} />
+      <Dialog {...args} open={open} onClose={() => setRequests((count) => count + 1)} actions={
+        <Button label="閉じる" onClick={() => setOpen(false)} />
+      } />
+      <output style={{ display: 'block', marginTop: 12 }} aria-live="polite">閉じる要求: {requests} 回</output>
+    </div>
+  );
+}
+
+export const KeepOpen: Story = {
+  args: { open: false, title: '保存しています', description: '終わるまで閉じません。' },
+  render: (args) => <KeepOpenExample {...args} />,
+};
 export const WithForm: Story = {
   render: (args) => (
     <Dialog {...args} actions={<>
