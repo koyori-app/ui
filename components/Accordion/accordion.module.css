@@ -25,6 +25,8 @@
 .label {
   flex: 1;
   min-width: 0;
+  /* 共通の button は折り返さないが、長い見出しは折り返す。 */
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 

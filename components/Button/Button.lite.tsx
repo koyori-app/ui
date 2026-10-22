@@ -39,7 +39,8 @@ export default function Button(props: ButtonProps) {
       aria-haspopup={props.ariaHasPopup}
       aria-pressed={props.ariaPressed}
       disabled={props.disabled}
-      onClick={(event) => props.onClick?.(event)}
+      /* Vue は親（as-child など）と利用側の @click を配列で渡すため、順に呼ぶ。 */
+      onClick={(event) => (Array.isArray(props.onClick) ? props.onClick : [props.onClick]).forEach((handler) => handler?.(event))}
     >
       <span class={styles.surface}>
         <span class={styles.icon} aria-hidden="true"><Slot name="icon" /></span>
