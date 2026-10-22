@@ -61,6 +61,7 @@ Button は `variant="primary" | "secondary" | "tertiary" | "ghost" | "danger"` �
 アイコンは React では `icon={<EllipsisIcon size={16} />}`、Vue では `#icon` スロットで渡し、ラベルの前に表示します。
 `label` を省略するとアイコンだけの正方形のボタンになります。その場合は `ariaLabel`（Vue も `ariaLabel`）で名前を付けてください。
 `label` がなければ `ariaLabel` を必須にする型を React・Vue の両方で公開します。空文字は避けてください。
+Vue では、利用側の `@click` と、Reka UI の `as-child` など親から流し込まれる `onClick` が同時に付いても、両方を順に呼びます。
 UI の開発では [アクセシビリティの指針](AGENT.md) を参照してください。
 
 ButtonGroup は子の Button をつなげ、隣り合う枠線を1本に重ねて外側の角だけを丸めます。
@@ -223,6 +224,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
 `node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
+`node scripts/check-button.cjs` は、Button が狭い行で縮まず折れないこと、広げると面も広がること、ButtonGroup のつながりを両フレームワークで検証します（`BUTTON_TEST_PORT` でポート変更可能）。
 Input の数値入力の契約と Vue / React の例は [Field・Input のドキュメント](apps/docs/src/content/docs/components/field.mdx#数値入力)を参照してください。
 `node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロール、
 Breadcrumb の構造・現在地・区切り・折り返しを両フレームワークのブラウザーで検証します。

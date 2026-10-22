@@ -51,3 +51,25 @@ export const IconOnly: Story = {
     template: iconTemplate,
   }),
 };
+
+// 狭い flex の行でも縮まず、日本語のラベルが折れない。
+export const NarrowRow: Story = {
+  render: () => ({
+    components: { Button },
+    template: `<div style="display: flex; gap: 8px; width: 200px">
+      <Button label="保存" />
+      <Button label="重大" variant="danger" />
+      <Button label="キャンセル" variant="tertiary" />
+    </div>`,
+  }),
+};
+
+// button を広げると、色の付いた面も同じ幅に広がり、ラベルは中央に来る。
+export const FullWidth: Story = {
+  args: { label: '保存' },
+  render: (args) => ({
+    components: { Button },
+    setup: () => ({ args }),
+    template: '<div style="width: 320px"><Button v-bind="args" style="width: 100%" /></div>',
+  }),
+};

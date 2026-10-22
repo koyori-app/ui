@@ -7,6 +7,8 @@
   --button-border: transparent;
 
   display: inline-flex;
+  /* flex の行で縮んで日本語のラベルが 1 字ずつ折れないようにする。 */
+  flex-shrink: 0;
   padding: 0;
   border: 0;
   border-radius: var(--koyori-radius-md);
@@ -15,12 +17,15 @@
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
+  white-space: nowrap;
   cursor: pointer;
 }
 
 /* 外側の button がレイアウトとクリック領域を維持し、内側だけを動かす。 */
 .surface {
   display: inline-flex;
+  /* button が width: 100% などで広がったとき、色の付いた面も一緒に広げる。 */
+  flex: 1 1 auto;
   align-items: center;
   justify-content: center;
   gap: var(--koyori-space-sm);

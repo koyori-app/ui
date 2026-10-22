@@ -109,6 +109,11 @@
   padding-inline: var(--koyori-space-lg);
 }
 
+/* 共通の button は折り返さないが、選んだ項目の一覧は折り返す。 */
+.triggerLabel {
+  white-space: normal;
+}
+
 .field .triggerLabel {
   min-width: 0;
   overflow-wrap: anywhere;

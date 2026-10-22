@@ -46,6 +46,8 @@
 
 .triggerSurface {
   min-width: 0;
+  /* 共通の button は折り返さないが、狭い幅では日付を折り返す。 */
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 

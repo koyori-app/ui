@@ -211,7 +211,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Dropd
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Button/Button.vue'], ['React', 'packages/react/src/generated/components/Button/Button.tsx']]) {
   const source = read(path);
   assert.match(source, /aria-haspopup/, `${name} 版 Button がメニューボタンになれる`);
-  assert.match(source, /onClick\?\.\(event\)/, `${name} 版 Button が click イベントを渡す（menuButtonPosition 用）`);
+  assert.match(source, /handler\?\.\(event\)/, `${name} 版 Button が click イベントを渡す（menuButtonPosition 用）`);
 }
 
 // 右クリックできない環境でも階層が見えるよう、代替は Dropdown ではなく同じ ContextMenu を開くボタンにする。
