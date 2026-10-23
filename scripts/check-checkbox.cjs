@@ -7,6 +7,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = resolve(__dirname, '..');
 const port = process.env.CHECKBOX_TEST_PORT || '6288';
 const base = `http://127.0.0.1:${port}`;
+const frameworks = ['react', 'vue'].filter(name => !process.env.CHECKBOX_TEST_FRAMEWORK || name === process.env.CHECKBOX_TEST_FRAMEWORK);
 const server = spawn('python3', ['-m', 'http.server', port, '--bind', '127.0.0.1', '--directory', root], { stdio: 'ignore' });
 let browser;
 (async () => {
@@ -18,7 +19,7 @@ let browser;
     browser = await chromium.launch({ headless: true });
     const axe = readdirSync(`${root}/node_modules/.pnpm`).find(name => name.startsWith('axe-core@'));
     const axeSource = readFileSync(`${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js`, 'utf8');
-    for (const framework of ['react', 'vue']) {
+    for (const framework of frameworks) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -72,7 +73,7 @@ let browser;
       await checkbox.press('Space');
       assert.equal(await checkbox.isChecked(), false);
       assert.equal(await page.locator('output').innerText(), '2');
-      assert.equal(await checkbox.locator('..').locator('path').evaluate(el => getComputedStyle(el).opacity), '0');
+      assert.equal(await checkbox.locator('..').locator('path').first().evaluate(el => getComputedStyle(el).opacity), '0');
       await page.getByText('タスクを完了', { exact: true }).click();
       assert(await checkbox.isChecked(), 'clicking the visible label toggles the input');
       assert.equal(await page.locator('output').innerText(), '3');
@@ -91,7 +92,7 @@ let browser;
       assert.equal(await page.locator('output').innerText(), '2');
       await story('checked');
       assert(await checkbox.isChecked());
-      assert.equal(await checkbox.locator('..').locator('path').evaluate(el => el.getAnimations().length), 0, 'initial checked state does not animate');
+      assert.equal(await checkbox.locator('..').locator('path').first().evaluate(el => el.getAnimations().length), 0, 'initial checked state does not animate');
 
       for (const name of ['disabled', 'disabled-checked']) {
         await story(name);
@@ -116,10 +117,37 @@ let browser;
       assert.equal(await checkbox.isChecked(), false, 'native form reset clears uncontrolled state');
       assert.equal(await page.locator('form').evaluate(el => el.checkValidity()), false);
 
+      // indeterminate is a DOM property; aria-checked must match it or axe reports aria-conditional-attr.
+      await story('indeterminate');
+      const all = page.getByRole('checkbox', { name: 'すべて選択', exact: true });
+      const mixed = () => all.evaluate(el => [el.getAttribute('aria-checked'), el.indeterminate, el.checked]);
+      const marks = () => all.locator('+ span path').evaluateAll(paths => paths.map(path => getComputedStyle(path).opacity));
+      assert.deepEqual(await mixed(), ['mixed', true, false]);
+      assert.deepEqual(await marks(), ['0', '1'], 'mixed state shows the dash instead of the check');
+      await accessibility();
+      await all.click();
+      assert.deepEqual(await mixed(), [null, false, true], 'a click leaves the mixed state and checks');
+      assert.equal(await page.getByRole('checkbox', { checked: true }).count(), 4);
+      assert.deepEqual(await marks(), ['1', '0']);
+      await all.click();
+      assert.deepEqual(await mixed(), [null, false, false]);
+      await page.getByRole('checkbox', { name: '実装', exact: true }).check();
+      assert.deepEqual(await mixed(), ['mixed', true, false], 'the parent sets the mixed state again');
+      await accessibility();
+      await page.emulateMedia({ forcedColors: 'active' });
+      const mixedColors = await all.locator('+ span').evaluate(el => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor]);
+      assert.notEqual(mixedColors[0], mixedColors[1], 'dash remains visible in forced colors');
+      await page.emulateMedia({ forcedColors: 'none' });
+      await story('indeterminate-rejected');
+      await checkbox.click();
+      assert.deepEqual(await checkbox.evaluate(el => [el.getAttribute('aria-checked'), el.indeterminate, el.checked]), ['mixed', true, false], 'mixed state survives a rejected change');
+      assert.equal(await page.locator('output').innerText(), '1');
+      await accessibility();
+
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await story('default');
       await checkbox.check();
-      assert.deepEqual(await checkbox.locator('..').locator('path').evaluate(el => [getComputedStyle(el).strokeDashoffset, getComputedStyle(el).transitionDuration, el.getAnimations().length]), ['0px', '0s', 0]);
+      assert.deepEqual(await checkbox.locator('..').locator('path').first().evaluate(el => [getComputedStyle(el).strokeDashoffset, getComputedStyle(el).transitionDuration, el.getAnimations().length]), ['0px', '0s', 0]);
       await page.emulateMedia({ forcedColors: 'active' });
       const colors = await checkbox.locator('+ span').evaluate(el => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor]);
       assert.notEqual(colors[0], colors[1], 'check remains visible in forced colors');
@@ -130,7 +158,7 @@ let browser;
       await accessibility();
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Checkbox native controls, SVG drawing, fixed size, controlled/uncontrolled state, labels, disabled, forms, reduced motion, forced colors and axe passed`);
+      console.log(`${framework}: Checkbox native controls, SVG drawing, indeterminate, fixed size, controlled/uncontrolled state, labels, disabled, forms, reduced motion, forced colors and axe passed`);
     }
   } finally {
     await browser?.close();

@@ -1,4 +1,5 @@
 // Run after pnpm build-storybook. See README for the external Playwright setup.
+// ICON_PICKER_TEST_FRAMEWORK=vue などで片方だけを検証できる。
 const assert = require('node:assert/strict');
 const { spawn, execFileSync } = require('node:child_process');
 const { mkdtempSync, rmSync, readFileSync, readdirSync } = require('node:fs');
@@ -80,7 +81,9 @@ let browser;
     const axeSource = readFileSync(resolve(root, `node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js`), 'utf8');
     browser = await chromium.launch({ headless: true });
 
-    for (const framework of ['react', 'vue']) {
+    const frameworks = ['react', 'vue'].filter((name) => !process.env.ICON_PICKER_TEST_FRAMEWORK || name === process.env.ICON_PICKER_TEST_FRAMEWORK);
+    assert(frameworks.length, 'ICON_PICKER_TEST_FRAMEWORK は vue か react');
+    for (const framework of frameworks) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
@@ -184,6 +187,16 @@ let browser;
       await story('disabled');
       assert.deepEqual(await options.evaluateAll((buttons) => buttons.map((button) => button.disabled)), [true, true, true, true, true, true]);
       assert(await page.getByRole('button', { name: '画像を選ぶ', exact: true }).isDisabled());
+      await a11y();
+
+      // 画像を受け取らない利用側には画像のボタンも入力欄も出さず、絵文字は選べる。
+      await story('emoji-only');
+      assert.equal(await group.getByRole('button', { name: '画像を選ぶ', exact: true }).count(), 0);
+      assert.equal(await group.getByRole('button', { name: '画像を削除', exact: true }).count(), 0);
+      assert.equal(await group.locator('input[type="file"]').count(), 0);
+      assert.equal(await group.evaluate((el) => el.children.length), 2, 'プレビューと候補だけで、空の操作欄で隙間を作らない');
+      await options.nth(2).click();
+      assert.deepEqual(await pressed(), ['🛠️']);
       await a11y();
 
       assert.deepEqual(errors, []);

@@ -153,12 +153,19 @@ Enter・Space・↓ は先頭、↑ は最後へフォーカスを移して開�
 無効な項目も矢印キーでフォーカスできますが、実行はできません。
 Tab / Shift + Tab は閉じて次・前の操作へ移動し、Escape は閉じてトリガーへ戻ります。外側クリックでも閉じます。
 Storybook の Actions で実行通知と Tab 移動を確認できます。
+項目の `kind` は `item`（既定）・`checkbox`・`radio` です。`checkbox`（`menuitemcheckbox`）は選んでも閉じずに `onSelect` を呼び、`radio`（`menuitemradio`）は選ぶと閉じます。
+`checked` はアプリが持ち、`onSelect` を受けて `items` を更新します。`destructive` は ContextMenu と同じ danger の色です（ラベルにも結果を書くこと）。
+`items` に `{ heading?, items }[]` を渡すと節に分かれ、節は `group`、節の間には `separator` が入ります。矢印キーは節をまたいで移動し、見出しと区切りは飛ばします。
+`ariaLabel` だけを渡すとアイコンだけの正方形のトリガーになります。`variant`（既定 `ghost`）は Button と同じです。
+`trigger`（React は要素、Vue は `#trigger` スロット）でトリガーの文字をアバターなどに差し替えられます。読み上げ名は `ariaLabel`、なければ `label` です。開閉は `onOpenChange(open)` で通知します。
 
 Picker は単一・複数選択用です。`label` と `items: { value, label, disabled? }[]` を渡します。
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
 単一選択は選ぶと閉じ、`selectionMode="multiple"` は選択・解除しても開いたままです。
 `avatars` を付けると、選択肢の先頭に 24px の Avatar を出します。画像は `items` の `src`、なければイニシャルです。
 行の上下の余白を詰めて高さは 36px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
+`items` の `color`（CSS の色）でラベルの前に 8px の色の点、`description` でラベルの下に小さな補足を出します（Storybook の ColorDots・Descriptions）。
+どちらも装飾として読み上げから外し、選択肢の名前とトリガーの表示は `label` だけです。検索も `label` だけを対象にし、`avatars` があれば `color` は無視します。
 トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。
 アバターなどを置いても、開閉・キーボード操作・読み上げ名（`label` と選択中のラベル）はそのままです。
 中身は `button` の内容として正しい要素にしてください（AvatarGroup のルートは `span` です）。
@@ -194,6 +201,7 @@ Dropdown と Picker のパネル・項目は `components/shared/menu.module.css`
 Dropdown・Picker・Sidebar は `components/shared/highlight.ts` と `highlight.module.css` を共有し、マウスの入った位置から背景が広がって項目間を移動します。ホバーできない端末（スマホなど）では、タップの瞬間に動いて見えないよう、背景を動かさずその場に表示します。Sidebar 内の Accordion の見出しと入れ子のリンクも同じ動きになり、現在地の色は保ちます。
 `--koyori-menu-width`（200px）・`--koyori-menu-max-height`（360px）・`--koyori-menu-gap`（8px）・
 `--koyori-menu-viewport-margin`（8px）・`--koyori-z-menu`（10）で配置を調整できます。
+`overflow: hidden` / `overflow-x: auto` の中にトリガーを置くときは、Dropdown・Picker に `topLayer` を付けると、パネルを Popover API の top layer に出して切れないようにします（DataList の中では指定不要）。
 配置計算に使う最大高・間隔・画面端の余白は、ブラウザーで長さを解決するため `rem`・`calc()` でも指定できます。長さの計測は開くときだけ行い、スクロール・リサイズ時は再利用します。開いている間にこれらの値を変更した場合は、開き直すと反映されます。
 文字入力の連結待ちは `MENU_TYPEAHEAD_TIMEOUT`（500ms）に集約しています。
 メニュー幅は親から独立し、狭い画面では縮小して長い項目を折り返します。
@@ -263,8 +271,9 @@ Calendarと同じ範囲制限とキーボード操作を使い、選択・取消
 `Checkbox` は `label` を必須にし、`hideLabel` で読み上げ名を保ったまま表示ラベルを隠せます。
 `checked` と `onCheckedChange` で状態を管理でき、省略時は標準の入力要素に任せます。
 チェック時は SVG の線を描画し、外枠や操作領域のサイズは変えません。動きを減らす設定にも対応します。
+`indeterminate` が true の間は混在の状態（横棒と `aria-checked="mixed"`）を出します。クリックでは反転した `checked` を `onCheckedChange` で知らせるので、全選択などでは子の状態から `checked` と `indeterminate` を導いて渡します。
 [使い方とプレビュー](apps/docs/src/content/docs/components/checkbox.mdx)を参照してください。
-Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描画を検証できます。
+Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描画を検証できます（`CHECKBOX_TEST_FRAMEWORK=vue` で片方だけ）。
 
 ## DataList
 
@@ -408,6 +417,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 `label`・`emojis`（重複は除く）と、現在値の `emoji`・`imageUrl` を渡します。`imageUrl` があれば絵文字より優先して表示します。
 候補の用意、MIME・サイズの検証、アップロード、保存は利用側で行います。`onImageSelect` は選ばれた `File` をそのまま渡し、
 同じファイルを選び直せるよう通知のあとに入力欄の値を空に戻します。削除は取り消せない操作なので danger のボタンです。
+`onImageSelect` を渡さなければ「画像を選ぶ」を出さず、絵文字だけで選べます。「画像を削除」は `imageUrl` と `onImageRemove` があるときだけ出します。
 全体と候補の一覧は `role="group"`、プレビューは `role="img"` で現在の状態（画像・絵文字・未設定）を読み上げます。
 候補は `aria-pressed` の切り替えボタンと roving tabindex で、← → で 1 つ、↑ ↓ で 1 行、Home / End で端へ移り、端では止まります。
 列数は折り返しの結果なので、キーを押した時点の実際の並びから求めます。ホバーの背景は Dropdown と同じ共通ハイライトです。

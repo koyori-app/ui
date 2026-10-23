@@ -17,7 +17,7 @@ export { default as Drawer, type DrawerProps } from './generated/components/Draw
 export { default as Field, type FieldProps } from './generated/components/Field/Field.js';
 export { default as Input, type InputProps } from './generated/components/Input/Input.js';
 export { default as Textarea, type TextareaProps } from './generated/components/Textarea/Textarea.js';
-export { default as Dropdown, type DropdownProps, type DropdownItem } from './generated/components/Dropdown/Dropdown.js';
+export { default as Dropdown, type DropdownProps, type DropdownItem, type DropdownSection } from './generated/components/Dropdown/Dropdown.js';
 export { default as ContextMenu, type ContextMenuProps, type ContextMenuItem } from './generated/components/ContextMenu/ContextMenu.js';
 export { contextMenuPosition, menuButtonPosition } from './generated/components/ContextMenu/context-menu.js';
 export { default as Picker, type PickerProps, type PickerItem } from './generated/components/Picker/Picker.js';

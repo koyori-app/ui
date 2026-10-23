@@ -7,6 +7,8 @@ interface Item {
   label: string;
   disabled?: boolean;
   src?: string;
+  color?: string;
+  description?: string;
 }
 
 export interface PickerOption extends Item {

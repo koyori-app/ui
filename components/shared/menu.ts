@@ -74,7 +74,7 @@ export function positionMenu(root: HTMLElement | null, trigger: HTMLElement | nu
   }
   const focused = list.querySelector<HTMLElement>(':focus-visible')
     || (document.activeElement === list ? list.querySelector<HTMLElement>('[data-active="true"]') : null);
-  const hovered = list.querySelector<HTMLElement>('[role="menuitem"]:hover, [role="option"]:hover');
+  const hovered = list.querySelector<HTMLElement>('[role^="menuitem"]:hover, [role="option"]:hover');
   if (focused || hovered) highlightItem(list, focused || hovered);
 }
 

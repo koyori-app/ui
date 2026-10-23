@@ -64,6 +64,28 @@
   flex-shrink: 0;
 }
 
+/* ステータスなどの色。名前は label が伝えるため装飾として扱う。 */
+.optionDot {
+  position: relative;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* label の下の補足。行は中身に合わせて伸び、36px の最小は .item が保つ。
+   比率の line-height は 1/64px 単位で端数になり、隣接選択の背景に継ぎ目の線が出るため rem で整数にする。 */
+.description {
+  display: block;
+  color: var(--koyori-color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.option[aria-disabled='true'] .description {
+  color: inherit;
+}
+
 /* 24px のアバターでも行の高さを 36px に保つ。 */
 .list[data-avatars='true'] .option {
   padding-block: var(--koyori-space-sm);
@@ -87,6 +109,8 @@
 @media (forced-colors: active) {
   .option[aria-selected='true'] { color: Highlight; }
   .option[aria-disabled='true'] { color: GrayText; }
+  .optionDot { outline: 1px solid CanvasText; }
+  .description { color: inherit; }
 }
 .field {
   display: block;

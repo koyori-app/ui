@@ -252,7 +252,8 @@ export default function ContextMenu(props: ContextMenuProps) {
   }, [props.open]);
 
   onUpdate(() => {
-    requestAnimationFrame(() => state.position());
+    /* Vue では依存付き onUpdate が setup 中にも走るが、SSR には requestAnimationFrame が無い。 */
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => state.position());
   }, [props.x, props.y, props.items]);
 
   /* 開いたまま別の行のボタンなどから開き直された（座標が変わり、フォーカスが外にある）ときは、

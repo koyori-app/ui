@@ -124,6 +124,27 @@ export const WithAvatars: Story = {
     ],
   },
 };
+export const ColorDots: Story = {
+  args: {
+    label: 'ステータス', defaultOpen: true, defaultSelectedValues: ['doing'],
+    items: [
+      { value: 'todo', label: '未着手', color: '#8a8494' },
+      { value: 'doing', label: '進行中', color: '#3b82f6' },
+      { value: 'review', label: 'レビュー中', color: '#a855f7' },
+      { value: 'done', label: '完了', color: '#22c55e' },
+    ],
+  },
+};
+export const Descriptions: Story = {
+  args: {
+    label: '役割', searchable: false, defaultOpen: true, defaultSelectedValues: ['member'],
+    items: [
+      { value: 'owner', label: 'オーナー', description: 'すべての設定を変更できます' },
+      { value: 'admin', label: '管理者', description: 'メンバーの追加と削除ができます' },
+      { value: 'member', label: 'メンバー', description: 'タスクを作成・編集できます' },
+    ],
+  },
+};
 export const CustomTrigger: Story = {
   args: { selectionMode: 'multiple', defaultSelectedValues: ['design', 'frontend', 'backend', 'review'] },
   render: (args) => ({

@@ -19,6 +19,10 @@ export interface PickerItem {
   disabled?: boolean;
   /** Shown when avatars is true. Falls back to initials of the label. */
   src?: string;
+  /** ラベルの前に出す色の点（CSS の色）。avatars と同時には使わない */
+  color?: string;
+  /** ラベルの下に出す補足。読み上げは label のまま（aria-describedby にはしない。短い補足なので option の名前に混ぜない） */
+  description?: string;
 }
 
 export interface PickerProps {
@@ -52,6 +56,8 @@ export interface PickerProps {
   trigger?: any;
   /** Shows a 24px Avatar before each option label. */
   avatars?: boolean;
+  /** トリガーが overflow: hidden / auto の中にあるとき true。パネルを Popover API の top layer に出して切れないようにする。 */
+  topLayer?: boolean;
 }
 
 export default function Picker(props: PickerProps) {
@@ -238,7 +244,8 @@ export default function Picker(props: PickerProps) {
   });
   onUpdate(() => {
     if (!state.activeId()) state.resetActive();
-    requestAnimationFrame(() => {
+    /* Vue では依存付き onUpdate が setup 中にも走るが、SSR には requestAnimationFrame が無い。 */
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
       state.position();
       if (document.activeElement === listRef) state.revealActive();
     });
@@ -265,7 +272,7 @@ export default function Picker(props: PickerProps) {
   });
 
   return (
-    <div ref={rootRef!} class={`${menu.root} ${state.context?.id ? styles.field : ''}`}>
+    <div ref={rootRef!} class={`${menu.root} ${state.context?.id ? styles.field : ''}`} data-menu-top-layer={props.topLayer ? '' : undefined}>
       <button ref={triggerRef!} id={state.context?.id} class={`${controls.button} ${styles.trigger}`} data-variant={state.context?.id ? 'tertiary' : 'ghost'} type="button" disabled={props.disabled}
         aria-label={state.view.label === props.label ? props.label : `${props.label}: ${state.view.label}`}
         aria-labelledby={state.context?.labelId && state.id ? [state.context?.labelId, `${state.id}-value`, state.context?.requiredId].filter(Boolean).join(' ') : undefined}
@@ -345,7 +352,15 @@ export default function Picker(props: PickerProps) {
                     <Avatar name={item.label} src={item.src} size={24} />
                   </span>
                 </Show>
-                <span class={menu.itemLabel}>{item.label}</span>
+                <Show when={!props.avatars && item.color}>
+                  <span class={styles.optionDot} style={{ backgroundColor: item.color ?? 'currentColor' }} aria-hidden="true" />
+                </Show>
+                <span class={menu.itemLabel}>
+                  {item.label}
+                  <Show when={item.description}>
+                    <span class={styles.description} aria-hidden="true">{item.description}</span>
+                  </Show>
+                </span>
                 <span class={menu.check} aria-hidden="true"><CheckIcon /></span>
               </div>
             )}
