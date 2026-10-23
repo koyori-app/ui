@@ -73,6 +73,17 @@ let browser;
       const end = await surface.boundingBox();
       assert(start.y < middle.y && middle.y < end.y, 'background must travel through intermediate positions');
       assert.equal(end.y, (await rows.nth(3).boundingBox()).y);
+      // 行の高さが小数のとき（フォントや拡大率で起きる）、帯が一覧の下端をはみ出してスクロールバーが出ないこと
+      await page.evaluate(() => document.documentElement.style.setProperty('--koyori-control-height-sm', '36.6px'));
+      const list = panel.locator('[role="presentation"]').first();
+      const widthBefore = (await list.evaluate(el => el.clientWidth));
+      await rows.nth(0).hover();
+      await rows.nth(3).hover();
+      await page.waitForTimeout(350);
+      const scroll = await list.evaluate(el => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, clientWidth: el.clientWidth, fractional: el.querySelector('[role^="menuitem"]').getBoundingClientRect().height % 1 !== 0 }));
+      assert(scroll.fractional, `${framework}: rows must have a fractional height for this check: ${JSON.stringify(scroll)}`);
+      assert(scroll.scrollHeight <= scroll.clientHeight && scroll.clientWidth === widthBefore, `${framework}: hovering the last row must not make the list scrollable: ${JSON.stringify(scroll)}`);
+      await page.evaluate(() => document.documentElement.style.removeProperty('--koyori-control-height-sm'));
       await page.mouse.click(700, 600);
       assert.equal(await panel.count(), 0);
       await trigger.focus();
