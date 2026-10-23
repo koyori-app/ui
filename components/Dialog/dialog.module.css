@@ -6,6 +6,9 @@
   width: var(--koyori-dialog-width);
   max-width: calc(100% - 2 * var(--koyori-space-xl));
   max-height: calc(100% - 2 * var(--koyori-space-xl));
+  /* 中央寄せはブラウザー既定に任せず明示する。利用側のリセット（Tailwind の preflight など）が margin を 0 にしても崩れない。 */
+  inset: 0;
+  margin: auto;
   /* 背景クリックの判定に使うため、余白は内側の panel が持つ。 */
   padding: 0;
   border: 1px solid var(--koyori-color-border);

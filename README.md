@@ -100,7 +100,7 @@ AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を�
 重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
 
 Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダルです。`open`・`title`・`description`・`onClose` を受け取り、
-本文は既定スロット、操作ボタンは `actions`（Vue は `#actions` スロット）に置きます。表示状態はアプリ側で持ち、`onClose` で false に戻します。
+本文は既定スロット、操作ボタンは `actions`（Vue は `#actions` スロット）に置きます。表示状態はアプリ側で持ち、`onClose` で false に戻します。`open` を true のままにすると閉じません（ブラウザーが強制的に閉じても `onClose` を呼んで開き直します）。
 フォーカスの閉じ込め・背景の操作停止・Escape・フォーカス復帰はブラウザーに任せ、`open` 属性はバインドしません（非モーダルになるため）。
 背景クリックは pointerdown の対象が dialog 自身のときだけ閉じ、開いている間は `body:has(dialog:modal)` で背景のスクロールを止めます。
 幅は `--koyori-dialog-width`、覆いの色は `--koyori-color-backdrop`、角丸は内側のボタンの角丸 + `--koyori-space-xl` です。
@@ -226,6 +226,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-picker-logic.cjs` はブラウザーなしで選択計算を検証します。
 `node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
+Storybook をビルド済みなら、続けて中央寄せとブラウザーが閉じたときの同期をブラウザーで検証します（`DIALOG_TEST_FRAMEWORK` で片方に絞り、`DIALOG_TEST_PORT` でポート変更可能）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
 `node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
 `node scripts/check-button.cjs` は、Button が狭い行で縮まず折れないこと、広げると面も広がること、ButtonGroup のつながりを両フレームワークで検証します（`BUTTON_TEST_PORT` でポート変更可能）。

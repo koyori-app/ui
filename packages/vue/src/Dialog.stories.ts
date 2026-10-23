@@ -43,6 +43,25 @@ export const Default: Story = {
   }),
 };
 export const Open: Story = {};
+/* onClose で open を変えない例（処理中は閉じないなど）。Escape を続けて押し、ブラウザーが閉じても開き直す。 */
+export const KeepOpen: Story = {
+  args: { open: false, title: '保存しています', description: '終わるまで閉じません。' },
+  render: (args) => ({
+    components: { Dialog, Button },
+    setup() {
+      const open = ref(false);
+      const requests = ref(0);
+      return { args, open, requests };
+    },
+    template: `<div>
+      <Button label="ダイアログを開く" :on-click="() => open = true" />
+      <Dialog v-bind="args" :open="open" :on-close="() => requests++">
+        <template #actions><Button label="閉じる" :on-click="() => open = false" /></template>
+      </Dialog>
+      <output style="display: block; margin-top: 12px" aria-live="polite">閉じる要求: {{ requests }} 回</output>
+    </div>`,
+  }),
+};
 export const WithForm: Story = {
   render: (args) => ({
     components: { Dialog, Button, Field, Input, Picker },
