@@ -84,6 +84,16 @@ let browser;
       assert(scroll.fractional, `${framework}: rows must have a fractional height for this check: ${JSON.stringify(scroll)}`);
       assert(scroll.scrollHeight <= scroll.clientHeight && scroll.clientWidth === widthBefore, `${framework}: hovering the last row must not make the list scrollable: ${JSON.stringify(scroll)}`);
       await page.evaluate(() => document.documentElement.style.removeProperty('--koyori-control-height-sm'));
+      // 祖先が拡縮されていても、帯は最後の行とぴったり重なり、一覧をスクロール可能にしないこと
+      await panel.evaluate(el => { el.style.transform = 'scale(0.8)'; });
+      await rows.nth(0).hover();
+      await rows.nth(3).hover();
+      await page.waitForTimeout(350);
+      const band = await surface.boundingBox();
+      const last = await rows.nth(3).boundingBox();
+      for (const key of ['x', 'y', 'width', 'height']) assert(Math.abs(band[key] - last[key]) < 0.05, `${framework}: the background must cover the last row under a scaled ancestor: ${JSON.stringify({ band, last })}`);
+      assert(await list.evaluate(el => el.scrollHeight <= el.clientHeight), `${framework}: hovering the last row under a scaled ancestor must not make the list scrollable`);
+      await panel.evaluate(el => { el.style.transform = ''; });
       await page.mouse.click(700, 600);
       assert.equal(await panel.count(), 0);
       await trigger.focus();
