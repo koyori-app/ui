@@ -57,6 +57,9 @@ Button は `variant="primary" | "secondary" | "tertiary" | "ghost" | "danger"` �
 `danger` は削除など取り消せない操作に使い、ラベルにも結果が分かる言葉を入れてください。
 各種類の通常・無効状態の Story と、Docs・アクセシビリティ確認用のアドオンを用意しています。
 共通 CSS で hover 時の色の遷移と押下時の縮小を実装し、`prefers-reduced-motion` に対応しています。
+`:hover` はホバーできる端末（`@media (hover: hover) and (pointer: fine)`）に限り、タップ後に色を残しません。
+コンテナより長いラベルだけを折り返し、短いラベルは狭い行でも 1 字ずつ折れません。
+キーボードでの移動はホバーの帯もタブの印も動かしません。`node scripts/check-touch-narrow.cjs` で、これらとタッチ端末・狭い幅の表示を検証します。
 押下時は内側の背景・ラベルだけを縮め、外側の寸法・クリック領域・フォーカス枠を維持します。
 アイコンは React では `icon={<EllipsisIcon size={16} />}`、Vue では `#icon` スロットで渡し、ラベルの前に表示します。
 `label` を省略するとアイコンだけの正方形のボタンになります。その場合は `ariaLabel`（Vue も `ariaLabel`）で名前を付けてください。
@@ -247,6 +250,7 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 ## Tooltip
 
 `Tooltip` は1つのボタン・リンクに短い補足を関連付け、ホバー・フォーカスで表示します。
+ホバーでは 300ms 待ってから表示し、別の Tooltip が開いている間と閉じた直後は待ちません。フォーカスでは常にすぐ表示します。
 `id`・`content`・`placement` を指定します。[使い方・無効トリガーの扱い](apps/docs/src/content/docs/components/tooltip.mdx)を参照してください。
 Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレームワークの操作・配置・アクセシビリティを検証できます（`TOOLTIP_TEST_PORT` でポート変更可能）。
 

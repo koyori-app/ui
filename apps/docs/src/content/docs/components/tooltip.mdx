@@ -7,6 +7,8 @@ import TooltipPreview from '../../../components/TooltipPreview.astro';
 
 Tooltip はボタン・リンクなどの短い補足です。トリガーへのホバーまたはキーボードフォーカスで表示し、Escapeで閉じます。
 
+ホバーでは 300ms 待ってから表示し、横切っただけでは開きません。別の Tooltip が開いている間と閉じた直後は、待たずに表示します。キーボードフォーカスでは常にすぐ表示します。
+
 <TooltipPreview />
 
 ## 使い方

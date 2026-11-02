@@ -1,5 +1,12 @@
 import { menuLengths, resetMenu } from '../shared/menu';
 
+// ポインターが横切っただけで開かないように、最初は少し待つ。
+// どれかが開いている間と閉じた直後は待たせず、ツールバーを続けて読めるようにする。
+const HOVER_DELAY_MS = 300;
+const SKIP_DELAY_MS = 300;
+let openTooltips = 0;
+let lastClosedAt = Number.NEGATIVE_INFINITY;
+
 /** One tooltip owns its listeners, description token and native popover. */
 export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | null) {
   if (!root || !panel) return;
@@ -9,6 +16,7 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
   let focused = false;
   let dismissed = false;
   let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  let openTimer: ReturnType<typeof setTimeout> | undefined;
   const topLayer = typeof panel.showPopover === 'function';
   if (topLayer) panel.popover = 'manual';
 
@@ -22,6 +30,11 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
   const enabled = () => !!trigger && !trigger.matches(':disabled') && root.dataset.disabled !== 'true' && !!panel.id && !!panel.textContent?.trim();
   const hide = () => {
     clearTimeout(closeTimer);
+    clearTimeout(openTimer);
+    if (!panel.hidden) {
+      openTooltips -= 1;
+      lastClosedAt = performance.now();
+    }
     if (topLayer && panel.matches(':popover-open')) panel.hidePopover();
     panel.hidden = true;
     resetMenu(panel, null);
@@ -47,8 +60,10 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
   };
   const show = () => {
     clearTimeout(closeTimer);
+    clearTimeout(openTimer);
     if (!enabled() || dismissed) return;
     if (topLayer) panel.popover = 'manual';
+    if (panel.hidden) openTooltips += 1;
     panel.hidden = false;
     if (topLayer && !panel.matches(':popover-open')) panel.showPopover();
     position();
@@ -71,6 +86,7 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
   };
   const leave = () => {
     hovered = false;
+    clearTimeout(openTimer);
     // Allow crossing the small gap between the trigger and the tooltip.
     closeTimer = setTimeout(() => {
       if (!hovered && !focused) { dismissed = false; hide(); }
@@ -80,7 +96,9 @@ export function connectTooltip(root: HTMLElement | null, panel: HTMLElement | nu
     if (event.pointerType === 'touch') return;
     hovered = true;
     update();
-    show();
+    clearTimeout(openTimer);
+    if (!panel.hidden || openTooltips > 0 || performance.now() - lastClosedAt < SKIP_DELAY_MS) show();
+    else openTimer = setTimeout(show, HOVER_DELAY_MS);
   };
   const focus = () => {
     focused = true;

@@ -37,3 +37,5 @@ export const Open: Story = {
 export const Localized: Story = {
   args: { title: 'Delete this task?', message: 'This cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' },
 };
+// 確定ボタンのラベルが長くても、幅 320px で左右を切らない。
+export const LongConfirmLabel: Story = { args: { confirmLabel: 'このタスクと関連するサブタスクをすべて削除する' } };

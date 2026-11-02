@@ -51,7 +51,7 @@ Pagination は、一覧の下に「1–20 / 120 件」のような範囲と、`�
 | `nextLabel` | `string` | `'次へ'` | 次へボタンの文言 |
 | `ellipsisLabel` | `string` | `'省略'` | 省略記号の読み上げの文言 |
 | `pageLabel` | `(page: number) => string` | `` `${page} ページ目` `` | ページ番号のボタンの名前。見えている数字を含める |
-| `formatRange` | `(range: { from, to, total }) => string` | `` `${from}–${to} / ${total} 件` `` | 範囲の文。既定では 0 件のとき `'0 件'` |
+| `formatRange` | `(range: { from, to, total }) => string` | `` `${from}–${to} / ${total} 件` ``（数値は `128,400` のように桁区切り） | 範囲の文。既定では 0 件のとき `'0 件'` |
 | `hideRange` | `boolean` | `false` | 範囲の文を出さない |
 | `loading` | `boolean` | `false` | 取得中。ボタンは残して `aria-disabled` にし、範囲に `aria-busy` を付ける |
 

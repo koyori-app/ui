@@ -73,3 +73,13 @@ export const FullWidth: Story = {
     template: '<div style="width: 320px"><Button v-bind="args" style="width: 100%" /></div>',
   }),
 };
+
+// コンテナより長いラベルだけを折り返し、はみ出さない。
+export const LongLabelNarrow: Story = {
+  args: { label: 'このタスクと関連するサブタスクをすべて削除する', variant: 'danger' },
+  render: (args) => ({
+    components: { Button },
+    setup: () => ({ args }),
+    template: '<div style="width: 200px"><Button v-bind="args" /></div>',
+  }),
+};

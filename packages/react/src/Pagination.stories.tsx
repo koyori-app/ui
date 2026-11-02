@@ -66,3 +66,6 @@ export const CustomFormat: Story = {
     formatRange: (range: PaginationRange) => `全 ${range.total} 件中 ${range.from} 件目から ${range.to} 件目`,
   },
 };
+
+// 件数には桁区切りを付ける。
+export const LargeTotal: Story = { args: { page: 3210, total: 128400 } };

@@ -14,10 +14,18 @@
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   transition: background-color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
-.link:hover { background: var(--sidebar-link-hover-background, var(--koyori-color-surface-hover)); }
+@media (hover: hover) and (pointer: fine) {
+  .link:hover { background: var(--sidebar-link-hover-background, var(--koyori-color-surface-hover)); }
+}
+
+.link:active:not([aria-current='page']) { background: var(--koyori-color-surface-active); }
 
 .link[aria-current='page'] {
   background: var(--koyori-color-selection);

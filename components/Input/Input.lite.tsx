@@ -17,6 +17,8 @@ export interface InputProps {
   value?: string;
   placeholder?: string;
   autocomplete?: string;
+  /** Maximum number of characters the user can enter. */
+  maxLength?: number;
   /** Virtual keyboard hint. Does not validate the value. */
   inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url';
   disabled?: boolean;
@@ -98,6 +100,7 @@ export default function Input(props: InputProps) {
       value={props.value}
       placeholder={props.placeholder}
       autoComplete={props.autocomplete}
+      maxLength={props.maxLength}
       inputMode={props.inputMode}
       disabled={props.disabled}
       readOnly={props.readOnly}

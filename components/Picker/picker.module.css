@@ -133,18 +133,17 @@
   padding-inline: var(--koyori-space-lg);
 }
 
-/* 共通の button は折り返さないが、選んだ項目の一覧は折り返す。 */
+/* 選んだ項目の一覧は語の途中でも折り返し、先頭に揃える。 */
 .triggerLabel {
-  white-space: normal;
-}
-
-.field .triggerLabel {
   min-width: 0;
+  text-align: start;
   overflow-wrap: anywhere;
 }
 
-.field .trigger:hover:not(:disabled) {
-  --button-border: var(--koyori-color-text-secondary);
+@media (hover: hover) and (pointer: fine) {
+  .field .trigger:hover:not(:disabled) {
+    --button-border: var(--koyori-color-text-secondary);
+  }
 }
 
 .field .trigger[aria-invalid='true']:not(:disabled) {
@@ -153,4 +152,9 @@
 
 .field .trigger:disabled .triggerSurface {
   border-color: var(--koyori-color-border);
+}
+
+/* iOS Safari は 16px 未満の入力欄にフォーカスすると画面を拡大する。 */
+@media (pointer: coarse) {
+  .search { font-size: max(16px, var(--koyori-font-size-sm)); }
 }

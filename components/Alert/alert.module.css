@@ -4,6 +4,8 @@
   --alert-color: var(--koyori-color-danger);
   --alert-background: var(--koyori-color-danger-subtle);
   display: flex;
+  /* 狭い幅では本文を細らせず、操作を次の行に回す。 */
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--koyori-space-md);
   box-sizing: border-box;
@@ -34,7 +36,7 @@
 
 /* ボタンの高さ（36px）の中で、1 行目が縦中央に来るようにする。 */
 .body {
-  flex: 1 1 auto;
+  flex: 1 1 16rem;
   min-width: 0;
   padding-block: calc((var(--koyori-control-height-sm) - var(--koyori-line-height-sm) * 1em) / 2);
 }

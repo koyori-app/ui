@@ -55,6 +55,10 @@
   background: transparent;
   font: inherit;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   transition: color var(--koyori-motion-fast) var(--koyori-ease-out), background-color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
@@ -81,7 +85,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-.page:hover { color: var(--koyori-color-text); }
+@media (hover: hover) and (pointer: fine) {
+  .page:hover { color: var(--koyori-color-text); }
+}
+
+.step:active:not(:disabled), .page:active:not([aria-current='page']) { background: var(--koyori-color-surface-active); }
 
 /* 現在ページはアクセントの面で塗る。色だけに頼らないよう太字も付ける。 */
 .page[aria-current='page'] {

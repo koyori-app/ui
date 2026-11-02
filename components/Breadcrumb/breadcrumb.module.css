@@ -42,13 +42,21 @@
   border-radius: var(--koyori-radius-md);
   color: var(--koyori-color-text-secondary);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
-.link:hover {
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: var(--koyori-color-text);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.link:active {
   color: var(--koyori-color-text);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
 }
 
 .link:focus-visible {

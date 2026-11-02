@@ -46,6 +46,7 @@ export const OutOfRange: Story = { args: { value: '101' } };
 export const Text: Story = { args: { type: 'text' } };
 export const Date: Story = { args: { type: 'date', value: '2026-10-22' } };
 export const InputMode: Story = { args: { type: 'text', inputMode: 'numeric' } };
+export const MaxLength: Story = { args: { type: 'text', maxLength: 5 } };
 
 /* フォーカスが外れるたびに 1 回通知する。数値の確定通知が先に届く。 */
 function BlurExample() {
@@ -85,6 +86,11 @@ export const WithPrefix: Story = {
 
 export const WithSuffix: Story = {
   render: () => <AffixExample label="在庫" type="number" min={0} value="12" suffix="件" />,
+};
+
+// 長い前後要素があっても入力欄を潰さない。
+export const LongAffix: Story = {
+  render: () => <AffixExample label="ファイル" value="report" suffix="IMG_20250914_183022_HDR_portrait_edited_edited.HEIC" />,
 };
 
 export const AffixInvalid: Story = {

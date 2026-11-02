@@ -27,12 +27,12 @@ export default function ConfirmDialog(props: ConfirmDialogProps) {
         <button type="button" class={controls.button} data-variant="tertiary"
           onClick={() => props.onCancel?.()}
         >
-          <span class={controls.surface}>{props.cancelLabel ?? 'キャンセル'}</span>
+          <span class={controls.surface}><span class={controls.label}>{props.cancelLabel ?? 'キャンセル'}</span></span>
         </button>
         <button type="button" class={controls.button} data-variant={props.destructive ? 'danger' : 'primary'}
           onClick={() => props.onConfirm?.()}
         >
-          <span class={controls.surface}>{props.confirmLabel}</span>
+          <span class={controls.surface}><span class={controls.label}>{props.confirmLabel}</span></span>
         </button>
       </div>
     </Dialog>

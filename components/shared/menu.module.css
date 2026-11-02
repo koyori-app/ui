@@ -92,7 +92,13 @@
   text-align: start;
   overflow-wrap: anywhere;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+.item:active:not([aria-disabled='true']) { background: var(--koyori-color-surface-active); }
 
 .itemLabel {
   position: relative;
@@ -200,5 +206,7 @@
 }
 
 @media (forced-colors: active) {
-  .item:hover:not([aria-disabled='true']) { outline: 1px solid Highlight; }
+  @media (hover: hover) and (pointer: fine) {
+    .item:hover:not([aria-disabled='true']) { outline: 1px solid Highlight; }
+  }
 }

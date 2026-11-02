@@ -18,3 +18,5 @@ export const Initials: Story = {};
 export const SingleWordName: Story = { args: { name: 'yupix' } };
 export const BrokenImage: Story = { args: { src: 'data:image/svg+xml;utf8,broken' } };
 export const Large: Story = { args: { src: photo, size: 64 } };
+export const EmptyName: Story = { args: { name: '' } };
+export const EmojiName: Story = { args: { name: '👩🏽‍💻 Priya' } };

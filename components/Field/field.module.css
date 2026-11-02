@@ -34,6 +34,7 @@
 
 .description, .error {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .description {
@@ -79,12 +80,17 @@ textarea.control {
   opacity: 1;
 }
 
-.control:hover:not(:disabled) {
-  border-color: var(--koyori-color-text-secondary);
+@media (hover: hover) and (pointer: fine) {
+  .control:hover:not(:disabled) {
+    border-color: var(--koyori-color-text-secondary);
+  }
+
+  .control[aria-invalid='true']:hover {
+    border-color: var(--koyori-color-danger);
+  }
 }
 
-.control[aria-invalid='true'],
-.control[aria-invalid='true']:hover {
+.control[aria-invalid='true'] {
   border-color: var(--koyori-color-danger);
 }
 
@@ -137,12 +143,17 @@ textarea.control {
 .group .control:focus-visible { outline: none; }
 .group .control:disabled { background: transparent; }
 
-.group:hover:has(.control:not(:disabled)) {
-  border-color: var(--koyori-color-text-secondary);
+@media (hover: hover) and (pointer: fine) {
+  .group:hover:has(.control:not(:disabled)) {
+    border-color: var(--koyori-color-text-secondary);
+  }
+
+  .group:hover:has(.control[aria-invalid='true']) {
+    border-color: var(--koyori-color-danger);
+  }
 }
 
-.group:has(.control[aria-invalid='true']),
-.group:hover:has(.control[aria-invalid='true']) {
+.group:has(.control[aria-invalid='true']) {
   border-color: var(--koyori-color-danger);
 }
 
@@ -162,9 +173,14 @@ textarea.control {
   --koyori-control-height-sm: calc(var(--affix-control-height) - 4px);
   --koyori-radius-md: calc(var(--affix-radius) - 2px);
   display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
+  /* 長い前後要素で入力欄が潰れないように、幅に上限を設けて折り返す。 */
+  min-width: 0;
+  max-width: 40%;
   padding-inline: var(--koyori-space-md);
   color: var(--koyori-color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 /* 未指定の前後要素は幅を持たない。 */
@@ -184,4 +200,9 @@ textarea.control {
   .control, .group {
     transition: none;
   }
+}
+
+/* iOS Safari は 16px 未満の入力欄にフォーカスすると画面を拡大する。 */
+@media (pointer: coarse) {
+  .control { font-size: max(16px, var(--koyori-font-size-sm)); }
 }
