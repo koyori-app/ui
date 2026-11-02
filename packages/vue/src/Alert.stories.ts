@@ -69,3 +69,13 @@ export const Multiple: Story = {
     </div>`,
   }),
 };
+
+// 狭い幅では本文を細らせず、操作を次の行に回す。
+export const LongMessageNarrow: Story = {
+  args: { message: '共有リンクの作成に失敗しました。https://example.com/workspaces/acme/projects/q3-launch/docs/9f8e7d6c5b4a を確認してください。', onRetry: () => {}, onDismiss: () => {} },
+  render: (args) => ({
+    components: { Alert },
+    setup: () => ({ args }),
+    template: '<div style="width: 288px"><Alert v-bind="args" /></div>',
+  }),
+};

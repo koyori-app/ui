@@ -1,3 +1,4 @@
+// 名前が空のときのアイコンは Lucide user; ISC. See THIRD_PARTY_NOTICES.md.
 import { onUpdate, Show, useStore } from '@builder.io/mitosis';
 import { avatarInitials, avatarSizeStyle } from './avatar';
 import styles from './avatar.module.css';
@@ -39,7 +40,15 @@ export default function Avatar(props: AvatarProps) {
         />
       </Show>
       <Show when={!state.showImage}>
-        <span role="img" aria-label={props.name}>{state.initials}</span>
+        <span role="img" aria-label={state.initials ? props.name : '名前のない利用者'}>
+          {state.initials}
+          <Show when={!state.initials}>
+            <svg class={styles.fallback} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" style={{ strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </Show>
+        </span>
       </Show>
     </span>
   );

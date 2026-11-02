@@ -56,3 +56,9 @@ export const FullWidth: Story = {
     </div>
   ),
 };
+
+// コンテナより長いラベルだけを折り返し、はみ出さない。
+export const LongLabelNarrow: Story = {
+  args: { label: 'このタスクと関連するサブタスクをすべて削除する', variant: 'danger' },
+  render: (args) => <div style={{ width: 200 }}><Button {...args} /></div>,
+};

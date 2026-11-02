@@ -17,8 +17,15 @@
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
-  white-space: nowrap;
+  /* コンテナより長いラベルだけを折り返す。keep-all で最小幅を保ち、狭い行で 1 字ずつ折れないようにする。 */
+  max-width: 100%;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* 外側の button がレイアウトとクリック領域を維持し、内側だけを動かす。 */
@@ -36,12 +43,17 @@
   border-radius: inherit;
   background: var(--button-background);
   pointer-events: none;
+  min-width: 0;
   transition: background-color var(--koyori-motion-fast) var(--koyori-ease-out), transform var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
 .icon {
   display: inline-flex;
   flex-shrink: 0;
+}
+
+.label {
+  min-width: 0;
 }
 
 /* アイコン未指定のときは、空の要素で gap を作らない。 */
@@ -79,7 +91,13 @@
   --button-color: var(--koyori-color-text-secondary);
 }
 
-.button:hover:not(:disabled) .surface {
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) .surface {
+    background: var(--button-hover-background);
+  }
+}
+
+.button:active:not(:disabled) .surface {
   background: var(--button-hover-background);
 }
 

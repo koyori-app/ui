@@ -250,3 +250,16 @@ export const UpdatingParent: Story = {
     template: '<div><Picker v-bind="args" :format-results-count="count => count + \'件の候補\'" /><output>{{ tick }}</output></div>',
   }),
 };
+
+// Field の外でも、選んだ項目の一覧がコンテナからはみ出さない。
+export const LongSelectionNarrow: Story = {
+  args: {
+    selectionMode: 'multiple',
+    items: [
+      { value: 'mail', label: 'bartholomew.fitzgerald@northwind-industries-holdings.example.com' },
+      { value: 'title', label: 'リリース前に確認するアクセシビリティとキーボード操作の受け入れ条件' },
+      { value: 'file', label: 'IMG_20250914_183022_HDR_portrait_edited_edited.HEIC' },
+    ],
+    defaultSelectedValues: ['mail', 'title', 'file'],
+  },
+};

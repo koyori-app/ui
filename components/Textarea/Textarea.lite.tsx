@@ -12,6 +12,8 @@ export interface TextareaProps {
   value?: string;
   placeholder?: string;
   rows?: number;
+  /** Maximum number of characters the user can enter. */
+  maxLength?: number;
   disabled?: boolean;
   readOnly?: boolean;
   onValueChange?: (value: string) => void;
@@ -38,6 +40,7 @@ export default function Textarea(props: TextareaProps) {
       value={props.value}
       placeholder={props.placeholder}
       rows={props.rows ?? 3}
+      maxLength={props.maxLength}
       disabled={props.disabled}
       readOnly={props.readOnly}
       required={state.context?.required}

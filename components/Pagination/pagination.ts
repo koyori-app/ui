@@ -53,9 +53,13 @@ export function canGoNext(page: number, pageSize: number, total: number | undefi
   return clampPage(page, pageSize, total) < pageCount(total, pageSize);
 }
 
+// 既定の文言が日本語なので固定する。実行環境のロケールに任せると SSR とハイドレーションで食い違う。
+const countFormat = new Intl.NumberFormat('ja-JP');
+
 /* 範囲は en dash でつなぐ。0 件で「0–0」と出さない。 */
 export function formatPageRange(range: PaginationRange) {
-  return range.total === 0 ? '0 件' : `${range.from}–${range.to} / ${range.total} 件`;
+  const { format } = countFormat;
+  return range.total === 0 ? '0 件' : `${format(range.from)}–${format(range.to)} / ${format(range.total)} 件`;
 }
 
 /** ページ番号の並びの 1 項目。page が null なら省略記号。key は描画の key に使う。 */

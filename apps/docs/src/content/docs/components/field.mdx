@@ -53,6 +53,7 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 | `onNumberCommit` | `(value: number \| null) => void` | — | 数値入力の確定通知。有効な空欄は `null`、0は `0` |
 | `onNumberInvalid` | `(message: string) => void` | — | 数値の確定を拒否したとき、ブラウザーの検証メッセージを通知 |
 | `autocomplete` | `string` | — | Input のみ。自動入力の種類。例: `email`、`name` |
+| `maxLength` | `number` | — | 入力できる最大の文字数 |
 | `rows` | `number` | `3` | Textarea のみ。表示する行数 |
 | `prefix` / `suffix` | React: 要素 / Vue: 同名スロット | — | Input のみ。入力欄の前後に置く要素。下の「先頭・末尾の要素」を参照 |
 
@@ -79,6 +80,8 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 設計の参照は [APG Spinbutton](https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/) と[デジタル庁の導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)です。
 
 ## 先頭・末尾の要素
+
+前後の要素はそれぞれ幅の 40% までで、超えると折り返します。入力欄の幅を残すためです。
 
 Input には `prefix`（React は要素、Vue は同名スロット）と `suffix` を渡せます。
 単位や通貨記号のような文字のほか、パスワードの表示切り替えのようなボタンも置けます。
@@ -135,6 +138,8 @@ Input には `prefix`（React は要素、Vue は同名スロット）と `suffi
 - Input の `prefix` / `suffix` に置いたボタンは入力欄の外にあります。名前を付け、Tab で順に到達できるようにしてください。
 
 ## スタイル
+
+タッチ端末（`pointer: coarse`）では入力欄の文字を 16px にします。iOS Safari がフォーカス時に画面を拡大するのを防ぐためです。
 
 入力欄の枠線は `--koyori-color-border-strong`、エラーの文字と枠線は `--koyori-color-danger` を使います。
 変更するときも、枠線は背景とのコントラスト比 3:1、エラーの文字は 4.5:1 以上を保ってください。

@@ -54,7 +54,13 @@
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+.emoji:active:not(:disabled) { background: var(--koyori-color-surface-active); }
 
 .emoji[aria-pressed='true'] {
   border-color: var(--koyori-color-selection-indicator);

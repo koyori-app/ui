@@ -20,6 +20,15 @@
   border-bottom: 1px solid var(--koyori-color-border);
 }
 
+/* 収まらないタブがある側を薄くする。tabs.ts が属性を付ける。 */
+.list[data-more-before], .list[data-more-after] {
+  --tabs-fade-direction: to right;
+  mask-image: linear-gradient(var(--tabs-fade-direction), transparent, #000 var(--tabs-fade-before, 0px), #000 calc(100% - var(--tabs-fade-after, 0px)), transparent);
+}
+.list[data-more-before] { --tabs-fade-before: 32px; }
+.list[data-more-after] { --tabs-fade-after: 32px; }
+.list:dir(rtl) { --tabs-fade-direction: to left; }
+
 .tab {
   position: relative;
   flex-shrink: 0;
@@ -32,7 +41,13 @@
   font: inherit;
   white-space: nowrap;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+.tab:active:not(:disabled) { background: var(--koyori-color-surface-active); }
 
 .tab[aria-selected='true'] {
   color: var(--koyori-color-text);
@@ -50,9 +65,9 @@
   opacity: var(--tab-indicator-opacity, 0);
   pointer-events: none;
   transition: var(--tab-indicator-transition,
-    transform var(--koyori-motion-slow) var(--koyori-ease-out),
-    width var(--koyori-motion-slow) var(--koyori-ease-out),
-    height var(--koyori-motion-slow) var(--koyori-ease-out));
+    transform var(--koyori-motion-base) var(--koyori-ease-out),
+    width var(--koyori-motion-base) var(--koyori-ease-out),
+    height var(--koyori-motion-base) var(--koyori-ease-out));
 }
 
 .selection {

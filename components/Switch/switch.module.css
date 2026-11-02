@@ -8,6 +8,10 @@
   color: var(--koyori-color-text);
   font: var(--koyori-font-size-sm)/var(--koyori-line-height-sm) var(--koyori-font-family);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* 連打しても途中から自然に戻るよう、keyframes ではなく transition だけで動かす。 */
@@ -50,7 +54,9 @@
   background: var(--koyori-color-selection);
 }
 
-.root:hover .track:not(:disabled) { border-color: var(--koyori-color-text); }
+@media (hover: hover) and (pointer: fine) {
+  .root:hover .track:not(:disabled) { border-color: var(--koyori-color-text); }
+}
 
 .track:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
@@ -81,7 +87,9 @@
   .thumb { background: ButtonText; }
   .track[aria-checked='true'] { border-color: Highlight; background: Highlight; }
   .track[aria-checked='true'] .thumb { background: HighlightText; }
-  .root:hover .track:not(:disabled) { border-color: Highlight; }
+  @media (hover: hover) and (pointer: fine) {
+    .root:hover .track:not(:disabled) { border-color: Highlight; }
+  }
   .track:focus-visible { outline-color: Highlight; }
   .track:disabled, .track[aria-checked='true']:disabled { border-color: GrayText; background: Canvas; }
   .track:disabled .thumb, .track[aria-checked='true']:disabled .thumb { background: GrayText; }

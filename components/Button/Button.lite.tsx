@@ -1,4 +1,4 @@
-import { Slot } from '@builder.io/mitosis';
+import { Show, Slot } from '@builder.io/mitosis';
 import styles from '../shared/control.module.css';
 
 interface ButtonOptions {
@@ -44,7 +44,7 @@ export default function Button(props: ButtonProps) {
     >
       <span class={styles.surface}>
         <span class={styles.icon} aria-hidden="true"><Slot name="icon" /></span>
-        {props.label}
+        <Show when={props.label}><span class={styles.label}>{props.label}</span></Show>
       </span>
     </button>
   );

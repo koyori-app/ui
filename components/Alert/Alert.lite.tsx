@@ -39,7 +39,7 @@ export default function Alert(props: AlertProps) {
       </div>
       <Show when={props.onRetry}>
         <button type="button" class={controls.button} data-variant="tertiary" onClick={() => props.onRetry?.()}>
-          <span class={controls.surface}>{props.retryLabel ?? '再試行'}</span>
+          <span class={controls.surface}><span class={controls.label}>{props.retryLabel ?? '再試行'}</span></span>
         </button>
       </Show>
       <Show when={props.onDismiss}>

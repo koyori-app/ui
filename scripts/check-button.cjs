@@ -35,7 +35,8 @@ assert.match(readFileSync(resolve(root, 'packages/vue/src/generated/components/B
       const boxes = () => page.locator('#storybook-root button').evaluateAll(buttons => buttons.map(button => {
         const surface = button.firstElementChild;
         const rect = el => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width, height: r.height }; };
-        const text = [...surface.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+        // ラベルは .surface の中の span にある。
+        const text = [...surface.querySelectorAll('span'), surface].flatMap(el => [...el.childNodes]).find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
         const range = document.createRange();
         range.selectNodeContents(text);
         const line = range.getBoundingClientRect();

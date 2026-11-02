@@ -11,9 +11,9 @@
   background: var(--highlight-background, var(--koyori-color-surface-active));
   pointer-events: none;
   transition: var(--highlight-transition,
-    transform var(--koyori-motion-slow) var(--koyori-ease-out),
-    width var(--koyori-motion-slow) var(--koyori-ease-out),
-    height var(--koyori-motion-slow) var(--koyori-ease-out), opacity var(--koyori-motion-fast) var(--koyori-ease-out));
+    transform var(--koyori-motion-fast) var(--koyori-ease-out),
+    width var(--koyori-motion-fast) var(--koyori-ease-out),
+    height var(--koyori-motion-fast) var(--koyori-ease-out), opacity var(--koyori-motion-fast) var(--koyori-ease-out));
 }
 
 /* ホバーできない端末（スマホなど）では、タップした瞬間に背景が広がったり滑ったりして見えるため、

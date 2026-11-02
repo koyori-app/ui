@@ -10,7 +10,9 @@ function layoutScale(root: HTMLElement, bounds: DOMRect) {
   return { x: scale(bounds.width, root.offsetWidth), y: scale(bounds.height, root.offsetHeight) };
 }
 
-export function highlightItem(root: HTMLElement | null, target: EventTarget | null) {
+// キーボードでの移動は動かさない。フォーカス枠はすぐ動くので、帯だけが遅れて見える。
+// Picker のようにフォーカスが一覧の外にある場合は、呼び出し側が instant を渡す。
+export function highlightItem(root: HTMLElement | null, target: EventTarget | null, instant = false) {
   if (!root || !(target instanceof HTMLElement)) return;
   if (target.matches(':disabled, [aria-disabled="true"]')) {
     hideHighlight(root);
@@ -19,6 +21,8 @@ export function highlightItem(root: HTMLElement | null, target: EventTarget | nu
   // offsetTop / offsetHeight は整数に丸まるので、行の高さが小数のとき帯が一覧の端を
   // 1px 未満はみ出し、スクロール可能な一覧ではそれだけでスクロールバーが出る。
   // 丸めない矩形から求めれば、帯は行の箱とぴったり重なり、はみ出さない。
+  const skipMotion = instant || target.matches(':focus-visible');
+  if (skipMotion) root.style.setProperty('--highlight-transition', 'none');
   const bounds = root.getBoundingClientRect();
   const item = target.getBoundingClientRect();
   const scale = layoutScale(root, bounds);
@@ -29,6 +33,10 @@ export function highlightItem(root: HTMLElement | null, target: EventTarget | nu
   root.style.setProperty('--highlight-width', `${item.width / scale.x}px`);
   root.style.setProperty('--highlight-height', `${item.height / scale.y}px`);
   root.style.setProperty('--highlight-opacity', '1');
+  if (skipMotion) {
+    root.querySelector('[data-hover-highlight]')?.getBoundingClientRect();
+    root.style.removeProperty('--highlight-transition');
+  }
 }
 
 export function enterHighlight(root: HTMLElement | null, event: { clientX: number; clientY: number }) {

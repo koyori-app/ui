@@ -26,8 +26,15 @@
   color: inherit;
   text-align: start;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.trigger:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+.trigger:active, .sortButton:active { background: var(--koyori-color-surface-active); }
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+}
 .count { flex-shrink: 0; color: var(--koyori-color-text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
 .chevron { display: inline-flex; flex-shrink: 0; transform: rotate(-90deg); transition: transform var(--koyori-motion-fast) var(--koyori-ease-out); }
 .trigger[aria-expanded='true'] .chevron { transform: none; }
@@ -66,8 +73,14 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.sortButton:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  .sortButton:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+}
 .sortButton:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: var(--koyori-focus-offset);
@@ -79,7 +92,10 @@
   opacity: 0;
   transition: transform var(--koyori-motion-fast) var(--koyori-ease-out), opacity var(--koyori-motion-fast) var(--koyori-ease-out);
 }
-.sortButton:hover .sortIcon, .sortButton:focus-visible .sortIcon { opacity: 0.5; }
+@media (hover: hover) and (pointer: fine) {
+  .sortButton:hover .sortIcon { opacity: 0.5; }
+}
+.sortButton:focus-visible .sortIcon { opacity: 0.5; }
 [aria-sort='descending'] .sortIcon { opacity: 1; }
 [aria-sort='ascending'] .sortIcon { opacity: 1; transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .sortIcon { transition: none; } }

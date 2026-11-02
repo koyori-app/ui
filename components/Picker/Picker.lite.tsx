@@ -188,7 +188,7 @@ export default function Picker(props: PickerProps) {
     revealActive() {
       const active = listRef?.querySelector<HTMLElement>('[data-active="true"]');
       active?.scrollIntoView({ block: 'nearest' });
-      if (active) highlightItem(listRef, active);
+      if (active) highlightItem(listRef, active, true);
     },
     focusList() {
       if (!state.activeId()) state.resetActive();

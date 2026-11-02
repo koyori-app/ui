@@ -51,6 +51,7 @@ export const OutOfRange: Story = { args: { value: '101' } };
 export const Text: Story = { args: { type: 'text' } };
 export const Date: Story = { args: { type: 'date', value: '2026-10-22' } };
 export const InputMode: Story = { args: { type: 'text', inputMode: 'numeric' } };
+export const MaxLength: Story = { args: { type: 'text', maxLength: 5 } };
 
 /* フォーカスが外れるたびに 1 回通知する。数値の確定通知が先に届く。 */
 export const Blur: Story = {
@@ -95,6 +96,11 @@ const affixExample = (label: string, args: InputProps, slots = '', error = '') =
 
 export const WithPrefix: Story = {
   render: () => affixExample('金額', { type: 'number', min: 0, value: '1200' }, '<template #prefix>¥</template>'),
+};
+
+// 長い前後要素があっても入力欄を潰さない。
+export const LongAffix: Story = {
+  render: () => affixExample('ファイル', { value: 'report' }, '<template #suffix>IMG_20250914_183022_HDR_portrait_edited_edited.HEIC</template>'),
 };
 
 export const WithSuffix: Story = {

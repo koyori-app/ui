@@ -45,21 +45,32 @@ function tabStop(list: HTMLElement, focused: Element | null) {
   }
 }
 
+/* 収まらないタブがある側だけを薄くして、続きがあると分かるようにする。RTL では scrollLeft が負になる。 */
+function syncScrollFade(list: HTMLElement) {
+  const overflow = list.scrollWidth - list.clientWidth;
+  const position = Math.abs(list.scrollLeft);
+  list.toggleAttribute('data-more-before', overflow > 1 && position > 1);
+  list.toggleAttribute('data-more-after', overflow > 1 && position < overflow - 1);
+}
+
 /* One selection surface and underline travel to the selected tab. Layout changes reposition them without animating. */
 export function placeTabIndicator(list: HTMLElement | null, animate = true) {
   if (!list) return;
   const tab = list.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+  syncScrollFade(list);
   if (!tab) {
     list.style.setProperty('--tab-indicator-opacity', '0');
     return;
   }
-  if (!animate) list.style.setProperty('--tab-indicator-transition', 'none');
+  // キーボードでの移動は動かさない。
+  const skipMotion = !animate || !!list.querySelector('[role="tab"]:focus-visible');
+  if (skipMotion) list.style.setProperty('--tab-indicator-transition', 'none');
   list.style.setProperty('--tab-indicator-x', `${tab.offsetLeft}px`);
   list.style.setProperty('--tab-indicator-y', `${tab.offsetTop}px`);
   list.style.setProperty('--tab-indicator-width', `${tab.offsetWidth}px`);
   list.style.setProperty('--tab-indicator-height', `${tab.offsetHeight}px`);
   list.style.setProperty('--tab-indicator-opacity', '1');
-  if (!animate) {
+  if (skipMotion) {
     list.querySelector('[data-tab-indicator]')?.getBoundingClientRect();
     list.style.removeProperty('--tab-indicator-transition');
   }
@@ -105,9 +116,12 @@ export function listenToTabs(list: HTMLElement | null) {
     if (restore) list.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]:not(:disabled)')?.focus();
   });
   items.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-selected'] });
+  const scroll = () => syncScrollFade(list);
+  list.addEventListener('scroll', scroll, { passive: true });
   list.addEventListener('focusin', focus);
   list.addEventListener('focusout', blur);
   return () => {
+    list.removeEventListener('scroll', scroll);
     highlight();
     sizes?.disconnect();
     items.disconnect();

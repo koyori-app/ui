@@ -21,7 +21,7 @@
   line-height: var(--koyori-line-height-sm);
   box-shadow: var(--koyori-shadow-panel);
   transition: opacity var(--koyori-motion-base) var(--koyori-ease-out),
-    transform var(--koyori-motion-base) var(--koyori-ease-pop);
+    transform var(--koyori-motion-base) var(--koyori-ease-out);
 }
 
 /* ::backdrop はトップレイヤーにあり、DOM の祖先からトークンを継承しないブラウザーがある。 */

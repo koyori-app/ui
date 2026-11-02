@@ -35,7 +35,10 @@
   border-radius: var(--koyori-radius-md);
   background: var(--koyori-color-border-strong);
 }
-.handle:hover, .root[data-dragging] > .handle { background: var(--koyori-color-surface-hover); }
+.root[data-dragging] > .handle { background: var(--koyori-color-surface-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .handle:hover { background: var(--koyori-color-surface-hover); }
+}
 .handle:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: calc(-1 * var(--koyori-focus-width));

@@ -34,7 +34,7 @@
 
 .frame[data-sidebar-rail] > .root {
   width: var(--sidebar-current-width);
-  transition: width var(--koyori-motion-slow) var(--koyori-ease-out);
+  transition: width var(--koyori-motion-base) var(--koyori-ease-out);
 }
 
 /* 幅が動く間、中身はカードではなく各領域で切る。つまみはカードの外に出す。 */
@@ -58,9 +58,9 @@
   flex-shrink: 0;
   /* カードが滑り出す端は切り、つまみのある側だけ枠の外まで見せる。 */
   clip-path: inset(0 calc(-1 * var(--sidebar-handle-width)) 0 0);
-  transition: width var(--koyori-motion-slow) var(--koyori-ease-out),
-    height var(--koyori-motion-slow) var(--koyori-ease-out),
-    visibility var(--koyori-motion-slow);
+  transition: width var(--koyori-motion-base) var(--koyori-ease-out),
+    height var(--koyori-motion-base) var(--koyori-ease-out),
+    visibility var(--koyori-motion-base);
 }
 
 .frame[data-open='false'] { visibility: hidden; }
@@ -126,10 +126,14 @@
   background: var(--koyori-color-surface);
   color: var(--koyori-color-text-secondary);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: opacity var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
-.handle:hover { background: var(--koyori-color-surface-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .handle:hover { background: var(--koyori-color-surface-hover); }
+}
 
 .handle:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
