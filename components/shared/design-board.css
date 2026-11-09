@@ -27,5 +27,7 @@
 .design-board .detail h4 { margin: 0; font-size: 15px; }
 @media (max-width: 900px) {
   .design-board .app { grid-template-columns: 1fr; }
+  .design-board .task { grid-template-columns: auto 1fr; }
+  .design-board .task > :nth-child(n + 3) { grid-column: 2; justify-self: start; }
   .design-board .side, .design-board .detail { border: 0; border-bottom: 1px solid var(--koyori-color-border); }
 }
