@@ -34,13 +34,13 @@ Story は各パッケージの `src/*.stories.*` に追加します。
 
 角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置・スピナーの周期の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
-Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
-配色はくすんだラベンダーとセージを使い、背景に色を持たせながら文字は濃く保ちます。
-主ボタン・ホバー・選択背景はラベンダーの濃淡で揃え、選択時はホバーより少し濃くします。
-補助ボタンはセージ、選択チェックは丸背景のない濃い紫です。
+Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）を使います。
+アクセントは墨で、色を持つのは成功・情報・警告・エラーの意味の色だけです。灰は青みを帯びています。
+主ボタン・ホバー・選択背景は墨の濃淡で揃え、選択時はホバーより少し濃くします。
+ダークは祖先に `.dark` か `data-theme="dark"` を付けると切り替わり、OS の設定には連動しません。
 選択背景とチェックの色は `--koyori-color-selection` と `--koyori-color-selection-indicator` で調整できます。
 カードなど角丸のある要素を入れ子にする場合は、外側の角丸を `内側の角丸 + 外側の padding` にします。
-Dropdown のパネルは `calc(var(--koyori-radius-md) + var(--koyori-space-xs))`（既定値: 8px + 4px = 12px）です。
+Dropdown のパネルは `calc(var(--koyori-radius-md) + var(--koyori-space-xs))`（既定値: 6px + 4px = 10px）です。
 計算は外側の要素で行い、その範囲で内側の角丸や余白を上書きした場合も追従させます。
 文字サイズは `rem`、行高は倍率なので、利用側のルート文字サイズに追従します。
 共通値はここで変更し、利用側で調整するときは `style.css` の読み込み後に上書きします。
@@ -238,6 +238,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 Storybook をビルド済みなら、続けて中央寄せとブラウザーが閉じたときの同期をブラウザーで検証します（`DIALOG_TEST_FRAMEWORK` で片方に絞り、`DIALOG_TEST_PORT` でポート変更可能）。
+`node scripts/check-tokens.cjs` は、tokens.css のライト・ダークのコントラストと配布 CSS のダークのブロックを検証します（`pnpm build` のあとに実行）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
 `node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
 `node scripts/check-button.cjs` は、Button が狭い行で縮まず折れないこと、広げると面も広がること、ButtonGroup のつながりを両フレームワークで検証します（`BUTTON_TEST_PORT` でポート変更可能）。
@@ -490,6 +491,8 @@ VRT 側で 2 つのプロジェクトを作成し、比較基準のブランチ�
 同じプロジェクトを指定すると比較基準が混ざるため、CI で拒否します。
 初回は main のビルドを実行し、VRT 上で結果を確認・承認して比較基準を用意します。
 必要な設定が欠けている場合も、送信前に設定エラーとして終了します。
+
+見た目を大きく変えたときは、main のビルドを VRT で全件承認して基準を更新します。
 
 ## ライセンス
 

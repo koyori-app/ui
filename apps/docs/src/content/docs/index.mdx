@@ -94,7 +94,29 @@ CSS の import はアプリのエントリーなどで一度だけ行えば十�
 | [タスクのプロパティとSSR境界](./blocks/task-properties/) | 現在値をSSRし、担当者・状態の編集と取得状態を利用側で組み立てる |
 | [2 列のダイアログ](./blocks/two-column-dialog/) | 左に本文、右にプロパティを置く大きなダイアログ |
 
-コンポーネントの色は現在ライト背景向けです。ドキュメントをダーク表示にしても、デモは白い背景で表示します。
+## テーマ
+
+標準はライトです。祖先の要素（通常は `<html>`）に `.dark` クラスか `data-theme="dark"` を付けると、その範囲がダークに切り替わります。
+
+- OS の設定（`prefers-color-scheme`）には連動しません。OS に合わせたい場合は、利用側でクラスを付け外しします。
+- ダークでは `color-scheme: dark` も付くため、スクロールバーなどのブラウザー標準の部品も暗くなります。
+- 色は `--koyori-color-*` のトークンで切り替わります。独自の部品もこのトークンを参照すると、同じように切り替わります。
+
+## フォント
+
+`--koyori-font-family` の既定値は `'Inter Variable', 'Noto Sans JP Variable', system-ui, sans-serif` です。
+フォントファイルはこのライブラリに含まれないため、利用側で読み込みます。読み込まない場合は `system-ui` で表示されます。
+
+```sh
+pnpm add @fontsource-variable/inter @fontsource-variable/noto-sans-jp
+```
+
+```ts title="main.ts（Vue・React 共通）"
+import '@fontsource-variable/inter';
+import '@fontsource-variable/noto-sans-jp';
+```
+
+別のフォントを使う場合は、`--koyori-font-family` を上書きします。
 
 ## アクセシビリティ
 

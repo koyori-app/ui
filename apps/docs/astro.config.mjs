@@ -70,7 +70,7 @@ export default defineConfig({
           ],
         },
       ],
-      customCss: ['./src/styles/custom.css'],
+      customCss: ['@fontsource-variable/inter', '@fontsource-variable/noto-sans-jp', './src/styles/custom.css'],
     }),
     react(),
     vue(),
