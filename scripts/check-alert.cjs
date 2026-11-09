@@ -65,11 +65,16 @@ const contrast = (a, b) => {
   return (light + 0.05) / (dark + 0.05);
 };
 const text = token('text');
+const surface = token('surface');
 for (const variant of ['danger', 'warning', 'info', 'success']) {
   const color = token(variant);
+  // Alert の面は surface、枠は border。接頭辞（--alert-color）と本文は surface に対して読めること。
+  assert(contrast(color, surface) >= 4.5, `${variant}: 接頭辞が surface に対して 4.5:1 以上（${contrast(color, surface).toFixed(2)}）`);
+  assert(contrast(text, surface) >= 4.5, `${variant}: 本文が surface に対して 4.5:1 以上（${contrast(text, surface).toFixed(2)}）`);
+  // -subtle は利用側が --alert-background で塗るとき用に残したトークン。塗ったときも読めること。
   const background = token(`${variant}-subtle`);
-  assert(contrast(color, background) >= 4.5, `${variant}: 接頭辞と枠線が背景に対して 4.5:1 以上（${contrast(color, background).toFixed(2)}）`);
-  assert(contrast(text, background) >= 4.5, `${variant}: 本文が背景に対して 4.5:1 以上（${contrast(text, background).toFixed(2)}）`);
+  assert(contrast(color, background) >= 4.5, `${variant}: 利用側が -subtle で塗っても接頭辞が 4.5:1 以上（${contrast(color, background).toFixed(2)}）`);
+  assert(contrast(text, background) >= 4.5, `${variant}: 利用側が -subtle で塗っても本文が 4.5:1 以上（${contrast(text, background).toFixed(2)}）`);
 }
 
 for (const framework of ['vue', 'react']) {

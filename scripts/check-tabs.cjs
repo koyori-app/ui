@@ -230,6 +230,18 @@ let browser, server, docsServer;
       await tab('list').focus(); await page.keyboard.press('ArrowRight'); await focused(tab('board'));
       assert.equal(await list.evaluate(el => el.style.getPropertyValue('--highlight-opacity')), '1');
       assert.equal(await tab('board').evaluate(el => getComputedStyle(el).outlineStyle), 'solid');
+      // 祖先だけをダークにしても、フォーカス色が追従して選択面・台に対して 3:1 以上を保つ。
+      await page.locator('#storybook-root').evaluate(el => el.setAttribute('data-theme', 'dark'));
+      await tab('board').focus(); await page.keyboard.press('ArrowLeft'); await focused(tab('list'));
+      const rgb = value => value.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+      const luminance = value => rgb(value).map(c => c / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+      const contrast = (a, b) => { const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (high + 0.05) / (low + 0.05); };
+      const ring = await tab('list').evaluate(el => getComputedStyle(el).outlineColor);
+      for (const [name, face] of [['selection surface', indicator], ['tab list', list]]) {
+        const background = await face.evaluate(el => getComputedStyle(el).backgroundColor);
+        assert(contrast(ring, background) >= 3, `${framework}: dark ancestor focus ring ${ring} on ${name} ${background} is ${contrast(ring, background).toFixed(2)}:1`);
+      }
+      await page.locator('#storybook-root').evaluate(el => el.removeAttribute('data-theme'));
       await page.emulateMedia({ reducedMotion: 'reduce' });
       assert.equal(await highlight.evaluate(el => getComputedStyle(el).transitionDuration), '0s');
       assert.equal(await indicator.evaluate(el => getComputedStyle(el).transitionDuration), '0s', 'selection does not slide with reduced motion');

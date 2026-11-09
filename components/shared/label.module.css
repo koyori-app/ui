@@ -26,7 +26,8 @@
 }
 
 .tag {
-  min-height: calc(var(--koyori-space-md) * 3 + var(--label-padding) * 2 + 2px);
+  /* 削除ボタン（24px）と揃える。削除できる Tag とできない Tag を並べても高さが変わらない。 */
+  min-height: calc(24px + var(--label-padding) * 2 + 2px);
   border-radius: calc(var(--koyori-radius-md) + var(--label-padding));
   background: transparent;
 }

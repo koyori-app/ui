@@ -165,6 +165,8 @@ let browser;
         await nav.waitFor();
       };
       const a11y = async () => {
+        // 現在ページの切り替えは色と背景が 140ms 遷移する。途中は文字と背景が混ざってコントラストが落ちるので、遷移が終わってから検査する。
+        await page.waitForFunction(() => document.getAnimations().length === 0);
         // Keep our instance separate from the addon, which may replace window.axe.
         await page.addScriptTag({ content: `${axeSource}\nwindow.paginationAxe = window.axe;` });
         const violations = await page.evaluate(async () => (await window.paginationAxe.run(document.querySelector('#storybook-root'))).violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) })));

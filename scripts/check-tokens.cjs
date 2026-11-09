@@ -29,11 +29,18 @@ assert.deepEqual(
   'ダークはライトと同じ色トークンを全部持つ',
 );
 assert.deepEqual(
-  [...darkBlock.matchAll(/--koyori-([a-z-]+):/g)].map(([, name]) => name).filter((name) => !name.startsWith('color-') && name !== 'shadow-panel'),
+  [...darkBlock.matchAll(/--koyori-([a-z-]+):/g)].map(([, name]) => name).filter((name) => !name.startsWith('color-') && name !== 'shadow-panel' && name !== 'focus-color'),
   [],
-  'ダークのブロックは色と影以外のトークンを再定義しない',
+  'ダークのブロックは色・影・フォーカス色以外のトークンを再定義しない',
 );
 assert.match(lightBlock, /--koyori-focus-color:\s*var\(--koyori-color-text-muted\)/, 'フォーカス色は text-muted');
+// :root で別のトークンを参照するトークンは、:root で値が確定して子孫へ継承される。
+// 祖先だけをダークにしたときも切り替わるよう、ダークのブロックにも同じ式で定義されていること。
+const references = Object.fromEntries([...lightBlock.matchAll(/(--koyori-[a-z-]+):\s*(var\(--koyori-[^;]+\))\s*;/g)].map(([, name, value]) => [name, value]));
+assert(references['--koyori-focus-color'], ':root に参照型のトークンがある（検査の前提）');
+for (const [name, value] of Object.entries(references)) {
+  assert(darkBlock.includes(`${name}: ${value};`), `ダークのブロックが ${name}: ${value} を定義する（祖先だけをダークにしても切り替わる）`);
+}
 
 const channel = (value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
 const luminance = (hex) => {

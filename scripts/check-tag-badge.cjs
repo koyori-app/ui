@@ -54,6 +54,7 @@ async function serve(directory, port) {
         assert.deepEqual(violations, []);
       };
       const item = page.locator('#storybook-root [data-size]');
+      let tagHeight;
       const dot = item.locator(':scope > span > span[aria-hidden="true"]');
       for (const component of ['tag', 'badge']) {
         await story(component, 'default');
@@ -62,6 +63,7 @@ async function serve(directory, port) {
         assert.equal(await page.getByRole('button').count(), 0, 'display-only labels have no button');
         assert.equal(await item.locator('[tabindex], [role]').count(), 0);
         const small = await item.boundingBox();
+        if (component === 'tag') tagHeight = small.height;
         assert.equal(await item.evaluate(el => getComputedStyle(el).fontSize), '13px');
         await a11y('#storybook-root');
 
@@ -107,6 +109,7 @@ async function serve(directory, port) {
       assert.equal(await remove.locator('svg').getAttribute('aria-hidden'), 'true');
       const box = await remove.boundingBox();
       assert(box.width >= 24 && box.height >= 24, 'remove target is at least 24px');
+      assert.equal((await remove.locator('xpath=ancestor::*[@data-size][1]').boundingBox()).height, tagHeight, 'a Tag with a remove button is as tall as one without');
       await page.keyboard.press('Tab');
       assert(await remove.evaluate(el => el === document.activeElement));
       assert.equal(await remove.evaluate(el => getComputedStyle(el).outlineWidth), '2px');

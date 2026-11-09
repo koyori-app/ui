@@ -53,7 +53,7 @@ function syncScrollFade(list: HTMLElement) {
   list.toggleAttribute('data-more-after', overflow > 1 && position < overflow - 1);
 }
 
-/* One selection surface and underline travel to the selected tab. Layout changes reposition them without animating. */
+/* One selection surface travels to the selected tab. Layout changes reposition them without animating. */
 export function placeTabIndicator(list: HTMLElement | null, animate = true) {
   if (!list) return;
   const tab = list.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');

@@ -67,8 +67,8 @@
   --koyori-color-border-strong: #868a94;
   /* エラーの文字と枠線。背景とのコントラスト比 4.5:1 以上を保つ。 */
   --koyori-color-danger: #c4322f;
-  /* Alert の種類ごとの文字・枠線と背景。文字は対応する -subtle 背景に対して 4.5:1 以上、
-     --koyori-color-text も各 -subtle 背景に対して 4.5:1 以上を保つ。 */
+  /* -subtle は意味の色の淡い背景。Alert は surface に色の帯なので使わないが、利用側が --alert-background などで
+     塗るときのために残す。意味の色の文字も、--koyori-color-text も、対応する -subtle 背景に対して 4.5:1 以上を保つ。 */
   --koyori-color-danger-subtle: #fdecec;
   --koyori-color-warning: #946200;
   --koyori-color-warning-subtle: #fff4d6;
@@ -88,6 +88,9 @@
 /* .dark と書くと、@import した CSS Modules が .dark を別名に変えて効かなくなるため、属性セレクタで書く。 */
 [class~='dark'], [data-theme='dark'] {
   color-scheme: dark;
+  /* :root で別のトークンを参照すると、値は :root で確定して子孫へ継承される。祖先だけをダークにしても
+     切り替わるよう、参照するトークンはここでも同じ式で定義する。 */
+  --koyori-focus-color: var(--koyori-color-text-muted);
   --koyori-color-accent: #ecedf0;
   --koyori-color-accent-hover: #ffffff;
   --koyori-color-on-accent: #101113;
