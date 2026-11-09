@@ -1,11 +1,11 @@
-/* 確認ボード（Design/Board）用。色・角丸はトークンだけを参照する。 */
+/* 確認ボード（Design/Board）用。Vue と React のストーリーが共有する（片方だけ直してずれないよう 1 つだけ置く）。色・角丸はトークンだけを参照する。 */
 .design-board { min-height: 100vh; box-sizing: border-box; padding: 20px 24px 64px; background: var(--koyori-color-surface-hover); color: var(--koyori-color-text); font-family: var(--koyori-font-family); }
 .design-board * { box-sizing: border-box; }
 .design-board h1 { margin: 0 0 4px; font-size: 20px; }
 .design-board h2 { margin: 28px 0 10px; color: var(--koyori-color-text-muted); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
 .design-board .stack { display: grid; gap: 10px; }
 .design-board .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.design-board .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.design-board .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
 .design-board .panel { padding: 16px; border: 1px solid var(--koyori-color-border); border-radius: calc(var(--koyori-radius-md) + 4px); background: var(--koyori-color-surface); box-shadow: var(--koyori-shadow-panel); }
 .design-board .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
 .design-board .swatch { overflow: hidden; border: 1px solid var(--koyori-color-border); border-radius: var(--koyori-radius-md); background: var(--koyori-color-surface); font-size: 11px; }

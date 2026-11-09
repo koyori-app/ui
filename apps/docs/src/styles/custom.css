@@ -17,8 +17,7 @@
   border-radius: 0.75rem;
   color: var(--koyori-color-text);
   background: var(--koyori-color-surface);
-  font: 1rem/1.6 system-ui, sans-serif;
-  font-family: var(--koyori-font-family);
+  font: 1rem/1.6 var(--koyori-font-family);
 }
 
 .component-preview p {

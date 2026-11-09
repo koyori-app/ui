@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Alert, Avatar, Badge, Button, Checkbox, Field, Input, Meter, ProgressBar, Switch, TabPanel, Tabs, Tag } from './index';
-import './design-board.css';
+import './generated/components/shared/design-board.css';
 
 /* デザインシステムの見本ボード。部品はすべて本物で、色と形はトークンだけで決まる。
    Dark は data-theme="dark" の div で包み、ツールバーに頼らず VRT でも必ず撮れるようにする。 */
@@ -31,6 +31,7 @@ const PRIORITY_COLOR: Record<string, string> = { High: 'var(--koyori-color-dange
 const TAB_ITEMS = [{ value: 'list', label: 'リスト' }, { value: 'board', label: 'ボード' }, { value: 'cal', label: 'カレンダー' }];
 
 function Board() {
+  const uid = useId(); // Autodocs は複数のボードを同時に描くため、ID はマウントごとに一意にする
   const [tab, setTab] = useState('list');
   const [checks, setChecks] = useState([false, true, false, true]);
   const done = checks.filter(Boolean).length;
@@ -54,7 +55,7 @@ function Board() {
             <h3>sprint 12 のタスク</h3>
             <div className="row"><Button label="フィルター" variant="secondary" /><Button label="タスクを作成" variant="primary" /></div>
           </div>
-          <Tabs id="board-tabs" label="表示" items={TAB_ITEMS} value={tab} onValueChange={setTab}>
+          <Tabs id={`${uid}-tabs`} label="表示" items={TAB_ITEMS} value={tab} onValueChange={setTab}>
             <TabPanel value="list"><span /></TabPanel><TabPanel value="board"><span /></TabPanel><TabPanel value="cal"><span /></TabPanel>
           </Tabs>
           {TASKS.map(t => (
@@ -69,8 +70,8 @@ function Board() {
         </div>
         <aside className="detail" aria-label="見本の詳細">
           <h4>TASK-458</h4>
-          <Field id="board-title" label="タイトル" description="一覧に表示される名前です。"><Input value="ホームでタスクを作ったら、リンク付きで通知する" /></Field>
-          <Field id="board-note" label="メモ" error="メモは 200 文字以内で入力してください。"><Input placeholder="例: 通知の文言" /></Field>
+          <Field id={`${uid}-title`} label="タイトル" description="一覧に表示される名前です。"><Input value="ホームでタスクを作ったら、リンク付きで通知する" /></Field>
+          <Field id={`${uid}-note`} label="メモ" error="メモは 200 文字以内で入力してください。"><Input placeholder="例: 通知の文言" /></Field>
           <Switch label="完了したら通知する" defaultChecked />
           <ProgressBar label="チェックリスト" value={done * 25} valueText={`${done} / 4 件`} />
           <div className="stack">
