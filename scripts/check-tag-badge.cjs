@@ -62,7 +62,7 @@ async function serve(directory, port) {
         assert.equal(await page.getByRole('button').count(), 0, 'display-only labels have no button');
         assert.equal(await item.locator('[tabindex], [role]').count(), 0);
         const small = await item.boundingBox();
-        assert.equal(await item.evaluate(el => getComputedStyle(el).fontSize), '14px');
+        assert.equal(await item.evaluate(el => getComputedStyle(el).fontSize), '13px');
         await a11y('#storybook-root');
 
         await story(component, 'with-dot');

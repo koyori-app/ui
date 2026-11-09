@@ -28,7 +28,7 @@
 .tag {
   min-height: calc(var(--koyori-space-md) * 3 + var(--label-padding) * 2 + 2px);
   border-radius: calc(var(--koyori-radius-md) + var(--label-padding));
-  background: var(--koyori-color-surface);
+  background: transparent;
 }
 
 .content {
@@ -42,7 +42,8 @@
 .label { min-width: 0; overflow-wrap: anywhere; }
 .dot { flex-shrink: 0; width: var(--koyori-space-md); height: var(--koyori-space-md); border-radius: 50%; background: currentColor; }
 .remove { flex-shrink: 0; }
-.removeSurface { min-width: calc(var(--koyori-space-md) * 3); min-height: calc(var(--koyori-space-md) * 3); padding: 0; }
+/* 操作領域は WCAG 2.5.8 の 24px。余白トークンを小さくしても割らない。 */
+.removeSurface { min-width: 24px; min-height: 24px; padding: 0; }
 
 @media (forced-colors: active) {
   .dot { outline: 1px solid CanvasText; }

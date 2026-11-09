@@ -103,7 +103,7 @@ let browser;
       const sidebar = nav.locator('..');
       assert.equal((await sidebar.boundingBox()).width, 240);
       assert.equal((await sidebar.boundingBox()).height, 460);
-      assert.equal(await sidebar.evaluate(el => getComputedStyle(el).borderRadius), '16px');
+      assert.equal(await sidebar.evaluate(el => getComputedStyle(el).borderRadius), '12px');
       const surface = nav.locator('[data-hover-highlight]');
       const overview = nav.getByRole('link', { name: '概要', exact: true });
       const projects = nav.getByRole('button', { name: 'プロジェクト', exact: true });

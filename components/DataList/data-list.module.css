@@ -65,7 +65,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--koyori-space-xs);
-  min-height: calc(var(--koyori-space-md) * 3);
+  min-height: 24px; /* 操作領域は WCAG 2.5.8 の 24px。余白トークンに依存させない。 */
   padding: 0;
   border: 0;
   border-radius: calc(var(--koyori-radius-md) / 2);

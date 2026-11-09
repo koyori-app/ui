@@ -20,12 +20,12 @@
   box-sizing: border-box;
   flex-shrink: 0;
   align-items: center;
-  width: 36px;
-  height: 20px;
-  margin-block: calc((var(--koyori-control-height-sm) - 20px) / 2);
+  width: 28px;
+  height: 16px;
+  margin-block: calc((var(--koyori-control-height-sm) - 16px) / 2);
   padding: 0;
-  border: 2px solid var(--koyori-color-border-strong);
-  border-radius: 10px;
+  border: 1.5px solid var(--koyori-color-border-strong);
+  border-radius: 8px;
   background: var(--koyori-color-surface);
   cursor: inherit;
   transition:
@@ -33,10 +33,11 @@
     border-color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
-/* トラックの内側は 32px。16px のサムが端から端まで 16px 動く。 */
+/* トラックの内側は 25px。10px のサムが 1.5px の余白を残して 12px 動く。 */
 .thumb {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
+  margin-inline-start: 1.5px;
   border-radius: 50%;
   background: var(--koyori-color-border-strong);
   transition:
@@ -50,7 +51,7 @@
 }
 
 .track[aria-checked='true'] .thumb {
-  transform: translateX(16px);
+  transform: translateX(12px);
   background: var(--koyori-color-selection);
 }
 

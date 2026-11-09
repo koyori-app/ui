@@ -80,9 +80,9 @@ for (const framework of ['react/src/generated/components/Textarea/Textarea.tsx',
       assert.equal(await running(indicator), 0, `${framework}: 矢印キーでタブの印を動かさない`);
       assert.match(await indicator.evaluate(el => getComputedStyle(el).transitionDuration), /^0\.22s/, `${framework}: タブの印は 220ms`);
 
-      // --- デスクトップの入力欄は 14px のまま。
+      // --- デスクトップの入力欄は 13px のまま。
       await open(desktop, 'input--text');
-      assert.equal(await desktop.locator('#storybook-root input').first().evaluate(el => getComputedStyle(el).fontSize), '14px', `${framework}: デスクトップの入力欄は 14px`);
+      assert.equal(await desktop.locator('#storybook-root input').first().evaluate(el => getComputedStyle(el).fontSize), '13px', `${framework}: デスクトップの入力欄は 13px`);
       await open(desktop, 'input--max-length');
       assert.equal(await desktop.locator('#storybook-root input').first().getAttribute('maxlength'), '5', `${framework}: maxLength を input に渡す`);
 

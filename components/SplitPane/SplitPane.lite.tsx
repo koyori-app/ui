@@ -98,7 +98,7 @@ export default function SplitPane(props: SplitPaneProps) {
 
   return (
     <div ref={rootRef!} class={styles.root} dir="ltr" data-dragging={state.dragging || undefined}
-      style={{ gridTemplateColumns: `minmax(0, ${state.layout().size}px) min(calc(var(--koyori-space-md) * 3), 100%) minmax(0, 1fr)` }}>
+      style={{ gridTemplateColumns: `minmax(0, ${state.layout().size}px) min(24px, 100%) minmax(0, 1fr)` }}>
       <div class={styles.pane} id={props.primaryId} inert={state.layout().size === 0}><Slot name="primary" /></div>
       <div ref={handleRef!} class={styles.handle} role="separator" tabIndex={0}
         aria-orientation="vertical" aria-label={props.ariaLabelledBy ? undefined : props.label}

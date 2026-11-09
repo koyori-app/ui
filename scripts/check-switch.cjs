@@ -18,12 +18,15 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Switc
 
 // 連打しても途中から戻れるよう、キーフレームではなく transition で動かす。
 const css = read('components/Switch/switch.module.css');
+// 無効なラベルの色は tokens.css の text-disabled。値をベタ書きしない。
+const disabledHex = read('components/tokens.css').match(/--koyori-color-text-disabled:\s*#([0-9a-f]{6})/i)[1];
+const disabledColor = `rgb(${[0, 2, 4].map((index) => parseInt(disabledHex.slice(index, index + 2), 16)).join(', ')})`;
 assert.doesNotMatch(css, /@keyframes/, 'Switch はキーフレームを使わない');
 
 for (const framework of ['vue', 'react']) {
   const dist = read(`packages/${framework}/dist/style.css`);
-  // 最小化で translateX(16px) は translate(16px) に書き換わる。どちらでも X 方向の移動だけ。
-  assert.match(dist, /transform:translate(X)?\(16px\)/, `${framework}: つまみは transform だけで動く`);
+  // 最小化で translateX(12px) は translate(12px) に書き換わる。どちらでも X 方向の移動だけ。
+  assert.match(dist, /transform:translate(X)?\(12px\)/, `${framework}: つまみは transform だけで動く`);
   const transitions = dist.match(/transition:[^;}]*/g) ?? [];
   assert.ok(transitions.some((rule) => /transform var\(--koyori-motion-fast\)/.test(rule)), `${framework}: つまみの移動を遷移させる`);
   assert.ok(transitions.some((rule) => /background-color var\(--koyori-motion-fast\)/.test(rule)), `${framework}: トラックの色を遷移させる`);
@@ -96,7 +99,7 @@ let browser;
       // 無効な部品の文字は WCAG 1.4.3 の対象外。axe はこの除外を input / select / textarea の
       // ラベルでしか判定できないため、色の検査だけ外して値を直接確かめる。
       await a11y({ rules: { 'color-contrast': { enabled: false } } });
-      assert.equal(await page.getByText('メール通知', { exact: true }).evaluate((el) => getComputedStyle(el).color), 'rgb(160, 155, 165)', '無効なラベルは Checkbox と同じ色');
+      assert.equal(await page.getByText('メール通知', { exact: true }).evaluate((el) => getComputedStyle(el).color), disabledColor, '無効なラベルは Checkbox と同じ色');
 
       await story('in-field');
       const describedBy = await control.getAttribute('aria-describedby');

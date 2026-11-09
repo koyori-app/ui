@@ -32,7 +32,7 @@ let releaseScripts;
     await page.goto(`${base}/blocks/task-properties/`, { waitUntil: 'commit' });
     await page.locator('[data-task-properties="vue"]').waitFor();
     // Wait for styles, while component scripts are still blocked.
-    await page.waitForFunction(() => getComputedStyle(document.querySelector('.task-property-readonly')).minHeight === '36px');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.task-property-readonly')).minHeight === '32px');
     const initial = await page.evaluate(() => {
       const roots = [...document.querySelectorAll('[data-task-properties]')];
       window.migrationNodes = roots.map(root => [root, root.querySelector('h3'), root.querySelector('[data-selection-summary]')]);

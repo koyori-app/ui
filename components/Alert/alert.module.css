@@ -2,7 +2,7 @@
 
 .root {
   --alert-color: var(--koyori-color-danger);
-  --alert-background: var(--koyori-color-danger-subtle);
+  --alert-background: var(--koyori-color-surface);
   display: flex;
   /* 狭い幅では本文を細らせず、操作を次の行に回す。 */
   flex-wrap: wrap;
@@ -10,31 +10,32 @@
   gap: var(--koyori-space-md);
   box-sizing: border-box;
   padding: var(--koyori-space-md) var(--koyori-space-lg);
-  border: 1px solid var(--alert-color);
+  border: 1px solid var(--koyori-color-border);
   border-radius: var(--koyori-radius-md);
   background: var(--alert-background);
+  /* 面は塗らず、左の細い帯で種類を示す。 */
+  box-shadow: inset 3px 0 0 var(--alert-color);
   color: var(--koyori-color-text);
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
 }
 
+.root:dir(rtl) { box-shadow: inset -3px 0 0 var(--alert-color); }
+
 .root[data-variant='warning'] {
   --alert-color: var(--koyori-color-warning);
-  --alert-background: var(--koyori-color-warning-subtle);
 }
 
 .root[data-variant='info'] {
   --alert-color: var(--koyori-color-info);
-  --alert-background: var(--koyori-color-info-subtle);
 }
 
 .root[data-variant='success'] {
   --alert-color: var(--koyori-color-success);
-  --alert-background: var(--koyori-color-success-subtle);
 }
 
-/* ボタンの高さ（36px）の中で、1 行目が縦中央に来るようにする。 */
+/* ボタンの高さ（32px）の中で、1 行目が縦中央に来るようにする。 */
 .body {
   flex: 1 1 16rem;
   min-width: 0;
@@ -53,6 +54,6 @@
 
 @media (forced-colors: active) {
   .root { border-color: CanvasText; }
-  /* 色が落ちても接頭辞の文字で種類が伝わる。 */
+  /* 帯は消えるが、色が落ちても接頭辞の文字で種類が伝わる。 */
   .prefix { color: inherit; }
 }

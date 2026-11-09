@@ -143,7 +143,7 @@ let browser;
       for (const viewportWidth of [232, 231, 180]) {
         await page.setViewportSize({ width: viewportWidth, height: 700 });
         await page.waitForTimeout(350);
-        assert.equal((await panel.boundingBox()).width, Math.min(200, viewportWidth - 32));
+        assert.equal((await panel.boundingBox()).width, Math.min(200, viewportWidth - 24));
         assert(await panel.evaluate(el => el.scrollWidth <= el.clientWidth), 'long items must wrap inside the menu');
       }
       await page.setViewportSize({ width: 800, height: 700 });
@@ -196,7 +196,7 @@ let browser;
       assert.equal(await panel.getAttribute('data-side'), 'top');
       await moveTrigger(300);
       assert.equal(await panel.getAttribute('data-side'), 'bottom');
-      await page.setViewportSize({ width: 800, height: 500 });
+      await page.setViewportSize({ width: 800, height: 440 });
       await page.waitForTimeout(60);
       assert.equal(await panel.getAttribute('data-side'), 'top');
       await page.setViewportSize({ width: 800, height: 700 });
@@ -204,7 +204,7 @@ let browser;
       assert.equal(await panel.getAttribute('data-side'), 'bottom');
       await trigger.evaluate(el => {
         document.body.style.height = '1400px';
-        el.parentElement.style.cssText = 'position: absolute; top: 500px; left: 16px';
+        el.parentElement.style.cssText = 'position: absolute; top: 560px; left: 16px';
         window.dispatchEvent(new Event('resize'));
       });
       assert.equal(await panel.getAttribute('data-side'), 'top');

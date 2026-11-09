@@ -26,7 +26,7 @@
 
 /* ::backdrop はトップレイヤーにあり、DOM の祖先からトークンを継承しないブラウザーがある。 */
 .root::backdrop {
-  background: var(--koyori-color-backdrop, #38344080);
+  background: var(--koyori-color-backdrop, #1b1c1f66);
   transition: opacity var(--koyori-motion-base) var(--koyori-ease-out);
 }
 

@@ -33,10 +33,10 @@
 .box {
   display: inline-flex;
   box-sizing: border-box;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--koyori-color-border-strong);
-  border-radius: calc(var(--koyori-radius-md) / 2);
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--koyori-color-border-strong);
+  border-radius: calc(var(--koyori-radius-md) - 2px);
   background: var(--koyori-color-surface);
   pointer-events: none;
 }

@@ -250,7 +250,7 @@ let browser;
         assert(bounds.x >= 7 && bounds.x + bounds.width <= width - 7, 'panel stays inside the viewport');
         assert(bounds.y >= 7 && bounds.y + bounds.height <= 600 - 7);
         const activeBounds = await grid.locator('[tabindex="0"]').boundingBox();
-        assert(activeBounds.width >= 36, 'narrow screens preserve readable calendar cells');
+        assert(activeBounds.width >= 32, 'narrow screens preserve readable calendar cells');
         assert(activeBounds.x >= bounds.x && activeBounds.x + activeBounds.width <= bounds.x + bounds.width, 'the focused date is scrolled into view');
       }
       await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-datepicker--english&viewMode=story`);

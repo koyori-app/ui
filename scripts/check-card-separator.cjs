@@ -72,13 +72,13 @@ let browser;
 
       await story('basic');
       const card = page.locator('.koyori-card').first();
-      assert.equal(await card.evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '24px', '既定は 8px + 16px');
+      assert.equal(await card.evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '18px', '既定は 6px + 12px');
       assert.equal(await page.getByRole('separator').count(), 1);
       await a11y();
 
       // padding を上書きすると角丸も追従する。
       await card.evaluate((el) => el.style.setProperty('--koyori-card-padding', '24px'));
-      assert.equal(await card.evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '32px');
+      assert.equal(await card.evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '30px');
       await card.evaluate((el) => el.style.setProperty('--koyori-radius-md', '12px'));
       assert.equal(await card.evaluate((el) => getComputedStyle(el).borderTopLeftRadius), '36px');
 
@@ -97,8 +97,8 @@ let browser;
       const cards = page.locator('.koyori-card');
       assert.equal(await cards.count(), 3);
       const [outer, inner] = await cards.evaluateAll((elements) => elements.slice(0, 2).map((el) => getComputedStyle(el).borderTopLeftRadius));
-      assert.equal(outer, '24px');
-      assert.equal(inner, '24px', '入れ子でも同じ計算を使う');
+      assert.equal(outer, '18px');
+      assert.equal(inner, '18px', '入れ子でも同じ計算を使う');
       await a11y();
 
       for (const name of ['in-dialog', 'in-sidebar', 'dark-background']) {

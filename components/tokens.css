@@ -1,24 +1,25 @@
 /* 共通の既定値。利用側の :root やコンポーネントを囲む要素で上書きできます。 */
 :root {
-  --koyori-font-family: system-ui, sans-serif;
-  --koyori-font-size-sm: 0.875rem;
+  --koyori-font-family: 'Inter Variable', 'Noto Sans JP Variable', system-ui, sans-serif;
+  --koyori-font-size-sm: 0.8125rem;
   --koyori-font-size-md: 1rem;
-  --koyori-line-height-sm: calc(20 / 14);
+  /* 18 / 13。calc(18 / 13) だと行が 17.98px になり、行の高さが端数になるので、わずかに上へ丸める。 */
+  --koyori-line-height-sm: 1.384616;
   --koyori-line-height-md: 1.5;
 
   /* 入れ子の外側は、利用箇所で内側の角丸 + padding を計算する。 */
-  --koyori-radius-md: 8px;
+  --koyori-radius-md: 6px;
 
   --koyori-space-xs: 4px;
-  --koyori-space-sm: 6px;
-  --koyori-space-md: 8px;
-  --koyori-space-lg: 10px;
-  --koyori-space-xl: 16px;
-  --koyori-control-height-sm: 36px;
+  --koyori-space-sm: 5px;
+  --koyori-space-md: 6px;
+  --koyori-space-lg: 8px;
+  --koyori-space-xl: 12px;
+  --koyori-control-height-sm: 32px;
 
   --koyori-focus-width: 2px;
   --koyori-focus-offset: 2px;
-  --koyori-focus-color: var(--koyori-color-text);
+  --koyori-focus-color: var(--koyori-color-text-muted);
   --koyori-motion-fast: 140ms;
   --koyori-motion-base: 220ms;
   --koyori-motion-slow: 320ms;
@@ -29,7 +30,7 @@
   /* plain のときだけ効く。max-height の範囲で高さを固定する。 */
   --koyori-dialog-height: auto;
   --koyori-sidebar-width: 240px;
-  --koyori-progress-height: 8px;
+  --koyori-progress-height: 4px;
   --koyori-spinner-duration: 900ms;
   --koyori-sidebar-rail-width: 64px;
   --koyori-sidebar-height: 240px;
@@ -41,39 +42,81 @@
   --koyori-menu-viewport-margin: 8px;
   --koyori-z-menu: 10;
 
-  /* くすんだラベンダーとセージ。背景に色を持たせ、文字は濃く保つ。 */
-  --koyori-color-accent: #c4b5df;
-  --koyori-color-accent-hover: #b6a3d4;
-  --koyori-color-on-accent: #352d46;
-  --koyori-color-accent-soft: #dbe5dc;
-  --koyori-color-accent-soft-hover: #cadbcf;
-  --koyori-color-accent-subtle: #e4ddf0;
-  --koyori-color-text: #383440;
-  --koyori-color-text-secondary: #5f5968;
-  --koyori-color-text-muted: #706879;
-  --koyori-color-text-disabled: #a09ba5;
-  --koyori-color-surface: #faf8f5;
-  --koyori-color-surface-disabled: #edeaf0;
-  --koyori-color-surface-hover: #e6dff0;
-  --koyori-color-surface-active: #ddd4ed;
-  --koyori-color-selection: #d0c4e4;
-  --koyori-color-selection-indicator: #594867;
-  --koyori-color-border: #d9d3df;
+  /* 墨のアクセントと青みの灰。色を持つのは成功・情報・警告・エラーの意味の色だけ。 */
+  --koyori-color-accent: #1f2330;
+  --koyori-color-accent-hover: #1a1d28;
+  --koyori-color-on-accent: #ffffff;
+  --koyori-color-accent-soft: #e4e5e6;
+  --koyori-color-accent-soft-hover: #d2d3d6;
+  --koyori-color-accent-subtle: #f2f2f3;
+  --koyori-color-text: #1b1c1f;
+  --koyori-color-text-secondary: #4c5059;
+  /* フォーカス枠の色も兼ねる。どの背景でもコントラスト比 3:1 以上を保つ。 */
+  --koyori-color-text-muted: #62666f;
+  --koyori-color-text-disabled: #a9acb4;
+  --koyori-color-surface: #ffffff;
+  /* 台の上に浮く面（Tabs の選択タブ）。ダークでは surface より一段明るい。 */
+  --koyori-color-surface-raised: #ffffff;
+  --koyori-color-surface-disabled: #f1f2f4;
+  --koyori-color-surface-hover: #f4f5f7;
+  --koyori-color-surface-active: #eceef1;
+  --koyori-color-selection: #d2d3d6;
+  --koyori-color-selection-indicator: #1a1d28;
+  --koyori-color-border: #e6e7ea;
   /* 入力欄の境界。背景とのコントラスト比 3:1 以上を保つ。 */
-  --koyori-color-border-strong: #8d8597;
+  --koyori-color-border-strong: #868a94;
   /* エラーの文字と枠線。背景とのコントラスト比 4.5:1 以上を保つ。 */
-  --koyori-color-danger: #a23b5a;
+  --koyori-color-danger: #c4322f;
   /* Alert の種類ごとの文字・枠線と背景。文字は対応する -subtle 背景に対して 4.5:1 以上、
      --koyori-color-text も各 -subtle 背景に対して 4.5:1 以上を保つ。 */
-  --koyori-color-danger-subtle: #f7e6ea;
-  --koyori-color-warning: #8a5a1f;
-  --koyori-color-warning-subtle: #f6ecdd;
-  --koyori-color-info: #465b8c;
-  --koyori-color-info-subtle: #e6eaf5;
-  --koyori-color-success: #2f6b4a;
-  --koyori-color-success-subtle: #dfeae1;
+  --koyori-color-danger-subtle: #fdecec;
+  --koyori-color-warning: #946200;
+  --koyori-color-warning-subtle: #fff4d6;
+  --koyori-color-info: #2f62d0;
+  --koyori-color-info-subtle: #e8f0ff;
+  --koyori-color-success: #177548;
+  --koyori-color-success-subtle: #e5f6ed;
   /* danger のボタン。文字は背景とのコントラスト比 4.5:1 以上を保つ。 */
-  --koyori-color-danger-hover: #8e3350;
-  --koyori-color-on-danger: #fdf1f4;
-  --koyori-shadow-panel: 0 8px 24px #4439580a, 0 2px 4px #44395805;
+  --koyori-color-danger-hover: #a62826;
+  --koyori-color-on-danger: #ffffff;
+  /* Dialog・Drawer の ::backdrop。 */
+  --koyori-color-backdrop: #1b1c1f66;
+  --koyori-shadow-panel: 0 6px 20px #1b1c1f0f, 0 1px 3px #1b1c1f0a;
+}
+
+/* ダーク。利用側が祖先に .dark か data-theme="dark" を付けたときだけ切り替わる。OS の設定には連動しない。 */
+/* .dark と書くと、@import した CSS Modules が .dark を別名に変えて効かなくなるため、属性セレクタで書く。 */
+[class~='dark'], [data-theme='dark'] {
+  color-scheme: dark;
+  --koyori-color-accent: #ecedf0;
+  --koyori-color-accent-hover: #ffffff;
+  --koyori-color-on-accent: #101113;
+  --koyori-color-accent-soft: #2f3032;
+  --koyori-color-accent-soft-hover: #404144;
+  --koyori-color-accent-subtle: #1f2022;
+  --koyori-color-text: #f2f3f5;
+  --koyori-color-text-secondary: #b4b8c0;
+  --koyori-color-text-muted: #8c919b;
+  --koyori-color-text-disabled: #55585f;
+  --koyori-color-surface: #101113;
+  --koyori-color-surface-raised: #202226;
+  --koyori-color-surface-disabled: #15161a;
+  --koyori-color-surface-hover: #17181b;
+  --koyori-color-surface-active: #202226;
+  --koyori-color-selection: #3c3d3f;
+  --koyori-color-selection-indicator: #ecedf0;
+  --koyori-color-border: #23262b;
+  --koyori-color-border-strong: #6a6e78;
+  --koyori-color-danger: #ff7a7a;
+  --koyori-color-danger-subtle: #2a1416;
+  --koyori-color-danger-hover: #ff9292;
+  --koyori-color-on-danger: #2a0c0c;
+  --koyori-color-warning: #f2c75c;
+  --koyori-color-warning-subtle: #2a2412;
+  --koyori-color-info: #7fa6ff;
+  --koyori-color-info-subtle: #14203a;
+  --koyori-color-success: #5fcf95;
+  --koyori-color-success-subtle: #0f241a;
+  --koyori-color-backdrop: #00000099;
+  --koyori-shadow-panel: 0 8px 24px #00000080, 0 0 0 1px #ffffff08;
 }

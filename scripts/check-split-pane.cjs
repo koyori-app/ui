@@ -88,7 +88,7 @@ let browser;
       assert.equal(await handle.getAttribute('aria-valuemax'), '536');
       assert.equal(await handle.getAttribute('aria-valuetext'), '320px');
       const box = await handle.boundingBox();
-      assert(box.width >= 24 && box.height >= 36, 'usable pointer target');
+      assert(box.width >= 24 && box.height >= 32, 'usable pointer target');
       await page.getByRole('button', { name: '一覧の操作', exact: true }).focus();
       await page.keyboard.press('Tab');
       assert(await handle.evaluate(el => el === document.activeElement));
