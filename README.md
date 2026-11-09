@@ -398,11 +398,11 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 
 `Toaster` は操作の結果を画面の右下に一時的に出す部品です。その場に残す失敗や注意は Alert を使います。
 アプリのルートに `<Toaster />`（`limit` 既定 3、`label` 既定「通知」）を 1 つ置き、`toast.success / error / info(message, { action, duration })` で出します。
-`action` に `href` を渡すとリンク、`onClick` だけならボタンで、押すと閉じます。`toast.dismiss(id?)` で閉じ、省略すると全部閉じます。
+`action` に `href` を渡すとリンク、`onClick` だけならボタンです。どちらも押すと `onClick(event)` を呼んでから閉じ、リンクでは `event.preventDefault()` でルーターに任せられます。`toast.dismiss(id?)` で閉じ、省略すると全部閉じます。
 `duration` の既定は 5 秒（`action` 付きは 8 秒）、`0` で手動で閉じるまで残します。上限を超えたら古いものから消えます。
-ホバーやフォーカスが領域の中にある間は全件の自動消去が止まり、外れると残り時間から再開します。
-`success`・`info` は `role="status"`、`error` は `role="alert"` で、フォーカスは奪いません。popover で top layer に出し、動きを減らす設定で入場の動きを止めます。
-ストアと role・接頭辞の決定は `components/Toaster/toast.ts` にまとめ、`node scripts/check-toaster.cjs` で検証します（`pnpm build` のあとに実行）。
+ホバーかフォーカスが領域の中にある間は全件の自動消去が止まり、両方が外れると残り時間から再開します。
+通知は Toaster と同時に置く見えない読み上げ領域（`success`・`info` は `role="status"`、`error` は `role="alert"`）に入れ、フォーカスは奪いません。閉じるボタンの名前は「閉じる: 本文」です。popover で top layer に出し、動きを減らす設定で入場の動きを止めます。
+ストアと読み上げ・接頭辞の決定は `components/Toaster/toast.ts` にまとめ、`node scripts/check-toaster.cjs` で検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/toaster.mdx)を参照してください。
 ## Switch
 

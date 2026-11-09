@@ -28,9 +28,10 @@
   display: flex;
 }
 
+/* 種類ごとの色は --toast-variant-*。Toaster を囲む要素で --toast-color / --toast-background を指定すると全種類を上書きできる。 */
 .toast {
-  --toast-color: var(--koyori-color-info);
-  --toast-background: var(--koyori-color-info-subtle);
+  --toast-variant-color: var(--koyori-color-info);
+  --toast-variant-background: var(--koyori-color-info-subtle);
   display: flex;
   /* 狭い幅では本文を細らせず、操作を次の行に回す。 */
   flex-wrap: wrap;
@@ -38,9 +39,9 @@
   gap: var(--koyori-space-md);
   box-sizing: border-box;
   padding: var(--koyori-space-md) var(--koyori-space-lg);
-  border: 1px solid var(--toast-color);
+  border: 1px solid var(--toast-color, var(--toast-variant-color));
   border-radius: var(--koyori-radius-md);
-  background: var(--toast-background);
+  background: var(--toast-background, var(--toast-variant-background));
   color: var(--koyori-color-text);
   box-shadow: var(--koyori-shadow-panel);
   font-family: var(--koyori-font-family);
@@ -51,13 +52,13 @@
 }
 
 .toast[data-variant='success'] {
-  --toast-color: var(--koyori-color-success);
-  --toast-background: var(--koyori-color-success-subtle);
+  --toast-variant-color: var(--koyori-color-success);
+  --toast-variant-background: var(--koyori-color-success-subtle);
 }
 
 .toast[data-variant='error'] {
-  --toast-color: var(--koyori-color-danger);
-  --toast-background: var(--koyori-color-danger-subtle);
+  --toast-variant-color: var(--koyori-color-danger);
+  --toast-variant-background: var(--koyori-color-danger-subtle);
 }
 
 /* 入場だけ動かす。退場は配列から消えた要素を遅らせて消す仕組みが要るため付けない。 */
@@ -66,6 +67,16 @@
     opacity: 0;
     transform: translateY(8px);
   }
+}
+
+/* 読み上げ専用の領域。Spinner と同じ「見た目だけ隠す」書き方で、読み上げには残す。 */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* ボタンの高さの中で、1 行目が縦中央に来るようにする。 */
@@ -77,7 +88,7 @@
 
 .prefix {
   font-weight: 600;
-  color: var(--toast-color);
+  color: var(--toast-color, var(--toast-variant-color));
   margin-inline-end: var(--koyori-space-sm);
 }
 

@@ -52,4 +52,4 @@ export { default as PasswordInput, type PasswordInputProps } from './generated/c
 export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.vue';
 export { type PaginationRange } from './generated/components/Pagination/pagination.js';
 export { default as Toaster, type ToasterProps } from './generated/components/Toaster/Toaster.vue';
-export { toast, type ToastAction, type ToastOptions, type ToastVariant } from './generated/components/Toaster/toast.js';
+export { toast, type ToastAction, type ToastClickEvent, type ToastOptions, type ToastVariant } from './generated/components/Toaster/toast.js';

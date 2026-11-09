@@ -1,7 +1,7 @@
 import { For, Show, onMount, onUnMount, onUpdate, useRef, useStore } from '@builder.io/mitosis';
 import XIcon from '../XIcon/XIcon.lite';
-import { TOAST_DEFAULT_LIMIT, connectToaster, emptyToasts, setToastLimit, toast, toastPrefix, toastRole } from './toast';
-import type { ToastItem } from './toast';
+import { TOAST_DEFAULT_LIMIT, announceToasts, connectToaster, emptyAnnouncement, emptyToasts, setToastLimit, toast, toastPrefix } from './toast';
+import type { ToastClickEvent, ToastItem } from './toast';
 import controls from '../shared/control.module.css';
 import styles from './toaster.module.css';
 
@@ -20,9 +20,7 @@ export default function Toaster(props: ToasterProps) {
   let cleanupRef = useRef<(() => void) | null>(null);
   const state = useStore({
     items: emptyToasts(),
-    role(variant: ToastItem['variant']) {
-      return toastRole(variant);
-    },
+    announcement: emptyAnnouncement(),
     prefix(variant: ToastItem['variant']) {
       return toastPrefix(variant);
     },
@@ -32,8 +30,8 @@ export default function Toaster(props: ToasterProps) {
     actionLabel(item: ToastItem) {
       return item.action?.label;
     },
-    act(item: ToastItem) {
-      item.action?.onClick?.();
+    act(item: ToastItem, event: ToastClickEvent) {
+      item.action?.onClick?.(event);
       toast.dismiss(item.id);
     },
     dismiss(id: number) {
@@ -45,6 +43,7 @@ export default function Toaster(props: ToasterProps) {
     setToastLimit(props.limit ?? TOAST_DEFAULT_LIMIT);
     cleanupRef = connectToaster(regionRef, (next) => {
       state.items = next;
+      state.announcement = announceToasts(state.announcement, next);
     }) ?? null;
   });
 
@@ -58,24 +57,26 @@ export default function Toaster(props: ToasterProps) {
 
   return (
     <section ref={regionRef!} class={styles.region} aria-label={props.label ?? '通知'}>
+      {/* 読み上げ用の領域は通知の前から置いておく（出現と同時に挿入された領域は読まれないことがある）。通知の本文はここに入れ、見えるトーストには role を付けない。 */}
+      <div class={styles.visuallyHidden} role="status" aria-atomic="true">{state.announcement.status}</div>
+      <div class={styles.visuallyHidden} role="alert" aria-atomic="true">{state.announcement.alert}</div>
       <For each={state.items}>
         {(item) => (
           <div key={item.id} class={styles.toast} data-variant={item.variant}>
-            {/* Alert と同じく、ライブ領域には文字だけを入れ、ボタンの出入りを読み上げに混ぜない。 */}
-            <div class={styles.body} role={state.role(item.variant)} aria-atomic="true">
+            <div class={styles.body}>
               <span class={styles.prefix}>{state.prefix(item.variant)}</span>
               <span class={styles.message}>{item.message}</span>
             </div>
             <Show when={state.actionHref(item)}>
-              <a class={styles.link} href={state.actionHref(item)} onClick={() => state.dismiss(item.id)}>{state.actionLabel(item)}</a>
+              <a class={styles.link} href={state.actionHref(item)} onClick={(event) => state.act(item, event)}>{state.actionLabel(item)}</a>
             </Show>
             <Show when={item.action && !state.actionHref(item)}>
-              <button type="button" class={controls.button} data-variant="tertiary" onClick={() => state.act(item)}>
+              <button type="button" class={controls.button} data-variant="tertiary" onClick={(event) => state.act(item, event)}>
                 <span class={controls.surface}><span class={controls.label}>{state.actionLabel(item)}</span></span>
               </button>
             </Show>
             <button type="button" class={controls.button} data-variant="ghost" data-icon-only="true"
-              aria-label={props.dismissLabel ?? '閉じる'} onClick={() => state.dismiss(item.id)}>
+              aria-label={`${props.dismissLabel ?? '閉じる'}: ${item.message}`} onClick={() => state.dismiss(item.id)}>
               <span class={controls.surface}><XIcon /></span>
             </button>
           </div>

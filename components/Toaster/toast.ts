@@ -3,11 +3,15 @@
 
 export type ToastVariant = 'success' | 'error' | 'info';
 
+/** action.onClick に渡るイベント。Vue ではネイティブの MouseEvent、React では合成イベントなので、共通して使える部分だけを型にする。 */
+export type ToastClickEvent = Pick<MouseEvent, 'preventDefault' | 'defaultPrevented' | 'button' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>;
+
 export interface ToastAction {
   label: string;
   /** 指定するとリンク（<a>）。省略すると操作ボタン。 */
   href?: string;
-  onClick?: () => void;
+  /** href 付きのリンクでも呼ぶ。event.preventDefault() で遷移を止め、ルーターで移動できる。呼んだあとトーストは閉じる。 */
+  onClick?: (event: ToastClickEvent) => void;
 }
 
 export interface ToastOptions {
@@ -91,6 +95,35 @@ export function emptyToasts(): ToastItem[] {
   return [];
 }
 
+/** 読み上げ領域（status・alert）の中身。通知が出たときに入り、その通知が消えたら空になる。 */
+export interface ToastAnnouncement {
+  status: string;
+  alert: string;
+  /** 各領域に入れた通知の番号。無ければ 0。 */
+  statusId: number;
+  alertId: number;
+  /** ここまでに見た最大の番号。新しい通知かどうかの判定に使う。 */
+  seen: number;
+}
+
+export function emptyAnnouncement(): ToastAnnouncement {
+  return { status: '', alert: '', statusId: 0, alertId: 0, seen: 0 };
+}
+
+/** 一覧の更新を読み上げ領域に反映する。エラーは alert、成功・情報は status。消えた通知の分は空にし、残った通知は読み直さない。 */
+export function announceToasts(previous: ToastAnnouncement, items: ToastItem[]): ToastAnnouncement {
+  const next = { ...previous };
+  if (!items.some((item) => item.id === next.statusId)) { next.status = ''; next.statusId = 0; }
+  if (!items.some((item) => item.id === next.alertId)) { next.alert = ''; next.alertId = 0; }
+  for (const item of items) {
+    if (item.id <= previous.seen) continue;
+    const text = `${toastPrefix(item.variant)} ${item.message}`;
+    if (toastRole(item.variant) === 'alert') { next.alert = text; next.alertId = item.id; } else { next.status = text; next.statusId = item.id; }
+    next.seen = item.id;
+  }
+  return next;
+}
+
 /** 登録時に現在の一覧を渡す。解除関数を返す。 */
 export function subscribeToasts(listener: (items: ToastItem[]) => void) {
   listeners.add(listener);
@@ -135,21 +168,32 @@ export function connectToaster(region: HTMLElement | null, listener: (items: Toa
     if (!region.matches(':popover-open')) region.showPopover();
   }
   const unsubscribe = subscribeToasts(listener);
-  // マウスが離れてもフォーカスが中にあれば止めたまま。フォーカスが外へ出てもホバー中なら止めたまま。
-  const leave = (event: FocusEvent | MouseEvent) => {
-    if (region.matches(':hover') || region.contains(event.relatedTarget as Node | null)) return;
-    resumeToasts();
+  // 止めるか再開するかは領域の実状態で決める。マウスとフォーカスのどちらかが残っていれば止めたまま。
+  const sync = () => {
+    if (region.matches(':hover') || region.matches(':focus-within')) pauseToasts();
+    else resumeToasts();
   };
-  region.addEventListener('mouseenter', pauseToasts);
-  region.addEventListener('focusin', pauseToasts);
-  region.addEventListener('mouseleave', leave);
-  region.addEventListener('focusout', leave);
+  // 離れた・フォーカスが外れた直後はまだ状態が更新されていないことがあるため、次のタスクで判定する。
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  const settle = () => {
+    clearTimeout(pending);
+    pending = setTimeout(sync);
+  };
+  // フォーカスを持つ要素が消えても focusout が出ないブラウザー（Firefox）がある。描画後の DOM の変化でも判定する。
+  const observer = new MutationObserver(settle);
+  observer.observe(region, { childList: true, subtree: true });
+  region.addEventListener('mouseenter', sync);
+  region.addEventListener('focusin', sync);
+  region.addEventListener('mouseleave', settle);
+  region.addEventListener('focusout', settle);
   return () => {
     unsubscribe();
-    region.removeEventListener('mouseenter', pauseToasts);
-    region.removeEventListener('focusin', pauseToasts);
-    region.removeEventListener('mouseleave', leave);
-    region.removeEventListener('focusout', leave);
+    clearTimeout(pending);
+    observer.disconnect();
+    region.removeEventListener('mouseenter', sync);
+    region.removeEventListener('focusin', sync);
+    region.removeEventListener('mouseleave', settle);
+    region.removeEventListener('focusout', settle);
     if (region.matches(':popover-open')) region.hidePopover();
     resumeToasts();
   };

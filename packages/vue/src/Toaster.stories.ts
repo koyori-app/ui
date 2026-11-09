@@ -50,7 +50,7 @@ export const Error: Story = { render: show(() => { toast.error('保存できま�
 export const Info: Story = { render: show(() => { toast.info('3 月 1 日からメールの形式が変わります。', { duration: 0 }); }) };
 
 export const WithLink: Story = {
-  render: show(() => { toast.success('タスクを作成しました。', { action: { label: 'タスクを開く', href: '#' }, duration: 0 }); }),
+  render: show(() => { toast.success('タスクを作成しました。', { action: { label: 'タスクを開く', href: '#', onClick: (event) => event.preventDefault() }, duration: 0 }); }),
 };
 
 export const WithAction: Story = {
