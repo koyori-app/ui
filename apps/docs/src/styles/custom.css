@@ -10,16 +10,14 @@
   --sl-color-accent-high: #172554;
 }
 
-/* Keep the demo canvas light until the component packages support dark colors. */
 .component-preview {
   padding: clamp(1rem, 4vw, 2rem);
   margin-block: 1rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--koyori-color-border);
   border-radius: 0.75rem;
-  color: #1e293b;
-  background: #fff;
-  color-scheme: light;
-  font: 1rem/1.6 system-ui, sans-serif;
+  color: var(--koyori-color-text);
+  background: var(--koyori-color-surface);
+  font: 1rem/1.6 var(--koyori-font-family);
 }
 
 .component-preview p {
