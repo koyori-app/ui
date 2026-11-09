@@ -163,6 +163,11 @@ const messages = () => latest.map((item) => item.message);
   assert.deepEqual([announced.status, announced.alert], ['', 'エラー 失敗しました。'], '消えた通知の分だけ空になり、残りの通知で読み直さない');
   announced = announceToasts(announced, []);
   assert.deepEqual([announced.status, announced.alert], ['', ''], '全部消えたら両方空');
+  // 同じ本文が重なっても、領域に入れた通知の番号が変わる（描画側はこれで要素を差し替え、ライブ領域を再び発火させる）
+  const twice = announceToasts(announceToasts(emptyAnnouncement(), items([1, 'success', '保存しました。'])), items([1, 'success', '保存しました。'], [2, 'success', '保存しました。']));
+  assert.deepEqual([twice.status, twice.statusId], ['完了 保存しました。', 2], '同じ本文でも status の番号は新しい通知に変わる');
+  const twiceError = announceToasts(announceToasts(emptyAnnouncement(), items([1, 'error', '失敗しました。'])), items([1, 'error', '失敗しました。'], [2, 'error', '失敗しました。']));
+  assert.deepEqual([twiceError.alert, twiceError.alertId], ['エラー 失敗しました。', 2], '同じ本文でも alert の番号は新しい通知に変わる');
 
   // 一時停止はホバーとフォーカスの実状態で決める（本物の DOM は後半のブラウザー検証で確かめる）
   const realObserver = globalThis.MutationObserver;
@@ -193,6 +198,26 @@ const messages = () => latest.map((item) => item.message);
   await sleep(150);
   assert.ok(!present('f'), 'focusout が出なくても、フォーカスのある要素が消えて領域が更新されれば再開する');
   dispose();
+  // 読み上げの履歴は接続ごとにストア側が持つ。描画側の state に持たせると、フレームワークによっては古い値を捕まえて毎回最初から計算する
+  reset();
+  let heard;
+  const disposeHeard = connectToaster(fake, (_items, announcement) => { heard = announcement; });
+  assert.deepEqual([heard.status, heard.alert], ['', ''], '接続直後は空');
+  toast.success('a', { duration: 0 });
+  const idB = toast.success('b', { duration: 0 });
+  assert.equal(heard.status, '完了 b');
+  toast.dismiss(idB);
+  assert.deepEqual([heard.status, heard.statusId], ['', 0], '残りがあるときに最新の成功を閉じると空のまま（古い通知を再掲しない）');
+  toast.error('e1', { duration: 0 });
+  const idE2 = toast.error('e2', { duration: 0 });
+  assert.equal(heard.alert, 'エラー e2');
+  toast.dismiss(idE2);
+  assert.deepEqual([heard.alert, heard.alertId], ['', 0], '残りがあるときに最新のエラーを閉じると空のまま（古いエラーを割り込ませ直さない）');
+  toast.success('same', { duration: 0 });
+  const sameBefore = heard.statusId;
+  const sameAfter = toast.success('same', { duration: 0 });
+  assert.ok(heard.statusId === sameAfter && sameAfter !== sameBefore, '同じ本文を重ねると番号が変わる');
+  disposeHeard();
   globalThis.MutationObserver = realObserver;
   reset();
   unsubscribe();
@@ -201,7 +226,9 @@ const messages = () => latest.map((item) => item.message);
   const read = (path) => readFileSync(resolve(root, path), 'utf8');
   for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Toaster/Toaster.vue'], ['React', 'packages/react/src/generated/components/Toaster/Toaster.tsx']]) {
     const source = read(path);
-    assert.match(source, /announceToasts/, `${name} 版は読み上げ領域の中身をストアの判定で決める`);
+    assert.doesNotMatch(source, /announceToasts/, `${name} 版は読み上げの履歴を描画側で計算しない（購読の閉包に固定されるため）`);
+    assert.match(source, /statusId/, `${name} 版は通知ごとに status の中身の要素を差し替える`);
+    assert.match(source, /alertId/, `${name} 版は通知ごとに alert の中身の要素を差し替える`);
     assert.match(source, /role="status"/, `${name} 版は status の読み上げ領域を常設する`);
     assert.match(source, /role="alert"/, `${name} 版は alert の読み上げ領域を常設する`);
     assert.equal(source.match(/role=/g).length, 2, `${name} 版の見えるトーストには role を付けない`);
@@ -401,6 +428,34 @@ async function browserChecks() {
       await toasts.first().waitFor();
       await toasts.first().getByRole('button', { name: '閉じる: 保存しました。' }).click();
       assert.equal(await toasts.count(), 0, '閉じるで即消える');
+
+      // 残りがあるときに最新の通知を閉じると、領域は空になり古い通知を読み直さない
+      await story('stacked');
+      await toasts.nth(2).waitFor();
+      assert.equal(await live('status').textContent(), '完了 4 件目の通知です。');
+      await toasts.nth(2).getByRole('button', { name: '閉じる: 4 件目の通知です。', exact: true }).click();
+      assert.equal(await toasts.count(), 2);
+      assert.equal(await live('status').textContent(), '', '最新の成功を閉じても、残りの通知を status に再掲しない');
+
+      // 同じ本文の通知が重なっても、領域の中身は新しい要素に差し替わる（同じ要素のまま文字が同じだと読み上げられない）
+      await story('playground');
+      const liveText = (role) => live(role).evaluate((el) => el.textContent);
+      const content = (role) => live(role).evaluateHandle((el) => el.firstElementChild);
+      for (const [button, role, text] of [['成功', 'status', '完了 保存しました。'], ['エラー', 'alert', 'エラー 保存できませんでした。時間をおいて試してください。']]) {
+        const open = page.getByRole('button', { name: button, exact: true });
+        await open.click();
+        await page.waitForFunction(([r, t]) => document.querySelector(`section[aria-label="通知"] > [role="${r}"]`)?.textContent === t, [role, text]);
+        const oldNode = await content(role);
+        await open.click();
+        await toasts.nth(1).waitFor();
+        assert.equal(await liveText(role), text, `同じ本文でも ${role} の中身は同じ`);
+        assert.equal(await oldNode.evaluate((node) => node.isConnected), false, `同じ本文が重なると ${role} の中身の要素を差し替える`);
+        // 残りがあるとき、新しい方を閉じると領域は空になる
+        await toasts.nth(1).getByRole('button').last().click();
+        assert.equal(await liveText(role), '', `最新を閉じると ${role} は空（古い通知を再掲しない）`);
+        await page.evaluate(() => document.querySelectorAll('section[aria-label="通知"] button[aria-label^="閉じる"]').forEach((b) => b.click()));
+        assert.equal(await toasts.count(), 0);
+      }
 
       await story('narrow', { width: 320, height: 568 });
       await toasts.first().waitFor();

@@ -159,15 +159,22 @@ export function toastPrefix(variant: ToastVariant) {
   return variant === 'success' ? '完了' : variant === 'error' ? 'エラー' : 'お知らせ';
 }
 
-/** Toaster 1 つ分。購読・top layer・ホバー/フォーカス中の停止を束ね、破棄関数を返す。ref が null（SSR）なら何もしない。 */
-export function connectToaster(region: HTMLElement | null, listener: (items: ToastItem[]) => void) {
+/**
+ * Toaster 1 つ分。購読・読み上げの履歴・top layer・ホバー/フォーカス中の停止を束ね、破棄関数を返す。ref が null（SSR）なら何もしない。
+ * 読み上げの履歴はここの閉包に持つ。描画側の state に持たせると、React では購読時の値に固定されて毎回最初から計算してしまう。
+ */
+export function connectToaster(region: HTMLElement | null, listener: (items: ToastItem[], announcement: ToastAnnouncement) => void) {
   if (!region) return;
   // Dialog（top layer）の裏に隠れないよう、対応ブラウザーでは popover="manual" で常時開く。
   if (typeof region.showPopover === 'function') {
     region.popover = 'manual';
     if (!region.matches(':popover-open')) region.showPopover();
   }
-  const unsubscribe = subscribeToasts(listener);
+  let announcement = emptyAnnouncement();
+  const unsubscribe = subscribeToasts((items) => {
+    announcement = announceToasts(announcement, items);
+    listener(items, announcement);
+  });
   // 止めるか再開するかは領域の実状態で決める。マウスとフォーカスのどちらかが残っていれば止めたまま。
   const sync = () => {
     if (region.matches(':hover') || region.matches(':focus-within')) pauseToasts();

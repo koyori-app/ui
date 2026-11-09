@@ -1,6 +1,6 @@
 import { For, Show, onMount, onUnMount, onUpdate, useRef, useStore } from '@builder.io/mitosis';
 import XIcon from '../XIcon/XIcon.lite';
-import { TOAST_DEFAULT_LIMIT, announceToasts, connectToaster, emptyAnnouncement, emptyToasts, setToastLimit, toast, toastPrefix } from './toast';
+import { TOAST_DEFAULT_LIMIT, connectToaster, emptyAnnouncement, emptyToasts, setToastLimit, toast, toastPrefix } from './toast';
 import type { ToastClickEvent, ToastItem } from './toast';
 import controls from '../shared/control.module.css';
 import styles from './toaster.module.css';
@@ -41,9 +41,9 @@ export default function Toaster(props: ToasterProps) {
 
   onMount(() => {
     setToastLimit(props.limit ?? TOAST_DEFAULT_LIMIT);
-    cleanupRef = connectToaster(regionRef, (next) => {
+    cleanupRef = connectToaster(regionRef, (next, spoken) => {
       state.items = next;
-      state.announcement = announceToasts(state.announcement, next);
+      state.announcement = spoken;
     }) ?? null;
   });
 
@@ -58,8 +58,9 @@ export default function Toaster(props: ToasterProps) {
   return (
     <section ref={regionRef!} class={styles.region} aria-label={props.label ?? '通知'}>
       {/* 読み上げ用の領域は通知の前から置いておく（出現と同時に挿入された領域は読まれないことがある）。通知の本文はここに入れ、見えるトーストには role を付けない。 */}
-      <div class={styles.visuallyHidden} role="status" aria-atomic="true">{state.announcement.status}</div>
-      <div class={styles.visuallyHidden} role="alert" aria-atomic="true">{state.announcement.alert}</div>
+      {/* 中身は通知の番号を key にした要素に入れる。同じ本文が重なっても要素が差し替わり、ライブ領域が再び発火する。 */}
+      <div class={styles.visuallyHidden} role="status" aria-atomic="true"><span key={state.announcement.statusId}>{state.announcement.status}</span></div>
+      <div class={styles.visuallyHidden} role="alert" aria-atomic="true"><span key={state.announcement.alertId}>{state.announcement.alert}</span></div>
       <For each={state.items}>
         {(item) => (
           <div key={item.id} class={styles.toast} data-variant={item.variant}>
