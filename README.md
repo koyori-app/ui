@@ -394,6 +394,16 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 個別の上書きは `--alert-color`・`--alert-background` で行います。接頭辞と role の決定は `components/Alert/alert.ts` にまとめ、
 `node scripts/check-alert.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/alert.mdx)を参照してください。
+## Toaster
+
+`Toaster` は操作の結果を画面の右下に一時的に出す部品です。その場に残す失敗や注意は Alert を使います。
+アプリのルートに `<Toaster />`（`limit` 既定 3、`label` 既定「通知」）を 1 つ置き、`toast.success / error / info(message, { action, duration })` で出します。
+`action` に `href` を渡すとリンク、`onClick` だけならボタンで、押すと閉じます。`toast.dismiss(id?)` で閉じ、省略すると全部閉じます。
+`duration` の既定は 5 秒（`action` 付きは 8 秒）、`0` で手動で閉じるまで残します。上限を超えたら古いものから消えます。
+ホバーやフォーカスが領域の中にある間は全件の自動消去が止まり、外れると残り時間から再開します。
+`success`・`info` は `role="status"`、`error` は `role="alert"` で、フォーカスは奪いません。popover で top layer に出し、動きを減らす設定で入場の動きを止めます。
+ストアと role・接頭辞の決定は `components/Toaster/toast.ts` にまとめ、`node scripts/check-toaster.cjs` で検証します（`pnpm build` のあとに実行）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/toaster.mdx)を参照してください。
 ## Switch
 
 `Switch` は押した瞬間に反映される設定の入切に使います。送信して初めて効く選択は Checkbox です。

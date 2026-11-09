@@ -51,3 +51,5 @@ export type { MeterTone } from './generated/components/Meter/meter.js';
 export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.vue';
 export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.vue';
 export { type PaginationRange } from './generated/components/Pagination/pagination.js';
+export { default as Toaster, type ToasterProps } from './generated/components/Toaster/Toaster.vue';
+export { toast, type ToastAction, type ToastOptions, type ToastVariant } from './generated/components/Toaster/toast.js';

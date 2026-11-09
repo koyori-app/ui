@@ -43,6 +43,7 @@ console.warn = (...args) => { warnings.push(args.join(' ')); };
     ['PasswordInput', { ariaLabel: 'パスワード' }],
     ['Switch', { label: '通知' }],
   ]) await renderToString(createSSRApp(ui[name], props));
+  assert.match(await renderToString(createSSRApp(ui.Toaster, {})), /<section[^>]*aria-label="通知"/, 'Toaster はサーバー描画で空の領域を出す');
   assert.deepEqual(warnings, [], 'Field の外でも Vue の警告を出さない');
   console.log('vue: Dropdown・Picker・ContextMenu・DatePicker のサーバー描画と topLayer の印、Field の外で警告が出ないことを確認しました。');
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => { console.warn = warn; });

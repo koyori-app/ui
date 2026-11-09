@@ -1,0 +1,114 @@
+@import '../tokens.css';
+
+/* popover の UA スタイル（inset: 0・margin: auto・枠・余白・背景・overflow）を上書きして、右下に固定する。 */
+.region {
+  position: fixed;
+  inset: auto;
+  inset-block-end: calc(var(--koyori-space-xl) + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: calc(var(--koyori-space-xl) + env(safe-area-inset-right, 0px));
+  z-index: var(--koyori-z-menu);
+  display: flex;
+  flex-direction: column;
+  gap: var(--koyori-space-md);
+  box-sizing: border-box;
+  width: var(--koyori-toast-width);
+  /* 100vw ではなく 100% にして、包含ブロックの幅に収める。 */
+  max-width: calc(100% - 2 * var(--koyori-space-xl));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+  /* 領域自体は背後の操作を妨げない。 */
+  pointer-events: none;
+}
+
+.region:popover-open {
+  display: flex;
+}
+
+.toast {
+  --toast-color: var(--koyori-color-info);
+  --toast-background: var(--koyori-color-info-subtle);
+  display: flex;
+  /* 狭い幅では本文を細らせず、操作を次の行に回す。 */
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--koyori-space-md);
+  box-sizing: border-box;
+  padding: var(--koyori-space-md) var(--koyori-space-lg);
+  border: 1px solid var(--toast-color);
+  border-radius: var(--koyori-radius-md);
+  background: var(--toast-background);
+  color: var(--koyori-color-text);
+  box-shadow: var(--koyori-shadow-panel);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  pointer-events: auto;
+  transition: opacity var(--koyori-motion-base) var(--koyori-ease-out), transform var(--koyori-motion-base) var(--koyori-ease-out);
+}
+
+.toast[data-variant='success'] {
+  --toast-color: var(--koyori-color-success);
+  --toast-background: var(--koyori-color-success-subtle);
+}
+
+.toast[data-variant='error'] {
+  --toast-color: var(--koyori-color-danger);
+  --toast-background: var(--koyori-color-danger-subtle);
+}
+
+/* 入場だけ動かす。退場は配列から消えた要素を遅らせて消す仕組みが要るため付けない。 */
+@starting-style {
+  .toast {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ボタンの高さの中で、1 行目が縦中央に来るようにする。 */
+.body {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding-block: calc((var(--koyori-control-height-sm) - var(--koyori-line-height-sm) * 1em) / 2);
+}
+
+.prefix {
+  font-weight: 600;
+  color: var(--toast-color);
+  margin-inline-end: var(--koyori-space-sm);
+}
+
+.message {
+  overflow-wrap: anywhere;
+}
+
+/* リンクはボタンと見分けがつくよう下線を付ける。 */
+.link {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  min-height: var(--koyori-control-height-sm);
+  padding: 0 var(--koyori-space-sm);
+  color: var(--koyori-color-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .toast { border-color: CanvasText; }
+  /* 色が落ちても接頭辞の文字で種類が伝わる。 */
+  .prefix { color: inherit; }
+}
