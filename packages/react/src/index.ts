@@ -51,3 +51,5 @@ export type { MeterTone } from './generated/components/Meter/meter.js';
 export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.js';
 export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.js';
 export { type PaginationRange } from './generated/components/Pagination/pagination.js';
+export { default as Toaster, type ToasterProps } from './generated/components/Toaster/Toaster.js';
+export { toast, type ToastAction, type ToastClickEvent, type ToastOptions, type ToastVariant } from './generated/components/Toaster/toast.js';

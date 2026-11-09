@@ -57,6 +57,7 @@ export default defineConfig({
             { label: 'Tabs', slug: 'components/tabs' },
             { label: 'SplitPane', slug: 'components/split-pane' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
+            { label: 'Toaster', slug: 'components/toaster' },
             { label: 'Tooltip', slug: 'components/tooltip' },
           ],
         },
