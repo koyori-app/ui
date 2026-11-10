@@ -73,7 +73,7 @@
   user-select: none;
 }
 
-.day:active:not([aria-disabled='true']) { background: var(--koyori-color-surface-active); }
+.day:active:not([aria-disabled='true'], [aria-selected='true']) { background: var(--koyori-color-surface-active); }
 
 .day:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
@@ -87,10 +87,13 @@
 }
 
 .day[aria-selected='true'] {
-  background: var(--koyori-color-selection);
-  color: var(--koyori-color-selection-indicator);
+  background: var(--koyori-color-accent);
+  color: var(--koyori-color-on-accent);
   font-weight: 600;
 }
+
+/* 塗った日の上では地と同じ色の輪が見えないため、日付の文字色で引く。 */
+.day[aria-selected='true']:focus-visible { outline-color: var(--koyori-color-on-accent); }
 
 .day[aria-disabled='true'] {
   color: var(--koyori-color-text-disabled);
@@ -102,4 +105,13 @@
   .day[aria-current='date'] { border: 1px solid CanvasText; }
   .day[aria-disabled='true'] { color: GrayText; }
   .nav[aria-disabled='true'] { color: GrayText; }
+}
+
+/* 選んだ日の面は弾んで現れる。 */
+@media (prefers-reduced-motion: no-preference) {
+  .day[aria-selected='true'] { animation: day-pop 320ms var(--koyori-ease-pop); }
+}
+
+@keyframes day-pop {
+  from { transform: scale(0.6); }
 }

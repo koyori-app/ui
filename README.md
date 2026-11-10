@@ -34,10 +34,10 @@ Story は各パッケージの `src/*.stories.*` に追加します。
 
 角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置・スピナーの周期の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
-Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
-配色はくすんだラベンダーとセージを使い、背景に色を持たせながら文字は濃く保ちます。
-主ボタン・ホバー・選択背景はラベンダーの濃淡で揃え、選択時はホバーより少し濃くします。
-補助ボタンはセージ、選択チェックは丸背景のない濃い紫です。
+Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）、ダイアログやカードなど浮いた面の角丸は `lg`（12px）を使います。
+配色は墨です。既定は黒い面（ダーク）で、祖先に `data-theme="light"` を付けると明るい面に切り替わります。
+主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーだけです。
+メニューやダイアログなど浮いた面は `--koyori-color-surface-raised` で塗ります。部品は地の色を塗らないため、ページの背景は利用側が `--koyori-color-surface` で塗ります。
 選択背景とチェックの色は `--koyori-color-selection` と `--koyori-color-selection-indicator` で調整できます。
 カードなど角丸のある要素を入れ子にする場合は、外側の角丸を `内側の角丸 + 外側の padding` にします。
 Dropdown のパネルは `calc(var(--koyori-radius-md) + var(--koyori-space-xs))`（既定値: 8px + 4px = 12px）です。
@@ -88,9 +88,9 @@ SidebarLink の `label`・`href` でページ移動、`current` で現在地、`
 本文に Accordion を置くとグループを開閉できます。幅は `--koyori-sidebar-width`（240px）、高さは親要素で指定します。
 `open`（と `id`）を渡すと開閉でき、閉じると幅（`placement` が `top`・`bottom` なら高さ、既定 `--koyori-sidebar-height`）を 0 まで畳んで隣の領域を広げます。
 開閉ボタンは Button の `ariaExpanded`・`ariaControls` で状態と対象を伝え、閉じるときに中にあったフォーカスはそのボタンへ戻します。
-`rail` を渡すと `--koyori-sidebar-rail-width`（64px）まで縮み、アイコンだけの表示になります。ラベルと badge は見た目だけ隠し、読み上げ名は保ちます。
+`rail` を渡すと `--koyori-sidebar-rail-width`（60px）まで縮み、アイコンだけの表示になります。ラベルと badge は見た目だけ隠し、読み上げ名は保ちます。
 `open` と組み合わせると、展開・アイコンだけ・完全に閉じるの 3 状態になります。レールで使うリンクには `icon` を渡してください。
-`onRailChange` を渡すと端から張り出すつまみが出て、押すと rail を反転します。状態は `aria-pressed`、名前は `railLabel` です。
+`onRailChange` を渡すとヘッダーに切り替えボタンが出て（展開時はヘッダーに乗せたときだけ）、押すと rail を反転します。状態は `aria-pressed`、名前は `railLabel` です。
 項目が多い場合はナビゲーション部分だけがスクロールします。Accordion 本文の余白は `--koyori-accordion-padding` で変更できます。
 
 Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
@@ -166,7 +166,7 @@ Picker は単一・複数選択用です。`label` と `items: { value, label, d
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
 単一選択は選ぶと閉じ、`selectionMode="multiple"` は選択・解除しても開いたままです。
 `avatars` を付けると、選択肢の先頭に 24px の Avatar を出します。画像は `items` の `src`、なければイニシャルです。
-行の上下の余白を詰めて高さは 36px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
+行の上下の余白を詰めて高さは 32px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
 `items` の `color`（CSS の色）でラベルの前に 8px の色の点、`description` でラベルの下に小さな補足を出します（Storybook の ColorDots・Descriptions）。
 どちらも装飾として読み上げから外し、選択肢の名前とトリガーの表示は `label` だけです。検索も `label` だけを対象にし、`avatars` があれば `color` は無視します。
 トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。

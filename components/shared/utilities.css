@@ -6,11 +6,10 @@
   display: grid;
   box-sizing: border-box;
   gap: var(--koyori-space-md);
-  /* 外側の角丸は「内側の角丸 + 外側の padding」。padding を上書きしても追従する。 */
   padding: var(--koyori-card-padding);
   border: 1px solid var(--koyori-color-border);
-  border-radius: calc(var(--koyori-radius-md) + var(--koyori-card-padding));
-  background: var(--koyori-color-surface);
+  border-radius: var(--koyori-radius-lg);
+  background: var(--koyori-color-surface-raised);
   color: var(--koyori-color-text);
   box-shadow: var(--koyori-shadow-panel);
   font-family: var(--koyori-font-family);

@@ -14,7 +14,7 @@ export default function SidebarCollapseDemo() {
     <div style={{ flex: 1, minWidth: 0 }}>
       <Button ariaLabel="メニュー" variant="ghost" icon={<MenuIcon />}
         ariaExpanded={open} ariaControls="react-collapsible-sidebar" onClick={() => setOpen(!open)} />
-      <p>端のつまみでアイコンだけの表示に、ハンバーガーで開閉できます。</p>
+      <p>ヘッダーのボタンでアイコンだけの表示に、ハンバーガーで開閉できます。</p>
     </div>
   </div>;
 }

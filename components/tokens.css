@@ -1,37 +1,42 @@
 /* 共通の既定値。利用側の :root やコンポーネントを囲む要素で上書きできます。 */
 :root {
-  --koyori-font-family: system-ui, sans-serif;
-  --koyori-font-size-sm: 0.875rem;
+  --koyori-font-family: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --koyori-font-size-sm: 0.8125rem;
   --koyori-font-size-md: 1rem;
-  --koyori-line-height-sm: calc(20 / 14);
+  --koyori-line-height-sm: calc(20 / 13);
   --koyori-line-height-md: 1.5;
 
   /* 入れ子の外側は、利用箇所で内側の角丸 + padding を計算する。 */
-  --koyori-radius-md: 8px;
+  --koyori-radius-md: 6px;
+  /* ダイアログやカードなど、浮いた面の角丸。 */
+  --koyori-radius-lg: 12px;
 
   --koyori-space-xs: 4px;
   --koyori-space-sm: 6px;
   --koyori-space-md: 8px;
   --koyori-space-lg: 10px;
   --koyori-space-xl: 16px;
-  --koyori-control-height-sm: 36px;
+  --koyori-control-height-sm: 32px;
 
   --koyori-focus-width: 2px;
   --koyori-focus-offset: 2px;
   --koyori-focus-color: var(--koyori-color-text);
-  --koyori-motion-fast: 140ms;
+  --koyori-motion-fast: 120ms;
   --koyori-motion-base: 220ms;
   --koyori-motion-slow: 320ms;
   --koyori-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --koyori-ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
+  /* 選択の面（島）が滑るときのばね。行き過ぎは 5% ほど。 */
+  --koyori-motion-spring: 420ms;
+  --koyori-ease-spring: linear(0, 0.19 5%, 0.52 12%, 0.82 20%, 0.99 29%, 1.045 37%, 1.05 44%, 1.03 54%, 1.008 66%, 0.998 80%, 1);
 
   --koyori-dialog-width: 480px;
   /* plain のときだけ効く。max-height の範囲で高さを固定する。 */
   --koyori-dialog-height: auto;
   --koyori-sidebar-width: 240px;
-  --koyori-progress-height: 8px;
+  --koyori-progress-height: 6px;
   --koyori-spinner-duration: 900ms;
-  --koyori-sidebar-rail-width: 64px;
+  --koyori-sidebar-rail-width: 60px;
   --koyori-sidebar-height: 240px;
   --koyori-drawer-width: 280px;
   --koyori-drawer-height: 60vh;
@@ -41,39 +46,78 @@
   --koyori-menu-viewport-margin: 8px;
   --koyori-z-menu: 10;
 
-  /* くすんだラベンダーとセージ。背景に色を持たせ、文字は濃く保つ。 */
-  --koyori-color-accent: #c4b5df;
-  --koyori-color-accent-hover: #b6a3d4;
-  --koyori-color-on-accent: #352d46;
-  --koyori-color-accent-soft: #dbe5dc;
-  --koyori-color-accent-soft-hover: #cadbcf;
-  --koyori-color-accent-subtle: #e4ddf0;
-  --koyori-color-text: #383440;
-  --koyori-color-text-secondary: #5f5968;
-  --koyori-color-text-muted: #706879;
-  --koyori-color-text-disabled: #a09ba5;
-  --koyori-color-surface: #faf8f5;
-  --koyori-color-surface-disabled: #edeaf0;
-  --koyori-color-surface-hover: #e6dff0;
-  --koyori-color-surface-active: #ddd4ed;
-  --koyori-color-selection: #d0c4e4;
-  --koyori-color-selection-indicator: #594867;
-  --koyori-color-border: #d9d3df;
+  /* 墨。黒い面に細い線を引き、選択と主操作は白黒を反転した面で示す。
+     色を持つのは成功・情報・警告・エラーだけ。 */
+  color-scheme: dark;
+  --koyori-color-accent: #f2f2f3;
+  --koyori-color-accent-hover: #d6d6da;
+  --koyori-color-on-accent: #0c0c0e;
+  --koyori-color-accent-soft: #232328;
+  --koyori-color-accent-soft-hover: #2e2e34;
+  --koyori-color-accent-subtle: #202025;
+  --koyori-color-text: #f2f2f3;
+  --koyori-color-text-secondary: #a9a9b2;
+  --koyori-color-text-muted: #8a8a94;
+  --koyori-color-text-disabled: #55555e;
+  --koyori-color-surface: #0c0c0e;
+  /* メニュー・ダイアログ・カードなど、地の上に浮く面。 */
+  --koyori-color-surface-raised: #151518;
+  --koyori-color-surface-disabled: #19191c;
+  --koyori-color-surface-hover: #1e1e23;
+  --koyori-color-surface-active: #29292f;
+  --koyori-color-selection: #2c2c33;
+  --koyori-color-selection-indicator: #f2f2f3;
+  --koyori-color-border: #27272d;
   /* 入力欄の境界。背景とのコントラスト比 3:1 以上を保つ。 */
-  --koyori-color-border-strong: #8d8597;
-  /* エラーの文字と枠線。背景とのコントラスト比 4.5:1 以上を保つ。 */
-  --koyori-color-danger: #a23b5a;
-  /* Alert の種類ごとの文字・枠線と背景。文字は対応する -subtle 背景に対して 4.5:1 以上、
-     --koyori-color-text も各 -subtle 背景に対して 4.5:1 以上を保つ。 */
-  --koyori-color-danger-subtle: #f7e6ea;
-  --koyori-color-warning: #8a5a1f;
-  --koyori-color-warning-subtle: #f6ecdd;
-  --koyori-color-info: #465b8c;
-  --koyori-color-info-subtle: #e6eaf5;
-  --koyori-color-success: #2f6b4a;
-  --koyori-color-success-subtle: #dfeae1;
-  /* danger のボタン。文字は背景とのコントラスト比 4.5:1 以上を保つ。 */
-  --koyori-color-danger-hover: #8e3350;
-  --koyori-color-on-danger: #fdf1f4;
-  --koyori-shadow-panel: 0 8px 24px #4439580a, 0 2px 4px #44395805;
+  --koyori-color-border-strong: #6b6b76;
+  --koyori-color-backdrop: #000000b3;
+  /* 意味の色。文字は地と対応する -subtle 背景の両方に対して 4.5:1 以上を保つ。 */
+  --koyori-color-danger: #ff6369;
+  --koyori-color-danger-hover: #ff8589;
+  --koyori-color-on-danger: #1f0506;
+  --koyori-color-danger-subtle: #2a1113;
+  --koyori-color-warning: #ffb224;
+  --koyori-color-warning-subtle: #2a1e07;
+  --koyori-color-info: #52a9ff;
+  --koyori-color-info-subtle: #0c1f36;
+  --koyori-color-success: #3dd68c;
+  --koyori-color-success-subtle: #0d281a;
+  --koyori-shadow-panel: 0 24px 56px -16px #000000d9, 0 6px 16px -4px #00000080, inset 0 1px 0 #ffffff0d;
+}
+
+/* 明るい面。考え方は同じで、白黒を入れ替える。 */
+[data-theme='light'] {
+  color-scheme: light;
+  --koyori-color-accent: #111114;
+  --koyori-color-accent-hover: #2e2e35;
+  --koyori-color-on-accent: #ffffff;
+  --koyori-color-accent-soft: #ececf0;
+  --koyori-color-accent-soft-hover: #dfdfe5;
+  --koyori-color-accent-subtle: #f0f0f3;
+  --koyori-color-text: #111114;
+  --koyori-color-text-secondary: #55555e;
+  --koyori-color-text-muted: #6b6b76;
+  --koyori-color-text-disabled: #a8a8b0;
+  --koyori-color-surface: #ffffff;
+  --koyori-color-surface-raised: #ffffff;
+  --koyori-color-surface-disabled: #f3f3f5;
+  --koyori-color-surface-hover: #f0f0f3;
+  --koyori-color-surface-active: #e4e4e9;
+  --koyori-color-selection: #eaeaef;
+  --koyori-color-selection-indicator: #111114;
+  --koyori-color-border: #dedee4;
+  --koyori-color-border-strong: #85858f;
+  --koyori-color-backdrop: #11111466;
+  --koyori-color-danger: #cd2b31;
+  --koyori-color-danger-hover: #ad2227;
+  --koyori-color-on-danger: #ffffff;
+  /* 明るい面では淡い色の面を作らない。種類は帯と接頭辞の色で示す。 */
+  --koyori-color-danger-subtle: #f6f6f8;
+  --koyori-color-warning: #8f4e00;
+  --koyori-color-warning-subtle: #f6f6f8;
+  --koyori-color-info: #0b62c4;
+  --koyori-color-info-subtle: #f6f6f8;
+  --koyori-color-success: #18794e;
+  --koyori-color-success-subtle: #f6f6f8;
+  --koyori-shadow-panel: 0 24px 56px -20px #11111440, 0 6px 16px -6px #1111141f;
 }
