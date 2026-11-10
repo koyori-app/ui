@@ -92,7 +92,7 @@ let browser;
       await page.getByRole('button', { name: '一覧の操作', exact: true }).focus();
       await page.keyboard.press('Tab');
       assert(await handle.evaluate(el => el === document.activeElement));
-      assert.equal(await handle.evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+      assert.equal(await handle.evaluate(el => getComputedStyle(el).outlineWidth), '1px');
       await page.keyboard.press('ArrowLeft'); await width(310);
       await page.keyboard.press('Shift+ArrowRight'); await width(360);
       await page.keyboard.press('Home'); await width(160);

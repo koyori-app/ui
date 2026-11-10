@@ -112,7 +112,7 @@ async function serve(directory, port) {
       assert.equal((await remove.locator('xpath=ancestor::*[@data-size][1]').boundingBox()).height, tagHeight, 'a Tag with a remove button is as tall as one without');
       await page.keyboard.press('Tab');
       assert(await remove.evaluate(el => el === document.activeElement));
-      assert.equal(await remove.evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+      assert.equal(await remove.evaluate(el => getComputedStyle(el).outlineWidth), '1px');
       await page.keyboard.press('Enter');
       await page.waitForFunction(() => document.querySelector('output')?.textContent === '1');
       await page.keyboard.press('Space');

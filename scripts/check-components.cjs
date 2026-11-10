@@ -47,7 +47,7 @@ let browser;
       let button = page.getByRole('button', { name: 'Continue' });
       await page.keyboard.press('Tab');
       const focus = await ring(button);
-      assert.equal(focus[0], '2px');
+      assert.equal(focus[0], '1px');
       await button.hover(); await page.waitForTimeout(200);
       const ghost = await surface(button);
       for (const component of ['dropdown', 'picker']) {
@@ -200,7 +200,7 @@ let browser;
       await list.focus(); await list.press('End'); await settle();
       assert.equal(await list.getAttribute('aria-activedescendant'), lastId);
       const activeRing = await ring(options.last());
-      assert.deepEqual(activeRing, [focus[0], focus[1], '-2px']);
+      assert.deepEqual(activeRing, [focus[0], focus[1], '-1px']);
       await page.getByRole('searchbox').fill(' ＴＥＡＭ 1000 '); await settle();
       assert.equal(await options.count(), 1);
       assert.equal(await options.first().getAttribute('id'), lastId);

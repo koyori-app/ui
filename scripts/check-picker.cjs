@@ -361,7 +361,7 @@ let browser;
       await search.fill('end');
       await search.press('Tab');
       assert(await retry.evaluate(el => el === document.activeElement));
-      assert.equal(await retry.evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+      assert.equal(await retry.evaluate(el => getComputedStyle(el).outlineWidth), '1px');
       await retry.press('Enter');
       assert(await search.evaluate(el => el === document.activeElement));
       assert.equal(await search.inputValue(), 'end');

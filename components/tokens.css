@@ -17,8 +17,8 @@
   --koyori-space-xl: 12px;
   --koyori-control-height-sm: 32px;
 
-  --koyori-focus-width: 2px;
-  --koyori-focus-offset: 2px;
+  --koyori-focus-width: 1px;
+  --koyori-focus-offset: 1px;
   --koyori-focus-color: var(--koyori-color-text-muted);
   --koyori-motion-fast: 140ms;
   --koyori-motion-base: 220ms;

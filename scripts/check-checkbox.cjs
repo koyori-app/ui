@@ -42,7 +42,7 @@ let browser;
       assert(geometry.width >= 24 && geometry.height >= 24, 'checkbox has a usable target');
       await page.keyboard.press('Tab');
       assert(await checkbox.evaluate(el => el === document.activeElement));
-      assert.equal(await checkbox.locator('+ span').evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+      assert.equal(await checkbox.locator('+ span').evaluate(el => getComputedStyle(el).outlineWidth), '1px');
 
       // Sample the actual SVG transition in browser time, independent of test runner latency.
       const drawing = await checkbox.evaluate(input => {

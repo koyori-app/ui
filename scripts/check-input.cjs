@@ -69,7 +69,7 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Butto
       await page.keyboard.press('Tab');
       assert(await input.evaluate(el => el === document.activeElement));
       // 枠は入力欄を包む要素に出る。入力欄自身の outline は none。
-      assert.deepEqual(await input.evaluate(el => [getComputedStyle(el).outlineStyle, getComputedStyle(el.parentElement).outlineStyle, getComputedStyle(el.parentElement).outlineWidth]), ['none', 'solid', '2px']);
+      assert.deepEqual(await input.evaluate(el => [getComputedStyle(el).outlineStyle, getComputedStyle(el.parentElement).outlineStyle, getComputedStyle(el.parentElement).outlineWidth]), ['none', 'solid', '1px']);
       await input.press('Enter');
       assert.deepEqual(await commits(), [null], 'empty commits as null');
       await input.press('Tab');
