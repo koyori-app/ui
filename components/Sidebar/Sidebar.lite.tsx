@@ -34,6 +34,12 @@ export default function Sidebar(props: SidebarProps) {
   onMount(() => { cleanupRef = listenToSidebar(itemsRef); });
   onUnMount(() => cleanupRef?.());
   onUpdate(() => { if (props.open === false) restoreFocus(rootRef, props.id); }, [props.open]);
+  // rail を切り替えたあとだけ並びの出現を動かす。最初の表示で動かさないよう、初回の呼び出しは記録だけにする。
+  let railSeenRef = useRef<boolean | null>(null);
+  onUpdate(() => {
+    if (railSeenRef && rootRef) rootRef.setAttribute('data-sidebar-rail-moved', '');
+    railSeenRef = true;
+  }, [props.rail]);
 
   return (
     /* 開閉しないときは display: contents で、レイアウトに影響しない。 */

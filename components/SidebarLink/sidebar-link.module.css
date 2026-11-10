@@ -105,6 +105,15 @@
   .link[aria-current='page'] .icon { animation: link-icon-pop 360ms var(--koyori-ease-pop); }
 }
 
+/* rail から広げたときは、ラベルを左から寄せて出す。 */
+@media (prefers-reduced-motion: no-preference) {
+  [data-sidebar-rail='false'][data-sidebar-rail-moved] .label { animation: link-label-in 260ms var(--koyori-ease-out) backwards; }
+}
+
+@keyframes link-label-in {
+  from { opacity: 0; transform: translateX(-8px); }
+}
+
 @keyframes link-icon-pop {
   from { transform: scale(0.5) rotate(-20deg); }
 }
