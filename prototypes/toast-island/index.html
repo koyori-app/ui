@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トースト試作（Island）</title>
+<style>
+  :root {
+    --t: 1.7; /* 動きの時間の倍率（標準 1.7）。JS が上書きする */
+    --w-pill: 126px;
+    --h-pill: 36px;
+    --top: 11px;
+    --gap: 14px;
+    /* 表示位置。--pl は左端の基準、--tx は自分の幅での左右の寄せ、--sy は上端（1）か下端（-1）か。JS が切り替える */
+    --pl: 50%; --tx: -50%; --sy: 1;
+    /* 減衰比 0.62・約 0.8s の spring を linear() で表したもの（8% ほど行き過ぎて戻る） */
+    --spring: linear(0, 0.026, 0.0936, 0.1888, 0.2997, 0.4167, 0.5326, 0.6418, 0.7406, 0.8269, 0.8996, 0.9585, 1.0043, 1.0381, 1.0613, 1.0755, 1.0823, 1.0833, 1.0799, 1.0734, 1.0649, 1.0554, 1.0456, 1.0361, 1.0272, 1.0193, 1.0124, 1.0067, 1.0021, 0.9986, 0.9961, 0.9944, 0.9935, 0.9931, 0.9931, 0.9935, 0.9941, 0.9948, 0.9956, 0.9964, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font: 15px/1.7 system-ui, -apple-system, "Hiragino Sans", sans-serif; background: #eef0f4; color: #1d2330; }
+  main { max-width: 720px; margin: 0 auto; padding: 120px 24px 48px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  h2 { font-size: 16px; margin: 28px 0 0; color: #1d2330; }
+  p { margin: 0 0 12px; color: #4a5366; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; align-items: center; }
+  .controls button, .controls select { font: inherit; padding: 8px 14px; border: 1px solid #c3c9d6; border-radius: 10px; background: #fff; color: inherit; cursor: pointer; }
+  .controls button:hover { background: #f6f7fa; }
+  .controls label { margin-left: 8px; color: #4a5366; }
+  .sample { height: 220px; border-radius: 16px; background: linear-gradient(135deg, #fff, #dde3ee); border: 1px solid #d3d9e5; margin-top: 16px; }
+
+  /* ---- トースト本体 ---- */
+  /* 形（blob）は .goo の中。フィルターで滲ませて液体のように繋ぐ。文字は .layer に分けて滲ませない。 */
+  .goo, .layers { position: fixed; top: 0; left: 0; right: 0; height: 70vh; pointer-events: none; z-index: 100; }
+  .goo { filter: url(#goo); }
+  :root[data-v="bottom"] .goo, :root[data-v="bottom"] .layers { top: auto; bottom: 0; }
+  :root[data-v="bottom"] .blob, :root[data-v="bottom"] .layer { top: auto; bottom: 0; }
+  .blob, .layer {
+    position: absolute; top: 0; left: var(--pl);
+    width: var(--w); height: var(--h);
+    border-radius: var(--r);
+    transform: translate(var(--tx), calc(var(--y) * var(--sy)));
+    transition:
+      width calc(800ms * var(--t)) var(--spring),
+      height calc(800ms * var(--t)) var(--spring),
+      border-radius calc(800ms * var(--t)) var(--spring),
+      transform calc(800ms * var(--t)) var(--spring),
+      opacity calc(140ms * var(--t)) var(--ease-out);
+  }
+  /* 形の色は --bg / --bd（状態ごとに JS が付ける）。黒の配色では --bg が黒、--bd が透明。 */
+  .blob { background: var(--bg, #0b0b0d); border: 1px solid var(--bd, transparent); }
+  .layer { overflow: hidden; pointer-events: auto; }
+  /* 入る前と退場後は、島（ピル）の形と位置。そこから広がり、そこへ戻る。 */
+  .blob:not(.in), .layer:not(.in) {
+    width: var(--w-pill); height: var(--h-pill); border-radius: calc(var(--h-pill) / 2);
+    transform: translate(var(--tx), calc(var(--top) * var(--sy))); opacity: 0;
+  }
+  .blob.in, .layer.in { opacity: 1; }
+  /* 退場: 入ってきた道を戻る。減衰を強めて跳ねさせず、最後に透明にする。 */
+  .blob.leaving, .layer.leaving {
+    transition:
+      width calc(420ms * var(--t)) var(--ease-drawer),
+      height calc(420ms * var(--t)) var(--ease-drawer),
+      border-radius calc(420ms * var(--t)) var(--ease-drawer),
+      transform calc(420ms * var(--t)) var(--ease-drawer),
+      opacity calc(160ms * var(--t)) var(--ease-out) calc(260ms * var(--t));
+  }
+
+  .inner {
+    width: var(--w); padding: 8px 8px 8px 16px; display: flex; align-items: flex-start; gap: 10px;
+    color: #f4f5f7; font-size: 14px; line-height: 20px;
+    opacity: 0; filter: blur(4px);
+    transition: opacity calc(120ms * var(--t)) var(--ease-out), filter calc(120ms * var(--t)) var(--ease-out);
+  }
+  .in .inner { opacity: 1; filter: blur(0); transition-duration: calc(260ms * var(--t)); transition-delay: calc(180ms * var(--t)); }
+  .leaving .inner { opacity: 0; filter: blur(4px); transition-duration: calc(100ms * var(--t)); transition-delay: 0ms; }
+  /* ---- 種類ごとのアイコン。線を描き込む（stroke-dashoffset）・点がはねる（spring）・エラーは波紋・警告は震える ---- */
+  .icon { flex: none; width: 22px; height: 22px; margin-top: 7px; transform: scale(0.6);
+    transition: transform calc(600ms * var(--t)) var(--spring); }
+  /* .go は「このアイコンを動かし始める」合図。トーストが出たときと、状態が切り替わってアイコンが入れ替わったときに付ける。 */
+  .icon.go { transform: scale(1); transition-delay: calc(180ms * var(--t)); }
+  .icon[data-v="loading"] svg { animation: spin calc(900ms) linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* 進捗の円（割合が分かる処理）。--p は 0〜1。回さず、線の長さで進みを見せる。 */
+  .icon[data-v="progress"] .prog { stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p, 0)); transform-origin: 11px 11px; transform: rotate(-90deg);
+    transition: stroke-dashoffset calc(500ms * var(--t)) var(--ease-out); }
+  /* 人が起こした通知（担当にされた・コメントされた）は、種類のアイコンの代わりに人のアバター。 */
+  .icon[data-v="avatar"] { width: 28px; height: 28px; margin-top: 3px; border-radius: 50%; background: var(--av, #4b5263); color: #fff; font-size: 11px; font-weight: 700; line-height: 28px; text-align: center; }
+  /* 切り替え中: 中身をいったん引いて、入れ替えてから戻す。形（幅・高さ）は spring で追従する。 */
+  .in.swap .inner { opacity: 0; filter: blur(4px); transition-duration: calc(90ms * var(--t)); transition-delay: 0ms; }
+  .icon svg { display: block; width: 22px; height: 22px; overflow: visible; fill: none; stroke: var(--c); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .draw { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset calc(380ms * var(--t)) var(--ease-out); }
+  .go .draw { stroke-dashoffset: 0; transition-delay: calc(var(--d, 0ms) * var(--t)); }
+  .pop { fill: var(--c); stroke: none; transform-box: fill-box; transform-origin: center; transform: scale(0);
+    transition: transform calc(500ms * var(--t)) var(--spring); }
+  .go .pop { transform: scale(1); transition-delay: calc(var(--d, 0ms) * var(--t)); }
+  .ping { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .go .ping { animation: ping calc(800ms * var(--t)) var(--ease-out) calc(var(--pd, 520ms) * var(--t)) forwards; }
+  @keyframes ping { from { opacity: 0.55; transform: scale(1); } to { opacity: 0; transform: scale(var(--ps, 2.1)); } }
+  /* 震え（エラーだけ）: トースト全体ではなく、アイコンだけを震わせる。位置の transform とは別の translate を使う。 */
+  .in .icon.shake svg { animation: shake calc(520ms * var(--t)) cubic-bezier(0.36, 0.07, 0.19, 0.97) calc(360ms * var(--t)); }
+  @keyframes shake { 0%, 100% { translate: 0; } 12% { translate: -3.5px; } 27% { translate: 3px; } 42% { translate: -2.5px; } 57% { translate: 2px; } 72% { translate: -1px; } 87% { translate: 0.5px; } }
+  .text { flex: 1; min-width: 0; padding-block: 8px; overflow-wrap: anywhere; }
+  .prefix { font-weight: 600; color: var(--c); margin-right: 6px; }
+  /* 画像。サムネイルは右に小さく、プレビューは本文の下に大きく。どちらも縦横比の枠を先に取り、読み込みで高さがずれないようにする。 */
+  .thumb { flex: none; width: 40px; height: 40px; margin-top: 2px; border-radius: 10px; overflow: hidden; background: rgba(255, 255, 255, 0.1); }
+  .preview { margin: 4px 0 10px; border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.1); aspect-ratio: var(--ar, 16 / 9); }
+  .thumb img, .preview img { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 240ms var(--ease-out); }
+  .thumb img.loaded, .preview img.loaded { opacity: 1; }
+  /* その場で返信する入力欄（iPhone の通知の返信のように、通知が入力欄つきの形に広がる）。 */
+  .reply { display: flex; align-items: flex-end; gap: 8px; padding: 4px 0 10px; }
+  .reply textarea { flex: 1; min-width: 0; height: 36px; max-height: 96px; resize: none; border: 0; outline: 0; border-radius: 18px; padding: 8px 14px; font: inherit; line-height: 20px; color: #f4f5f7; background: rgba(255, 255, 255, 0.12); }
+  .reply textarea::placeholder { color: rgba(244, 245, 247, 0.5); }
+  .reply textarea:focus-visible { box-shadow: 0 0 0 2px #8ab4ff; }
+  .send { flex: none; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; color: #0b0b0d; background: #f4f5f7; cursor: pointer; transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out); }
+  .send:disabled { opacity: 0.35; cursor: default; }
+  .send:not(:disabled):active { transform: scale(0.94); }
+  .send:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
+  .num { display: inline-block; position: relative; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .num > span:first-child { display: inline-block; }
+  .col { flex: 1; min-width: 0; }
+  .col .text { display: block; }
+  .title { font-weight: 600; }
+  .desc { display: block; margin-top: 2px; color: rgba(244, 245, 247, .66); font-size: 13px; line-height: 18px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 10px; }
+  .btn { flex: none; height: 32px; padding: 0 14px; border: 0; border-radius: 16px; font: inherit; font-weight: 600; color: #f4f5f7; background: rgba(255, 255, 255, .14); cursor: pointer; }
+  .btn.primary { color: #0b0b0d; background: #f4f5f7; }
+  .btn.inline { align-self: flex-start; margin-top: 2px; }
+  .btn:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .btn:hover { background: rgba(255, 255, 255, .24); } .btn.primary:hover { background: #fff; } }
+  .link, .x { flex: none; align-self: flex-start; height: 36px; display: inline-flex; align-items: center; justify-content: center; color: inherit; border: 0; background: transparent; font: inherit; cursor: pointer; border-radius: 18px; }
+  .link { padding: 0 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .x { width: 36px; position: relative; }
+  /* 残り時間: × の周りの円。時計回りに線が消えていく。ホバー/フォーカス中は止まって濃くなる。進行中（timed なし）は出さない。 */
+  .ring { position: absolute; inset: 0; width: 36px; height: 36px; transform: rotate(-90deg); fill: none; stroke: var(--c); stroke-width: 2; stroke-linecap: round; opacity: 0; pointer-events: none; transition: opacity 160ms var(--ease-out); }
+  .timed .ring { opacity: 0.7; }
+  .timed .ring circle { stroke-dasharray: 1; stroke-dashoffset: 0; animation: ring var(--hold) linear calc(500ms * var(--t)) forwards; }
+  .layer.paused.timed .ring { opacity: 1; }
+  .layer.paused.timed .ring circle { animation-play-state: paused; }
+  @keyframes ring { to { stroke-dashoffset: 1; } }
+  .link:focus-visible, .x:focus-visible { outline: 2px solid #8ab4ff; outline-offset: -2px; }
+  @media (hover: hover) and (pointer: fine) { .x:hover, .link:hover { background: rgba(255,255,255,.12); } }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* ---- 薄い色の配色（data-tone="light"）。状態の色は薄い面と細い枠、文字は濃い色。影で、明るい背景から浮かせる。 ---- */
+  :root[data-tone="light"] .goo { filter: url(#goo) drop-shadow(0 8px 18px rgba(24, 36, 70, 0.16)); }
+  :root[data-tone="light"] .inner { color: #1d2330; }
+  :root[data-tone="light"] .desc { color: rgba(29, 35, 48, 0.68); }
+  :root[data-tone="light"] .btn { color: #1d2330; background: rgba(29, 35, 48, 0.08); }
+  :root[data-tone="light"] .btn.primary { color: #fff; background: #1d2330; }
+  :root[data-tone="light"] .reply textarea { color: #1d2330; background: rgba(255, 255, 255, 0.72); box-shadow: inset 0 0 0 1px rgba(29, 35, 48, 0.14); }
+  :root[data-tone="light"] .reply textarea::placeholder { color: rgba(29, 35, 48, 0.45); }
+  :root[data-tone="light"] .reply textarea:focus-visible { box-shadow: 0 0 0 2px #2552a8; }
+  :root[data-tone="light"] .send { color: #fff; background: #1d2330; }
+  :root[data-tone="light"] .thumb, :root[data-tone="light"] .preview { background: rgba(29, 35, 48, 0.08); }
+  :root[data-tone="light"] .btn:focus-visible { outline-color: #2552a8; }
+  :root[data-tone="light"] .link:focus-visible, :root[data-tone="light"] .x:focus-visible { outline-color: #2552a8; }
+  @media (hover: hover) and (pointer: fine) {
+    :root[data-tone="light"] .btn:hover { background: rgba(29, 35, 48, 0.15); }
+    :root[data-tone="light"] .btn.primary:hover { background: #2e3750; }
+    :root[data-tone="light"] .x:hover, :root[data-tone="light"] .link:hover { background: rgba(29, 35, 48, 0.08); }
+  }
+
+  /* 動きを減らす設定: 位置や大きさは動かさず、最終の形でふわっと出す。滲みも切る。 */
+  @media (prefers-reduced-motion: reduce) {
+    .goo { filter: none; }
+    .blob, .layer, .blob.leaving, .layer.leaving { transition: opacity 160ms ease; }
+    .blob:not(.in), .layer:not(.in) { width: var(--w); height: var(--h); border-radius: var(--r); transform: translate(var(--tx), calc(var(--y) * var(--sy))); opacity: 0; }
+    .inner, .in .inner, .leaving .inner { filter: none; transition: none; transition-delay: 0ms; }
+    /* アイコンは描き終えた形で出し、震えと波紋は無し。 */
+    .icon, .icon.go { transform: none; transition: none; }
+    .draw, .go .draw { stroke-dashoffset: 0; transition: none; }
+    .pop, .go .pop { transform: none; transition: none; }
+    .go .ping, .in .icon.shake svg { animation: none; }
+    /* スピナーは進行中を伝える表示なので止めず、ゆっくり回す。 */
+    .icon[data-v="loading"] svg { animation-duration: 2400ms; }
+    .in.swap .inner { transition: none; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <filter id="goo" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"/>
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" result="goo"/>
+      <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+    </filter>
+  </defs>
+</svg>
+
+<main>
+  <h1>トースト試作（液体の動き）</h1>
+  <p>ボタンで出します。選んだ位置の端（上・中央は島、右の角は小さな点）から広がり、続けて出すと滴のように分かれて積まれます。閉じると、出てきた端へ戻ります。</p>
+  <div class="controls">
+    <button data-kind="success">成功</button>
+    <button data-kind="error">エラー（アイコンが震える）</button>
+    <button data-kind="info">情報</button>
+    <button data-kind="warning">警告</button>
+    <button data-kind="allkinds">成功・情報・警告・エラー</button>
+
+    <button data-kind="link">リンク付き</button>
+    <button data-kind="progressOk">進行中 → 成功</button>
+    <button data-kind="progressNg">進行中 → エラー</button>
+    <button data-kind="steps">段階的に進む</button>
+    <button data-kind="burst">3 つ続けて</button>
+    <button data-kind="long">複数行</button>
+    <button data-kind="title">見出し付き</button>
+    <button data-kind="undo">元に戻す</button>
+    <button data-kind="actions">ボタン 2 つ</button>
+    <button data-kind="mixed">高さ違いを重ねる</button>
+    <label>表示位置 <select id="pos"><option value="top-center">上・中央（島から）</option><option value="top-right">上・右（角の点から）</option><option value="bottom-right">下・右（角の点から）</option></select></label>
+    <label>配色 <select id="tone"><option value="dark">黒</option><option value="light">薄い色</option></select></label>
+    <label>表示時間 <select id="hold"><option value="2500">2.5 秒</option><option value="4000">4 秒</option><option value="5000" selected>5 秒</option><option value="8000">8 秒</option><option value="0">消えない</option></select></label>
+    <label>動きの速さ <select id="speed"><option value="1.3">やや速い</option><option value="1.7">標準</option><option value="2.2">ややゆっくり</option><option value="6">確認用（6 倍）</option></select></label>
+    <label><input type="checkbox" id="snd" checked> 音</label>
+    <label>音量 <select id="vol"><option value="0.25">小</option><option value="0.5" selected>中</option><option value="0.9">大</option></select></label>
+    <span id="snds"></span>
+  </div>
+  <h2>Koyori task の場面</h2>
+  <div class="controls" id="scenes"></div>
+  <div class="sample"></div>
+</main>
+
+<div class="goo" id="gooLayer"></div>
+<div class="layers" id="layers" role="region" aria-label="通知"></div>
+<div class="sr" role="status" id="status"></div>
+<div class="sr" role="alert" id="alert"></div>
+
+<script>
+  const root = document.documentElement.style;
+  const q = new URLSearchParams(location.search);
+  root.setProperty('--t', q.get('t') || '1.7');
+  document.getElementById('speed').value = q.get('t') || '1.7';
+  document.getElementById('speed').onchange = (e) => { root.setProperty('--t', e.target.value); };
+
+  // 表示位置。端の基準（--pl）・左右の寄せ（--tx）・上下（data-v と --sy）を切り替える。下のときは下端から内側へ積む。
+  // 位置ごとに、広がる前の形（pw×ph）と端からの距離（edge）を変える。
+  //   上・中央: 島（横長のピル）／ 角: 小さな丸い点 ／ 下・中央: 下端の持ち手（細いピル）
+  let TOP = 11;
+  const EDGE = '12px';
+  const R = `calc(100% - ${EDGE})`;
+  const POS = {
+    'top-center':    { pl: '50%', tx: '-50%', v: 'top',    pw: 126, ph: 36, edge: 11 },
+    'top-left':      { pl: EDGE,  tx: '0%',   v: 'top',    pw: 40,  ph: 40, edge: 12 },
+    'top-right':     { pl: R,     tx: '-100%', v: 'top',   pw: 40,  ph: 40, edge: 12 },
+    'bottom-center': { pl: '50%', tx: '-50%', v: 'bottom', pw: 112, ph: 16, edge: 14 },
+    'bottom-left':   { pl: EDGE,  tx: '0%',   v: 'bottom', pw: 40,  ph: 40, edge: 12 },
+    'bottom-right':  { pl: R,     tx: '-100%', v: 'bottom', pw: 40,  ph: 40, edge: 12 },
+  };
+  function applyPos(name) {
+    const p = POS[name] || POS['top-center'];
+    root.setProperty('--pl', p.pl); root.setProperty('--tx', p.tx); root.setProperty('--sy', p.v === 'bottom' ? '-1' : '1');
+    root.setProperty('--w-pill', p.pw + 'px'); root.setProperty('--h-pill', p.ph + 'px'); root.setProperty('--top', p.edge + 'px');
+    TOP = p.edge;
+    document.documentElement.dataset.v = p.v;
+  }
+  applyPos(q.get('pos'));
+  // 配色。切り替えると、出ているものを消して、新しい配色で 1 件出して見せる。
+  document.documentElement.dataset.tone = q.get('tone') === 'light' ? 'light' : 'dark';
+  document.getElementById('tone').value = document.documentElement.dataset.tone;
+  document.getElementById('tone').onchange = (e) => {
+    items.splice(0).forEach((i) => { clearTimeout(i.timer); i.blob.remove(); i.layer.remove(); });
+    document.documentElement.dataset.tone = e.target.value;
+    setTimeout(() => demos.success(), 250);
+  };
+  document.getElementById('pos').value = POS[q.get('pos')] ? q.get('pos') : 'top-center';
+  document.getElementById('pos').onchange = (e) => {
+    // 出ているものは新しい位置へ移さず消して、新しい位置で 1 件出して見せる。
+    items.splice(0).forEach((i) => { clearTimeout(i.timer); i.blob.remove(); i.layer.remove(); });
+    applyPos(e.target.value);
+    setTimeout(() => demos.success(), 250);
+  };
+
+  const gooEl = document.getElementById('gooLayer'), layersEl = document.getElementById('layers');
+  const COLOR = { success: '#34c759', error: '#ff6b60', warning: '#ffb340', info: '#5aa9ff', loading: '#c9ced8' };
+  const PREFIX = { success: '完了', error: 'エラー', warning: '注意', info: 'お知らせ', loading: '処理中' };
+  // 薄い色の配色: 状態ごとの [アクセント（文字・アイコン・円）, 面, 枠]。アクセントは面の上で 4.5:1 以上になる濃さにしてある。
+  const LIGHT = {
+    success: ['#17703d', '#e3f4e8', '#9bd7b2'],
+    error: ['#b3202f', '#fde8ea', '#f2a9b0'],
+    warning: ['#8a4f06', '#fff1d9', '#eec984'],
+    info: ['#2552a8', '#e4edfc', '#a9c2f0'],
+    loading: ['#4a5465', '#eceff4', '#c8cfda'],
+  };
+  const isLight = () => document.documentElement.dataset.tone === 'light';
+  const setTone = (item, v) => set(item, isLight() ? { '--c': LIGHT[v][0], '--bg': LIGHT[v][1], '--bd': LIGHT[v][2] } : { '--c': COLOR[v], '--bg': '#0b0b0d', '--bd': 'transparent' });
+  // 線は pathLength=1 にそろえ、--d（ms）で描き始めを遅らせる。
+  const d = (ms) => `style="--d:${ms}ms"`;
+  const ICON = {
+    // 成功: チェックを描き終えた（約 0.9 秒後）あとに、円が 1 回だけ波になって広がる。
+    success: `<circle class="ping" style="--pd:900ms;--ps:2.5" cx="11" cy="11" r="9"/><circle class="draw" pathLength="1" cx="11" cy="11" r="9" ${d(160)}/><path class="draw" pathLength="1" d="M6.6 11.4l3 3 5.9-6.4" ${d(520)}/>`,
+    error: `<circle class="ping" cx="11" cy="11" r="9"/><circle class="draw" pathLength="1" cx="11" cy="11" r="9" ${d(160)}/><path class="draw" pathLength="1" d="M7.6 7.6l6.8 6.8" ${d(480)}/><path class="draw" pathLength="1" d="M14.4 7.6l-6.8 6.8" ${d(600)}/>`,
+    warning: `<path class="draw" pathLength="1" d="M11 3.3l8.1 14.2a.9.9 0 0 1-.8 1.3H3.7a.9.9 0 0 1-.8-1.3z" ${d(160)}/><path class="draw" pathLength="1" d="M11 8.7v4.1" ${d(560)}/><circle class="pop" cx="11" cy="15.5" r="1" ${d(700)}/>`,
+    info: `<circle class="draw" pathLength="1" cx="11" cy="11" r="9" ${d(160)}/><circle class="pop" cx="11" cy="7.5" r="1.1" ${d(480)}/><path class="draw" pathLength="1" d="M11 10.6v5" ${d(560)}/>`,
+  };
+  ICON.loading = `<circle cx="11" cy="11" r="9" opacity="0.25"/><path d="M11 2a9 9 0 0 1 9 9"/>`;
+  ICON.progress = `<circle cx="11" cy="11" r="9" opacity="0.25"/><circle class="prog" pathLength="1" cx="11" cy="11" r="9"/>`;
+  const icon = (v, p) => `<span class="icon${v === 'error' ? ' shake' : ''}" data-v="${v}"${p != null ? ` style="--p:${p}"` : ''} aria-hidden="true"><svg viewBox="0 0 22 22">${ICON[v]}</svg></span>`;
+  // アイコンの種類: avatar（人）/ progress（割合つきの進行中）/ loading（割合なし）/ 各種類
+  const kindOf = (variant, o) => (o.avatar ? 'avatar' : variant === 'loading' ? (o.progress != null ? 'progress' : 'loading') : variant);
+  const iconFor = (variant, o) => (o.avatar
+    ? `<span class="icon" data-v="avatar" style="--av:${o.avatar.color}" aria-hidden="true">${o.avatar.text}</span>`
+    : icon(kindOf(variant, o), o.progress));
+  const GAP = 20, LIMIT = 3;
+  const items = [];
+  let uid = 0;
+
+  function layout() {
+    let y = TOP;
+    items.filter((i) => !i.leaving).forEach((i) => { set(i, { '--y': y + 'px' }); y += i.h + GAP; });
+  }
+  function set(i, vars) { for (const k in vars) { i.blob.style.setProperty(k, vars[k]); i.layer.style.setProperty(k, vars[k]); } }
+
+  // ---- 音（Web Audio の合成。音声ファイルは使わない）----
+  // 状態ごとの音色。アイコンの動きと同じ瞬間に鳴らす（SOUND_AT は、各アイコンの見せ場が来る時間。速さの倍率を掛ける）。
+  //   音色は柔らかい正弦波が中心。出だしで少し下から跳ね上がる（bend）と、泡がはじけるような「ぽん」になる。
+  //   成功: 「ぴろりん」と跳ねる 3 音の上昇（チェックを描き終えて波が出る瞬間）／ 情報: 「ぽん」と丸い 1 音（i の点が出る瞬間）
+  //   警告: 「ぴ・ぴ」と短く 2 回、少し下がる（三角の「!」が出る瞬間）／ エラー: 「あうっ」と下がる 2 音（アイコンが震え始める瞬間）
+  const SOUND_AT = { success: 900, error: 360, warning: 620, info: 480 };
+  function note(ctx, dest, { f, f2, at, dur, type = 'sine', gain = 0.3, attack = 0.006, bend = 1 }) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f * bend, at);
+    if (bend !== 1) o.frequency.exponentialRampToValueAtTime(f, at + 0.045);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, at + dur);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(gain, at + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(g).connect(dest); o.start(at); o.stop(at + dur + 0.03);
+  }
+  const SOUNDS = {
+    // ぴろりん: ソ→ド→ミ（G5・C6・E6）を 0.07 秒ずつ重ねて弾ませ、最後のミに小さなきらめきを足す。
+    success(ctx, out, at) {
+      note(ctx, out, { f: 784, at, dur: 0.32, gain: 0.34, bend: 0.9 });
+      note(ctx, out, { f: 1046.5, at: at + 0.07, dur: 0.34, gain: 0.34, bend: 0.9 });
+      note(ctx, out, { f: 1318.5, at: at + 0.14, dur: 0.7, gain: 0.36, bend: 0.9 });
+      note(ctx, out, { f: 2637, at: at + 0.14, dur: 0.22, gain: 0.07 });
+    },
+    // ぽん: 低い所から跳ね上がる丸い 1 音と、軽い倍音。
+    info(ctx, out, at) { note(ctx, out, { f: 880, at, dur: 0.38, gain: 0.4, bend: 0.8 }); note(ctx, out, { f: 1760, at, dur: 0.12, gain: 0.07 }); },
+    // ん？: 2 音が上がって終わる。ビープで驚かさず、問いかけるように「ちょっと見て」と伝える。
+    warning(ctx, out, at) {
+      note(ctx, out, { f: 523, f2: 587, at, dur: 0.2, gain: 0.34, bend: 0.95 });
+      note(ctx, out, { f: 659, f2: 784, at: at + 0.17, dur: 0.38, gain: 0.34, bend: 0.95 });
+    },
+    // あうっ: 下がる 2 音（ラ→ファ）。高い倍音を丸め、しょんぼりしても刺さらない。
+    error(ctx, out, at) {
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800; lp.connect(out);
+      note(ctx, lp, { f: 440, f2: 415, at, dur: 0.2, gain: 0.42 });
+      note(ctx, lp, { f: 349, f2: 311, at: at + 0.17, dur: 0.4, gain: 0.42 });
+      note(ctx, lp, { f: 698, f2: 622, at: at + 0.17, dur: 0.2, gain: 0.07, type: 'triangle' });
+    },
+  };
+  let actx, master;
+  const soundOn = () => document.getElementById('snd').checked;
+  function ensureAudio() {
+    if (!actx) { actx = new (window.AudioContext || window.webkitAudioContext)(); master = actx.createGain(); master.connect(actx.destination); }
+    master.gain.value = +document.getElementById('vol').value;
+    if (actx.state === 'suspended') actx.resume();
+  }
+  // variant の音を、アイコンの見せ場（delayMs 後）に鳴らす。成功・情報・警告・エラーだけ（進行中は鳴らさない）。
+  //   続けて出たとき（前の通知から 2 秒以内）は、見せ場を待たず、まだ鳴っていない音もまとめてすぐ鳴らす。
+  //   0.22 秒以内に重なる音は、強い方（エラー > 警告 > 成功 > 情報）だけを鳴らし、弱い方は鳴らさない。
+  const PRIO = { info: 1, success: 2, warning: 3, error: 4 };
+  const pending = new Set();
+  let lastShowAt = -1e9, lastPlay = { t: -1e9, p: 0 };
+  const t00 = performance.now();
+  function playNow(variant) {
+    const t = performance.now(), p = PRIO[variant];
+    const skip = t - lastPlay.t < 220 && p <= lastPlay.p;
+    (window.__sounds ||= []).push([variant, Math.round(t - t00), skip ? 'skipped' : 'played']);
+    if (skip) return;
+    lastPlay = { t, p };
+    try { SOUNDS[variant](actx, master, actx.currentTime + 0.01); } catch (e) { /* 音が出せない環境では黙る */ }
+  }
+  function sound(variant, delayMs) {
+    if (!SOUNDS[variant] || !soundOn()) return;
+    try { ensureAudio(); } catch (e) { return; }
+    const now = performance.now();
+    const burst = now - lastShowAt < 2000;
+    lastShowAt = now;
+    if (burst) pending.forEach((q) => { clearTimeout(q.timer); pending.delete(q); playNow(q.variant); });
+    const q = { variant };
+    q.timer = setTimeout(() => { pending.delete(q); playNow(variant); }, burst ? Math.min(delayMs, 120) : delayMs);
+    pending.add(q);
+  }
+  // 試作の確認用: 音を聴かなくても、波形が無音でも割れてもいないことを OfflineAudioContext で測る。
+  window.__soundTest = async (variant) => {
+    const oc = new OfflineAudioContext(1, 44100 * 1.4, 44100); const out = oc.createGain(); out.gain.value = 0.5; out.connect(oc.destination);
+    SOUNDS[variant](oc, out, 0);
+    const d = (await oc.startRendering()).getChannelData(0); let peak = 0, last = 0;
+    for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; if (a > 0.01) last = i; }
+    return { variant, peak: +peak.toFixed(3), audibleSec: +(last / 44100).toFixed(2) };
+  };
+
+  // o: { title, link: '文言', inline: '文言'（右に置くボタン）, actions: [{ label, primary }]（本文の下に並べるボタン） }
+  function innerHtml(variant, message, o) {
+    const pre = (o.prefix ?? PREFIX[variant]) ? `<span class="prefix">${o.prefix ?? PREFIX[variant]}</span>` : '';
+    const text = o.title
+      ? `${pre}<span class="title">${o.title}</span><span class="desc">${message}</span>`
+      : `${pre}${message}`;
+    const actions = (o.actions || []).map((a) => `<button type="button" class="btn${a.primary ? ' primary' : ''}" ${a.reply ? 'data-reply' : 'data-act'}>${a.label}</button>`).join('');
+    // 画像: o.preview = { src, alt, ratio }（本文の下に大きく）／ o.thumb = { src, alt }（右に小さく）。alt は必ず付ける。
+    const img = (i) => `<img src="${i.src}" alt="${esc(i.alt || '')}" onload="this.classList.add('loaded')" draggable="false">`;
+    return `${iconFor(variant, o)}<div class="col"><span class="text">${text}</span>` +
+      (o.preview ? `<div class="preview" style="--ar:${o.preview.ratio || '16 / 9'}">${img(o.preview)}</div>` : '') +
+      (actions ? `<div class="actions">${actions}</div>` : '') + `</div>` +
+      (o.thumb ? `<span class="thumb">${img(o.thumb)}</span>` : '') +
+      (o.link ? `<a class="link" href="#" data-act>${o.link}</a>` : '') +
+      (o.inline ? `<button type="button" class="btn primary inline" data-act>${o.inline}</button>` : '') +
+      `<button class="x" type="button" aria-label="閉じる: ${plain(o.title || message)}">✕<svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" pathLength="1"/></svg></button>`;
+  }
+  const plain = (s) => s.replace(/<[^>]+>/g, ''); // 読み上げと名前には、数字の装飾などのタグを入れない
+  // o.persist は、対応が要る通知（接続切れ・競合）を手動で閉じるまで残す。
+  const holdFor = (variant, o = {}) => { const h = +document.getElementById('hold').value; return o.persist || variant === 'loading' || h <= 0 ? 0 : variant === 'error' ? h * 1.6 : h; };
+  const tFactor = () => +getComputedStyle(document.documentElement).getPropertyValue('--t') || 1;
+  function wire(item) {
+    item.layer.querySelector('.x').onclick = () => dismiss(item);
+    item.layer.querySelectorAll('[data-act]').forEach((a) => (a.onclick = (e) => { e.preventDefault(); dismiss(item); }));
+    // 「返信」は閉じずに、その場で入力欄へ広げる。
+    const cfg = (item.o.actions || []).find((a) => a.reply);
+    item.layer.querySelectorAll('[data-reply]').forEach((b) => (b.onclick = () => openReply(item, cfg.reply)));
+  }
+  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+  // 返信を入力する。ボタンを退かして入力欄に置き換え、形は spring で広がる。入力中は表示時間を止める（円も消す）。
+  //   Enter（IME の変換中は除く）で送信 / Shift+Enter で改行 / Esc で元の通知へ戻る。
+  function openReply(item, cfg) {
+    if (item.editing) return;
+    item.editing = true;
+    item.layer.classList.remove('timed');
+    const t = tFactor();
+    const inner = item.layer.firstElementChild;
+    const col = inner.querySelector('.col');
+    col.querySelector('.actions')?.remove();
+    const form = document.createElement('form'); form.className = 'reply';
+    form.innerHTML = `<textarea rows="1" aria-label="${esc(cfg.label)}" placeholder="${esc(cfg.placeholder)}"></textarea>` +
+      `<button class="send" type="submit" aria-label="送信" disabled><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14V4M4.5 8.5 9 4l4.5 4.5"/></svg></button>`;
+    col.append(form);
+    form.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260 * t, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', delay: 120 * t, fill: 'backwards' });
+    const ta = form.firstElementChild, send = form.lastElementChild;
+    const resize = () => { item.h = Math.max(52, inner.offsetHeight); set(item, { '--h': item.h + 'px', '--r': Math.min(28, item.h / 2) + 'px' }); layout(); };
+    resize();
+    ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 96) + 'px'; send.disabled = !ta.value.trim(); resize(); });
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); form.requestSubmit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeReply(item); }
+    });
+    form.addEventListener('submit', (e) => { e.preventDefault(); const v = ta.value.trim(); if (v) sendReply(item, v, cfg); });
+    requestAnimationFrame(() => ta.focus({ preventScroll: true }));
+    say('info', cfg.label + 'の入力欄を開きました。', {});
+  }
+  function closeReply(item) {
+    if (!item.editing) return;
+    item.editing = false;
+    softUpdate(item, item.variant, item.msg, item.o);
+    applyHold(item, item.variant, item.o);
+    item.layer.querySelector('[data-reply]')?.focus({ preventScroll: true });
+  }
+  function sendReply(item, text, cfg) {
+    item.editing = false;
+    update(item, 'loading', cfg.sending);
+    setTimeout(() => update(item, 'success', `「${esc(text.length > 40 ? text.slice(0, 40) + '…' : text)}」`, { title: '返信しました' }), 1400);
+  }
+  function say(variant, message, o) {
+    document.getElementById(variant === 'error' || variant === 'warning' ? 'alert' : 'status').textContent = PREFIX[variant] + ' ' + (o.title ? o.title + '。' : '') + plain(message);
+  }
+
+  function show(variant, message, o = {}) {
+    // 同じ id の通知が出ていたら、増やさずにそれを更新する（連打の保存、件数が増える一括操作など）。
+    if (o.id) { const ex = items.find((i) => i.key === o.id && !i.leaving); if (ex) { update(ex, variant, message, o); return ex; } }
+    const w = Math.min(380, innerWidth - 24);
+    const blob = document.createElement('div'); blob.className = 'blob';
+    const layer = document.createElement('div'); layer.className = 'layer';
+    layer.style.setProperty('--c', COLOR[variant]);
+    layer.innerHTML = `<div class="inner">${innerHtml(variant, message, o)}</div>`;
+    const item = { id: ++uid, key: o.id, blob, layer, w, h: 52, leaving: false, variant, kind: kindOf(variant, o), msg: message, o };
+    // 高さは本文の折り返しで決まるので、先に幅だけ与えて測る。
+    layer.style.setProperty('--w', w + 'px'); layer.style.visibility = 'hidden';
+    layersEl.append(layer); gooEl.append(blob);
+    item.h = Math.max(52, layer.firstElementChild.offsetHeight);
+    layer.style.visibility = '';
+    set(item, { '--w': w + 'px', '--h': item.h + 'px', '--r': Math.min(28, item.h / 2) + 'px', '--y': TOP + 'px' });
+    setTone(item, variant);
+    items.push(item);
+    wire(item);
+    say(variant, message, o);
+    if (!o.silent) sound(variant, SOUND_AT[variant] * tFactor() + 32);
+
+    // 上限を超えたら古いものから島へ戻す。
+    // 返信を入力中のものは、書きかけを失わないよう押し出さない。
+    const live = items.filter((i) => !i.leaving);
+    while (live.length > LIMIT) { const v = live.find((i) => !i.editing); if (!v) break; live.splice(live.indexOf(v), 1); dismiss(v); }
+
+    // 島の形で 1 フレーム描画してから広げる（transition を効かせる）。
+    requestAnimationFrame(() => requestAnimationFrame(() => { blob.classList.add('in'); layer.classList.add('in'); layer.querySelector('.icon').classList.add('go'); layout(); }));
+    // 表示時間（holdFor）。エラーは 1.6 倍、進行中と 0 は手動で閉じるまで残す。円が消え切ったら閉じる。
+    applyHold(item, variant, o);
+    layer.addEventListener('animationend', (e) => { if (e.animationName === 'ring') dismiss(item); });
+    return item;
+  }
+
+  // 同じ種類のまま中身だけ変わる更新（件数が増える・保存が続く）。入れ替えの演出は挟まず、変わった所だけ動かす。
+  //   数字: 古い数字が上へ抜け、新しい数字が下から入る ／ アイコン: 1 回だけ弾む ／ 円: 残り時間が満ちて戻り、数え直す ／ 形: 高さが変われば spring で追従
+  function softUpdate(item, variant, message, o) {
+    const t = tFactor();
+    const ease = 'cubic-bezier(0.23, 1, 0.32, 1)';
+    const inner = item.layer.firstElementChild;
+    const oldNum = inner.querySelector('.num');
+    const oldText = oldNum && oldNum.textContent;
+    const keepIcon = inner.querySelector('.icon'), keepX = inner.querySelector('.x');
+    inner.innerHTML = innerHtml(variant, message, o);
+    inner.replaceChild(keepIcon, inner.querySelector('.icon'));
+    inner.replaceChild(keepX, inner.querySelector('.x'));
+    keepX.setAttribute('aria-label', '閉じる: ' + plain(o.title || message));
+    item.msg = message; item.o = o;
+    wire(item);
+    const num = inner.querySelector('.num');
+    if (num && oldText != null && oldText !== num.textContent) {
+      const cur = num.firstElementChild;
+      const ghost = document.createElement('span');
+      ghost.textContent = oldText; ghost.setAttribute('aria-hidden', 'true'); ghost.style.cssText = 'position:absolute;left:0;top:0';
+      num.append(ghost);
+      ghost.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(-0.7em)', opacity: 0 }], { duration: 300 * t, easing: ease, fill: 'forwards' }).onfinish = () => ghost.remove();
+      cur.animate([{ transform: 'translateY(0.7em)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300 * t, easing: ease });
+    }
+    keepIcon.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 400 * t, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+    const c = keepX.querySelector('circle');
+    if (c && item.layer.classList.contains('timed')) {
+      const from = parseFloat(getComputedStyle(c).strokeDashoffset) || 0;
+      c.getAnimations().forEach((a) => { if (a.animationName === 'ring') a.currentTime = 0; });
+      c.animate([{ strokeDashoffset: from }, { strokeDashoffset: 0 }], { duration: 260 * t, easing: ease });
+    }
+    item.h = Math.max(52, inner.offsetHeight);
+    set(item, { '--h': item.h + 'px', '--r': Math.min(28, item.h / 2) + 'px' });
+    layout();
+    say(variant, message, o);
+  }
+
+  // 同じトーストの状態を切り替える（進行中 → 成功・エラーなど）。中身を引いて入れ替え、形は spring で追従する。
+  function update(item, variant, message, o = {}) {
+    if (item.leaving) return;
+    const nk = kindOf(variant, o);
+    if (item.variant === variant && item.kind === nk && nk !== 'loading' && nk !== 'progress') { softUpdate(item, variant, message, o); return; }
+    // 進捗の数字だけが変わるときは、中身を入れ替えず円だけ動かす。
+    if (nk === 'progress' && item.kind === 'progress' && message === item.msg) { item.layer.querySelector('.icon').style.setProperty('--p', o.progress); return; }
+    item.layer.classList.add('swap');
+    setTimeout(() => {
+      if (item.leaving) return;
+      const inner = item.layer.firstElementChild;
+      // 進行中のまま文言だけ変えるときは、スピナー（円）を入れ替えずに残す。
+      const keep = item.kind === nk && (nk === 'loading' || nk === 'progress') ? inner.querySelector('.icon') : null;
+      if (keep && nk === 'progress') keep.style.setProperty('--p', o.progress);
+      setTone(item, variant);
+      inner.innerHTML = innerHtml(variant, message, o);
+      if (keep) inner.replaceChild(keep, inner.querySelector('.icon'));
+      item.h = Math.max(52, inner.offsetHeight);
+      set(item, { '--h': item.h + 'px', '--r': Math.min(28, item.h / 2) + 'px' });
+      layout();
+      wire(item);
+      item.variant = variant; item.kind = nk; item.msg = message; item.o = o;
+      say(variant, message, o);
+      if (!o.silent) sound(variant, SOUND_AT[variant] * tFactor() + 32);
+      requestAnimationFrame(() => {
+        item.layer.classList.remove('swap');
+        if (!keep) inner.querySelector('.icon').classList.add('go');
+      });
+      applyHold(item, variant, o);
+    }, 110 * tFactor());
+  }
+
+  function dismiss(item) {
+    if (item.leaving) return;
+    item.leaving = true; clearTimeout(item.timer);
+    for (const el of [item.blob, item.layer]) { el.classList.add('leaving'); el.classList.remove('in'); }
+    layout();
+    const t = +getComputedStyle(document.documentElement).getPropertyValue('--t') || 1;
+    setTimeout(() => { item.blob.remove(); item.layer.remove(); items.splice(items.indexOf(item), 1); syncPaused(); }, 560 * t);
+  }
+
+  // ホバー中・フォーカス中は全部のトーストの表示時間を止める。消えたあとに領域の状態を見直す（Firefox は focusout が出ないことがある）。
+  // 時計は × の周りの円（.ring）の animation。ホバー/フォーカス中は animation-play-state で止まり、終わったら閉じる。
+  const applyHold = (item, variant, o = {}) => { const ms = holdFor(variant, o); item.layer.style.setProperty('--hold', ms + 'ms'); item.layer.classList.toggle('timed', ms > 0); };
+  const syncPaused = () => setTimeout(() => {
+    // ホバー/フォーカス中のトーストと、それより古い（端に近い）ものだけ止める。
+    // 古いものが消えると内側のトーストが端へ詰まって、操作中のボタンが動いてしまうため。新しいものは消えても位置が変わらないので、止めない。
+    const ls = [...layersEl.children];
+    const k = ls.findLastIndex((l) => l.matches(':hover') || l.matches(':focus-within'));
+    ls.forEach((l, i) => l.classList.toggle('paused', i <= k));
+  });
+  ['pointerover', 'pointerout', 'focusin', 'focusout'].forEach((t) => layersEl.addEventListener(t, syncPaused));
+
+  const demos = {
+    success: () => show('success', '保存しました。'),
+    error: () => show('error', '保存できませんでした。時間をおいて試してください。'),
+    info: () => show('info', 'メールの形式が変わります。'),
+    warning: () => show('warning', 'このタスクの期限が過ぎています。'),
+    allkinds: () => { show('success', '保存しました。'); setTimeout(() => show('info', 'メールの形式が変わります。'), 500); setTimeout(() => show('warning', '期限が過ぎています。'), 1000); setTimeout(() => show('error', '保存できませんでした。'), 1500); },
+    link: () => show('success', 'タスクを作成しました。', { link: 'タスクを開く' }),
+    burst: () => { show('success', '保存しました。'); setTimeout(() => show('info', 'メールの形式が変わります。'), 350); setTimeout(() => show('error', '同期に失敗しました。'), 700); },
+    long: () => show('info', 'このタスクは別のスプリントに移されました。担当者と期限はそのままで、元のスプリントの集計からは外れます。必要なら、タスクの詳細から元に戻せます。'),
+    title: () => show('success', 'ホームのタスク一覧に追加しました。', { title: 'タスクを作成しました' }),
+    undo: () => show('success', 'タスクを削除しました。', { inline: '元に戻す' }),
+    actions: () => show('error', '通信が不安定なため、変更をサーバーへ送れませんでした。もう一度試すか、あとで自動的に再送されるのを待てます。', { title: '保存できませんでした', actions: [{ label: '再試行', primary: true }, { label: '詳細' }] }),
+    mixed: () => { demos.undo(); setTimeout(demos.long, 450); setTimeout(demos.actions, 900); },
+    // 1 つのトーストで状態を切り替える
+    progressOk: () => { const t = show('loading', '保存しています…'); setTimeout(() => update(t, 'success', '保存しました。'), 2400); },
+    progressNg: () => { const t = show('loading', '保存しています…'); setTimeout(() => update(t, 'error', '保存できませんでした。', { inline: '再試行' }), 2400); },
+    steps: () => {
+      const t = show('loading', 'ファイルを送信しています…');
+      setTimeout(() => update(t, 'loading', '画像を変換しています…'), 2200);
+      setTimeout(() => update(t, 'loading', 'タスクに添付しています…'), 4400);
+      setTimeout(() => update(t, 'success', 'ファイルを添付しました。', { title: 'アップロード完了' }), 6600);
+    },
+  };
+  document.querySelectorAll('[data-kind]').forEach((b) => (b.onclick = () => demos[b.dataset.kind]()));
+
+  // ---- Koyori task で実際に出しそうな場面 ----
+  const wait = (fn, ms) => setTimeout(fn, ms);
+  let bulkN = 0;
+  // 画像の例（SVG で描いた見本。実際はアップロードした画像の URL が入る）。
+  const svg = (s) => 'data:image/svg+xml;utf8,' + encodeURIComponent(s);
+  const IMG = {
+    design: svg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#ff8bb0"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><rect x="48" y="48" width="544" height="264" rx="20" fill="#fff" opacity=".93"/><rect x="76" y="76" width="180" height="22" rx="11" fill="#7c5cff"/><rect x="76" y="116" width="360" height="14" rx="7" fill="#c9cbe0"/><rect x="76" y="140" width="300" height="14" rx="7" fill="#c9cbe0"/><rect x="76" y="190" width="150" height="96" rx="14" fill="#ffd3e2"/><rect x="246" y="190" width="150" height="96" rx="14" fill="#d7ccff"/><rect x="416" y="190" width="150" height="96" rx="14" fill="#cdeedd"/></svg>'),
+    shot: svg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><rect width="640" height="360" fill="#f2f4f8"/><rect width="640" height="40" fill="#fff"/><circle cx="24" cy="20" r="6" fill="#ff6b60"/><circle cx="44" cy="20" r="6" fill="#ffb340"/><circle cx="64" cy="20" r="6" fill="#34c759"/><rect y="40" width="150" height="320" fill="#e6e9f0"/><rect x="18" y="62" width="110" height="12" rx="6" fill="#b9c0cf"/><rect x="18" y="88" width="90" height="12" rx="6" fill="#cfd5e1"/><rect x="18" y="114" width="100" height="12" rx="6" fill="#cfd5e1"/><rect x="176" y="64" width="210" height="112" rx="14" fill="#fff"/><rect x="404" y="64" width="210" height="112" rx="14" fill="#fff"/><rect x="176" y="196" width="438" height="130" rx="14" fill="#fff"/><rect x="396" y="56" width="228" height="128" rx="18" fill="none" stroke="#ff4d4f" stroke-width="5" stroke-dasharray="14 8"/></svg>'),
+  };
+  const SCENES = [
+    ['タスクを作成（リンク）', () => show('success', 'TASK-458 をホームの一覧に追加しました。', { title: 'タスクを作成しました', link: '開く' })],
+    ['項目を保存（連打しても 1 つ）', () => show('success', '保存しました。', { id: 'save', silent: true })],
+    ['ステータスを移す（元に戻す）', () => show('success', 'TASK-312 を Reviewing に移しました。', { id: 'move', inline: '元に戻す' })],
+    ['タスクを削除（元に戻す）', () => show('info', 'TASK-209 を削除しました。', { inline: '元に戻す' })],
+    ['一括更新（件数が増える）', () => { bulkN = 0; const tick = () => { bulkN++; show('success', `<span class="num"><span>${bulkN}</span></span> 件のタスクを Done にしました。`, { id: 'bulk', inline: '元に戻す' }); if (bulkN < 4) wait(tick, 600); }; tick(); }],
+    ['担当にされた（アバター）', () => show('info', 'TASK-120「ログイン画面の文言を直す」', { prefix: '', avatar: { text: 'YU', color: '#6a5acd' }, title: 'yupix さんがあなたを担当にしました', link: '開く' })],
+    ['コメントが付いた（返信）', () => show('info', '「この指摘は次の PR で直します」', { prefix: '', avatar: { text: 'MK', color: '#1f8a78' }, title: 'mika さんがコメントしました', actions: [{ label: '返信', primary: true, reply: { label: 'mika さんへ返信', placeholder: '返信を入力…', sending: '返信を送信しています…' } }, { label: '開く' }] })],
+    ['ファイルを添付（進捗）', () => { const m = 'design-v2.png を送信しています…'; const t = show('loading', m, { progress: 0 }); [0.28, 0.6, 0.86].forEach((p, i) => wait(() => update(t, 'loading', m, { progress: p }), 1100 * (i + 1))); wait(() => update(t, 'success', 'design-v2.png を添付しました。'), 4600); }],
+    ['オフライン → 復帰', () => { const t = show('warning', '変更は接続したあとにまとめて送られます。', { title: 'オフラインです', persist: true }); wait(() => update(t, 'loading', '再接続しています…'), 3600); wait(() => update(t, 'success', '再接続しました。3 件の変更を送りました。'), 6200); }],
+    ['保存の競合（選ぶ）', () => show('warning', '自分の変更はまだ保存されていません。', { title: 'TASK-312 は別の人が先に更新しました', persist: true, actions: [{ label: '最新を読み込む', primary: true }, { label: '自分の変更を残す' }] })],
+    ['期限が近い', () => show('warning', '期限は明日（11/10）です。', { title: 'TASK-77 の期限が近づいています', link: '開く' })],
+    ['レビュー指摘が届いた', () => show('info', 'TASK-314 に新しい指摘が 2 件あります。', { link: '見る' })],
+    ['PR を結んだ', () => show('success', 'PR #965 を TASK-314 に結びました。マージで完了します。', { link: 'PR を開く' })],
+    ['画像を添付（サムネイル）', () => show('success', 'design-v2.png を添付しました。', { thumb: { src: IMG.design, alt: 'design-v2.png のプレビュー' } })],
+    ['画像つきコメント（大きなプレビュー）', () => show('info', '「ここの余白が気になります」', { prefix: '', avatar: { text: 'MK', color: '#1f8a78' }, title: 'mika さんが画像を送りました', preview: { src: IMG.shot, alt: 'mika さんが共有したスクリーンショット。右上のカードが赤い点線で囲まれている', ratio: '16 / 9' }, actions: [{ label: '開く', primary: true }] })],
+    ['画像を送信（サムネイルで進捗 → 完了）', () => { const th = { src: IMG.design, alt: 'design-v2.png のプレビュー' }; const m = 'design-v2.png を送信しています…'; const t = show('loading', m, { progress: 0, thumb: th }); [0.3, 0.62, 0.9].forEach((p, i) => wait(() => update(t, 'loading', m, { progress: p, thumb: th }), 1000 * (i + 1))); wait(() => update(t, 'success', 'design-v2.png を添付しました。', { thumb: th }), 4200); }],
+    ['権限がない（エラー）', () => show('error', 'この操作にはプロジェクトの編集権限が必要です。管理者に依頼してください。', { title: '権限がありません' })],
+  ];
+  // 音だけを聴き比べるボタン（トーストは出さない）。
+  [['success', '成功'], ['info', '情報'], ['warning', '警告'], ['error', 'エラー']].forEach(([v, label]) => {
+    const b = document.createElement('button'); b.textContent = '♪ ' + label; b.onclick = () => { ensureAudio(); SOUNDS[v](actx, master, actx.currentTime + 0.02); };
+    document.getElementById('snds').append(b);
+  });
+  SCENES.forEach(([label, fn]) => { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; document.getElementById('scenes').append(b); });
+  if (!q.has('quiet')) setTimeout(demos.success, 500);
+
+  // 開発用: ファイルが変わったら自動で読み込み直す（リアルタイムで見せるため）。
+  let last; setInterval(async () => { try { const s = await (await fetch(location.pathname, { cache: 'no-store' })).text(); if (last && s !== last) location.reload(); last = s; } catch {} }, 600);
+</script>
+</body>
+</html>
