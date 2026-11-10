@@ -18,7 +18,7 @@ const rail = ref(false);
     <div style="flex: 1; min-width: 0">
       <Button ariaLabel="メニュー" variant="ghost" :aria-expanded="open" aria-controls="vue-collapsible-sidebar"
         :on-click="() => open = !open"><template #icon><MenuIcon /></template></Button>
-      <p>端のつまみでアイコンだけの表示に、ハンバーガーで開閉できます。</p>
+      <p>ヘッダーのボタンでアイコンだけの表示に、ハンバーガーで開閉できます。</p>
     </div>
   </div>
 </template>

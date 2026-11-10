@@ -1,9 +1,9 @@
 @import '../tokens.css';
 
 @media (hover: hover) and (pointer: fine) {
-  .row:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+  .row:hover { background: var(--koyori-color-surface-hover); }
 }
-.row[data-selected='true'] { background: color-mix(in srgb, var(--koyori-color-selection) 35%, var(--koyori-color-surface)); }
+.row[data-selected='true'] { background: var(--koyori-color-selection); }
 .row:focus-within {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: calc(-1 * var(--koyori-focus-width));

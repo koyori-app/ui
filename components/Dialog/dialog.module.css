@@ -12,28 +12,42 @@
   /* 背景クリックの判定に使うため、余白は内側の panel が持つ。 */
   padding: 0;
   border: 1px solid var(--koyori-color-border);
-  /* 入れ子の角丸は、内側のボタンの角丸 + panel の余白。 */
-  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-xl));
-  background: var(--koyori-color-surface);
+  border-radius: var(--koyori-radius-lg);
+  background: var(--koyori-color-surface-raised);
   color: var(--koyori-color-text);
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
   line-height: var(--koyori-line-height-sm);
   box-shadow: var(--koyori-shadow-panel);
   transition: opacity var(--koyori-motion-base) var(--koyori-ease-out),
-    transform var(--koyori-motion-base) var(--koyori-ease-out);
+    transform var(--koyori-motion-spring) var(--koyori-ease-spring),
+    /* overlay と display を離散的に遷移させ、閉じるときも縮んで消える。非対応ブラウザーは即時に消える。 */
+    overlay var(--koyori-motion-base) allow-discrete,
+    display var(--koyori-motion-base) allow-discrete;
+}
+
+.root:not([open]) {
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+.root:not([open])::backdrop {
+  opacity: 0;
 }
 
 /* ::backdrop はトップレイヤーにあり、DOM の祖先からトークンを継承しないブラウザーがある。 */
 .root::backdrop {
-  background: var(--koyori-color-backdrop, #38344080);
-  transition: opacity var(--koyori-motion-base) var(--koyori-ease-out);
+  background: var(--koyori-color-backdrop, #000000b3);
+  backdrop-filter: blur(6px);
+  transition: opacity var(--koyori-motion-base) var(--koyori-ease-out),
+    overlay var(--koyori-motion-base) allow-discrete,
+    display var(--koyori-motion-base) allow-discrete;
 }
 
 @starting-style {
   .root[open] {
     opacity: 0;
-    transform: translateY(8px) scale(0.96);
+    transform: translateY(24px) scale(0.9);
   }
 
   .root[open]::backdrop {
@@ -50,7 +64,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--koyori-space-xl);
-  padding: var(--koyori-space-xl);
+  padding: calc(var(--koyori-space-xl) + var(--koyori-space-xs));
 }
 
 .header {

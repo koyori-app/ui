@@ -143,3 +143,15 @@
   .page[aria-current='page'] { outline: 2px solid Highlight; outline-offset: -2px; }
   .step[aria-disabled='true'], .page[aria-disabled='true'] { color: GrayText; }
 }
+
+/* 現在ページの面は、移った先で弾んで現れる。前へ・次へは押すと矢印が進む向きへ動く。 */
+@media (prefers-reduced-motion: no-preference) {
+  .page[aria-current='page'] { animation: page-pop 320ms var(--koyori-ease-pop); }
+  .previousIcon, .nextIcon { transition: translate var(--koyori-motion-spring) var(--koyori-ease-spring); }
+  .step:active:not([aria-disabled='true']) .previousIcon { translate: -3px 0; }
+  .step:active:not([aria-disabled='true']) .nextIcon { translate: 3px 0; }
+}
+
+@keyframes page-pop {
+  from { transform: scale(0.7); }
+}
