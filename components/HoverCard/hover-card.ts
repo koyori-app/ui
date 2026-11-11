@@ -41,10 +41,14 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
   let host: HTMLElement | null = null;
   let trigger: HTMLElement | null = null;
   let candidate: HTMLElement | null = null;
-  let dismissed: HTMLElement | null = null;
+  // Esc で閉じた・取り消した札。ポインターもフォーカスも離れるまで、開く予約を入れない。
+  const dismissed = new Set<HTMLElement>();
   // ポインターとフォーカスの所在は、どの起点かを要素で持つ。真偽値だと別の札のものと区別できない。
   let hovered: HTMLElement | null = null;
   let focused: HTMLElement | null = null;
+  // 開く予約の出どころがキーボードのフォーカスである札。ポインターの横切りで予約を押しのけられたときだけ入れ直す。
+  // 開いたとき・Esc・その札からフォーカスが出たときに消す。ホバー由来の予約は持たない。
+  let pendingFocus: HTMLElement | null = null;
   let pointerOnCard = false;
   // キーボードで入ったフォーカスがカードの中にある。マウスで押して得たフォーカスは数えない。
   let focusOnCard = false;
@@ -108,6 +112,7 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
     if (element === trigger || destroyed) return;
     if (trigger) close();
     cancelOpen();
+    pendingFocus = null;
     clearTimeout(closeTimer);
     trigger = element;
     addDetails(element);
@@ -146,9 +151,10 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
   const settle = (immediate = false) => {
     // 候補の札自身にポインターもフォーカスも無くなったら、開く予約を取り消す。
     if (candidate && !engaged(candidate)) cancelOpen();
-    if (dismissed && !engaged(dismissed)) dismissed = null;
-    // 横切った札の予約が 1 つしかない予約を押しのけていたら、フォーカスのある札の予約を入れ直す（遅れは openDelay のまま）。
-    if (!candidate && !trigger && focused && dismissed !== focused && !current.disabled) scheduleOpen(focused);
+    dismissed.forEach(element => { if (!engaged(element)) dismissed.delete(element); });
+    if (pendingFocus && (focused !== pendingFocus || dismissed.has(pendingFocus))) pendingFocus = null;
+    // フォーカス由来の予約が、横切った札の予約に押しのけられて消えたら入れ直す（遅れは openDelay のまま）。
+    if (!candidate && pendingFocus && pendingFocus !== trigger && !current.disabled) scheduleOpen(pendingFocus, true);
     if (!trigger) return;
     if (held()) {
       clearTimeout(closeTimer);
@@ -163,13 +169,16 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
       settle(true);
     }, current.closeDelay ?? CLOSE_DELAY_MS);
   };
-  const scheduleOpen = (element: HTMLElement) => {
+  const scheduleOpen = (element: HTMLElement, byFocus = false) => {
+    if (byFocus) pendingFocus = element;
     if (candidate === element && openTimer !== undefined) return;
     cancelOpen();
     candidate = element;
     openTimer = setTimeout(() => {
       const next = candidate;
       cancelOpen();
+      // フォーカス由来の予約はここで使い切る。開けなかったときに後から入れ直さない。
+      if (next && next === pendingFocus) pendingFocus = null;
       // 発火の時点でも、その札にポインターかフォーカスが残っていることを確かめる。
       // キーボードのフォーカスがカードの中にある間は、ホバーだけの札へ入れ替えない（フォーカスがカードごと body に落ちる）。
       if (next && engaged(next) && !(focusOnCard && focused !== next) && !current.disabled && resolve(next)) open(next);
@@ -181,7 +190,7 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
     const element = resolve(event.target);
     if (!element) return;
     hovered = element;
-    if (element !== trigger && dismissed !== element && !focusOnCard) scheduleOpen(element);
+    if (element !== trigger && !dismissed.has(element) && !focusOnCard) scheduleOpen(element);
     settle();
   };
   const pointerOut = (event: PointerEvent) => {
@@ -208,7 +217,7 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
     // タップやクリックで入ったフォーカスでは開かない。
     if ((event.target as Element).matches(':focus-visible')) {
       focused = element;
-      if (element !== trigger && dismissed !== element) scheduleOpen(element);
+      if (element !== trigger && !dismissed.has(element)) scheduleOpen(element, true);
     }
     settle();
   };
@@ -258,17 +267,25 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
   };
   const escape = (event: KeyboardEvent) => {
     if (event.key !== 'Escape' || event.isComposing || event.keyCode === 229) return;
+    // 開く予約も取り消し、その札はポインターとフォーカスが離れるまで抑止する。
+    const dismissWaiting = () => {
+      if (candidate) dismissed.add(candidate);
+      if (pendingFocus) dismissed.add(pendingFocus);
+      pendingFocus = null;
+      cancelOpen();
+    };
     if (card.hidden || !trigger) {
       // 開く待ちだけを取り消す。外の Dialog などには伝える。
-      if (candidate) dismissed = candidate;
-      cancelOpen();
+      dismissWaiting();
       return;
     }
     const origin = trigger;
     const active = document.activeElement;
     const focusHere = card.contains(active) || origin.contains(active);
     if (card.contains(active)) origin.focus({ preventScroll: true });
-    dismissed = origin;
+    dismissed.add(origin);
+    if (focused) dismissed.add(focused);
+    dismissWaiting();
     close();
     // フォーカスが起点かカードにあるときだけ、Esc をここで受け止める（外の Dialog やメニューは閉じない）。
     // ホバーで開いただけなら、カードだけ閉じて Esc は入力欄などへ通す。
@@ -330,8 +347,10 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
         if (candidate && !resolve(candidate)) cancelOpen();
         if (hovered && !resolve(hovered)) hovered = null;
         if (focused && !resolve(focused)) focused = null;
+        if (pendingFocus && pendingFocus !== focused) pendingFocus = null;
       }
       if (current.disabled) {
+        pendingFocus = null;
         cancelOpen();
         close();
       }
@@ -339,6 +358,7 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
     // アンマウント中に利用側の state を触らないよう、onOpenChange は呼ばない。何度呼んでもよい。
     destroy() {
       if (destroyed) return;
+      pendingFocus = null;
       cancelOpen();
       close(false);
       destroyed = true;

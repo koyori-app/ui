@@ -393,14 +393,77 @@ const crossing = async framework => {
     assert.match(await s.card.innerText(), /yupix/);
     await s.finish();
   }
-  // 起点にフォーカスがあってカードが開いている間に、別の札にポインターがとどまっても、フォーカスは body に落ちない。
+  // 起点にフォーカスがあって別の札にとどまると、札は入れ替わる。入れ替わってもフォーカスは起点に残る（抑止はカードの中にフォーカスがあるときだけ）。
   {
     const s = await prepare();
     await s.focusHanako();
     await s.hover(s.link('yupix'));
-    await s.tick(600);
+    await s.tick(400);
     await s.frame();
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix', 'resting on a mention swaps the card while focus is on another mention');
+    assert.match(await s.card.innerText(), /yupix/);
     assert.equal(await s.active(), 'A:@hanako', 'focus stays on the focused mention');
+    await s.finish();
+  }
+  // Esc は開く予約も取り消す。A を開いて B に移り、予約の途中で Esc を押すと、B は開かない（ポインターが B にいる間も、離れて戻るまで）。
+  {
+    const s = await prepare();
+    await s.hover(s.link('hanako'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true);
+    await s.hover(s.link('yupix'));
+    await s.tick(100);
+    await s.page.keyboard.press('Escape');
+    assert.equal(await s.shown(), false);
+    await s.tick(1000);
+    assert.equal(await s.shown(), false, 'Escape cancels the reservation of the mention the pointer moved to');
+    assert.equal(await s.log(), 'open:hanako close:hanako');
+    await s.away();
+    await s.hover(s.link('yupix'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true, 'the mention opens again once the pointer has left and returned');
+    await s.finish();
+  }
+  // Esc のあと、フォーカスのある札は開き直らない。ポインターを離しても、別の札を横切っても同じ。
+  {
+    const s = await prepare();
+    await s.focusHanako();
+    await s.hover(s.link('yupix'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix');
+    await s.page.keyboard.press('Escape');
+    assert.equal(await s.shown(), false);
+    await s.away();
+    await s.tick(1000);
+    assert.equal(await s.shown(), false, 'the focused mention does not open again after Escape once the pointer leaves');
+    await s.hover(s.link('yupix'));
+    await s.tick(100);
+    await s.away();
+    await s.tick(1000);
+    assert.equal(await s.shown(), false, 'crossing a mention after Escape does not open the focused mention');
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix close:yupix');
+    await s.finish();
+  }
+  // フォーカスのある札が入れ替わったあと、ポインターを離しても、あとで別の札を横切っても、フォーカスのある札は開き直らない。
+  {
+    const s = await prepare();
+    await s.focusHanako();
+    await s.hover(s.link('yupix'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix');
+    await s.away();
+    await s.tick(1000);
+    assert.equal(await s.shown(), false);
+    await s.hover(s.link('yupix'));
+    await s.tick(100);
+    await s.away();
+    await s.tick(1000);
+    assert.equal(await s.shown(), false, 'an unrelated crossing does not reopen the focused mention');
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix close:yupix');
     await s.finish();
   }
   // 札にフォーカスがあって開く予約が待つ間に、別の札を横切っても、その札は開く。
