@@ -169,6 +169,7 @@ Picker は単一・複数選択用です。`label` と `items: { value, label, d
 行の上下の余白を詰めて高さは 32px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
 `items` の `color`（CSS の色）でラベルの前に 8px の色の点、`description` でラベルの下に小さな補足を出します（Storybook の ColorDots・Descriptions）。
 どちらも装飾として読み上げから外し、選択肢の名前とトリガーの表示は `label` だけです。検索も `label` だけを対象にし、`avatars` があれば `color` は無視します。
+`items` の `icon` でラベルの前にアイコンを出せます（React は要素、Vue は `#item-icon="{ item }"` スロット。Storybook の ItemIcons）。
 トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。
 アバターなどを置いても、開閉・キーボード操作・読み上げ名（`label` と選択中のラベル）はそのままです。
 中身は `button` の内容として正しい要素にしてください（AvatarGroup のルートは `span` です）。

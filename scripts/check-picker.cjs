@@ -312,6 +312,47 @@ let browser;
       await settle();
       await runAxe();
 
+      // 項目ごとのアイコンは装飾。名前・検索・引き金の表示は label のまま、アイコンのない行は変えない。
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--item-icons&viewMode=story`);
+      const priorities = page.getByRole('listbox', { name: '優先度' });
+      await priorities.getByRole('option').first().waitFor();
+      await settle();
+      const flags = priorities.locator('svg[data-flag]');
+      assert.equal(await flags.count(), 4);
+      for (const flag of await flags.all()) assert.equal(await flag.evaluate(el => el.parentElement.getAttribute('aria-hidden')), 'true');
+      assert.equal(await flags.nth(0).evaluate(el => getComputedStyle(el).color), 'rgb(220, 38, 38)');
+      assert.equal(await flags.nth(1).evaluate(el => getComputedStyle(el).color), 'rgb(249, 115, 22)');
+      const urgent = priorities.getByRole('option', { name: '緊急', exact: true });
+      const unset = priorities.getByRole('option', { name: '未設定', exact: true });
+      assert((await urgent.locator('svg[data-flag]').boundingBox()).x < (await urgent.getByText('緊急', { exact: true }).boundingBox()).x, 'アイコンは label の前');
+      assert.equal(await unset.locator('svg[data-flag]').count(), 0);
+      assert.equal(await unset.locator(':scope > span').count(), 3, '選択背景・label・チェック印だけ');
+      assert.equal(await urgent.locator(':scope > span').count(), 4);
+      assert.equal((await urgent.boundingBox()).height, (await unset.boundingBox()).height);
+      assert.equal(await priorities.getByRole('option', { name: '緊急', exact: true }).count(), 1);
+      assert.equal(await priorities.getByRole('option', { name: '高', exact: true, selected: true }).count(), 1);
+      const prioritySearch = page.getByRole('searchbox', { name: '優先度を検索' });
+      const priorityTrigger = page.getByRole('button', { name: /^優先度/ });
+      assert.equal(await priorityTrigger.innerText(), '高');
+      await prioritySearch.fill('緊');
+      await settle();
+      assert.equal(await priorities.getByRole('option').count(), 1);
+      assert.equal(await priorities.locator('svg[data-flag]').count(), 1);
+      await prioritySearch.fill('');
+      await settle();
+      await prioritySearch.press('ArrowDown');
+      await priorities.press('Home');
+      await priorities.press('Enter');
+      await settle();
+      assert.equal(await priorityTrigger.innerText(), '緊急');
+      assert.equal(await priorityTrigger.getAttribute('aria-expanded'), 'false');
+      await priorityTrigger.click();
+      await priorities.getByRole('option').first().waitFor();
+      await settle();
+      await priorities.getByRole('option', { name: '中', exact: true }).hover();
+      assert.equal(await priorities.evaluate(el => el.style.getPropertyValue('--highlight-opacity')), '1');
+      await runAxe();
+
       await story('controlled-without-search');
       await trigger.click();
       await list.waitFor();
@@ -556,7 +597,7 @@ let browser;
 
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Picker with/without search, IME, selection/merging, keyboard, focus, sizing, placement, scrolling and accessibility passed`);
+      console.log(`${framework}: Picker with/without search, IME, selection/merging, item icons, keyboard, focus, sizing, placement, scrolling and accessibility passed`);
     }
   } finally {
     await browser?.close();
