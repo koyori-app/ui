@@ -28,20 +28,12 @@ export default function Mention(props: MentionProps) {
   });
 
   /* 固定 class の CSS（mention.css）で描く。role・aria-* は付けず、読み上げは見える字（label）だけにする。
-     アバターは装飾なので aria-hidden。画像の失敗時の切り替えは、HTML と同じ構造を保つため入れない。 */
+     アバターは装飾なので aria-hidden。画像の失敗時の切り替えは、HTML と同じ構造を保つため入れない。
+     根を 1 つにするため、a と span は v-if / v-else の連鎖にする（fragment だと Vue が class・data-* などの非 props 属性を落とす）。 */
   return (
-    <>
-      <Show when={props.href}>
-        <a class={state.className} href={props.href}>
-          <Show when={props.avatar}>
-            <span class="koyori-mention-avatar" data-initials={state.initials} aria-hidden="true">
-              <Show when={props.avatar?.src}><img src={props.avatar?.src ?? undefined} alt="" /></Show>
-            </span>
-          </Show>
-          <span class="koyori-mention-label">{props.label}</span>
-        </a>
-      </Show>
-      <Show when={!props.href}>
+    <Show
+      when={props.href}
+      else={
         <span class={state.className}>
           <Show when={props.avatar}>
             <span class="koyori-mention-avatar" data-initials={state.initials} aria-hidden="true">
@@ -50,7 +42,16 @@ export default function Mention(props: MentionProps) {
           </Show>
           <span class="koyori-mention-label">{props.label}</span>
         </span>
-      </Show>
-    </>
+      }
+    >
+      <a class={state.className} href={props.href}>
+        <Show when={props.avatar}>
+          <span class="koyori-mention-avatar" data-initials={state.initials} aria-hidden="true">
+            <Show when={props.avatar?.src}><img src={props.avatar?.src ?? undefined} alt="" /></Show>
+          </span>
+        </Show>
+        <span class="koyori-mention-label">{props.label}</span>
+      </a>
+    </Show>
   );
 }

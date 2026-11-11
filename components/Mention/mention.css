@@ -56,7 +56,7 @@
   justify-content: center;
   width: var(--koyori-mention-avatar-size);
   height: var(--koyori-mention-avatar-size);
-  /* 札の左端から 2px の所に置く。 */
+  /* 縁の内側の端から、space-xs の半分（既定で 2px）の所に置く。札の外端からは縁の 1px を足した 3px。 */
   margin-inline-start: calc(var(--koyori-space-xs) / 2 - var(--koyori-space-md));
   overflow: hidden;
   border-radius: 50%;
@@ -105,10 +105,13 @@ a.koyori-mention[href]:focus-visible {
 }
 
 @media (forced-colors: active) {
-  /* 強制配色では地の反転が消えるため、本人は強調の系統色で示す。 */
+  /* 強制配色では地の反転が消えるため、本人は強調の系統色で示す。
+     color・background を直に書かず変数を上書きする。a.koyori-mention[href] の color（0,2,1）は
+     この規則（0,2,0）より強いので、直に書くとリンクの札の字だけ on-accent の暗い色のまま Highlight の地に乗る。
+     ほかの状態は forced-color-adjust を切らず、ブラウザーの強制配色（Canvas・CanvasText・LinkText）に任せる。 */
   .koyori-mention-member.koyori-mention-self {
     forced-color-adjust: none;
-    background: Highlight;
-    color: HighlightText;
+    --koyori-mention-color: HighlightText;
+    --koyori-mention-background: Highlight;
   }
 }

@@ -24,6 +24,8 @@ Mention は `@名` を頭のアバター付きの丸い札で出します。い�
 | `avatar` | `{ name: string; src?: string \| null } \| null` | — | 渡すと頭にアバターを出す。`src` が無ければ `name` の頭文字。定型の句の札では省く |
 | `href` | `string` | — | 渡すと `a` 要素（リンク）にする |
 
+Vue では、渡した `class`・`data-*`・`title` などの属性が根の要素（`span` か `a`）に付きます。React の部品は上の props だけを描き、ほかの属性は描きません（ほかの部品と同じです）。
+
 頭文字は Avatar と同じ `avatarInitials` で決めます（「yupix」は「y」。大文字にはしません）。
 `src` の URL の安全性は利用側で確かめてください。画像が読み込めなかったときは、`alt=""` の壊れた画像は描かれず、下の頭文字が見えます。
 
@@ -87,7 +89,7 @@ avatarInitials('aki');              // 'a'
 - 札の要素に `role` や `aria-*` は付けません。読み上げは見える字（`label`）が名前になります。
 - アバターは装飾なので `aria-hidden="true"` です。頭文字は `data-initials` を CSS の `::before` で描くため、コピーした文にも読み上げにも混ざりません。画像の `alt` は空です。
 - 状態を色だけで伝えません。外れた者・退会した者・名の引けぬ者は破線の縁を付け、字と地の対比は明暗とも 4.5:1 以上です。
-- 本人は白黒を反転した面で示します。強制配色（`forced-colors: active`）では地の反転が消えるため、`Highlight` / `HighlightText` で示します。
+- 本人は白黒を反転した面で示します。強制配色（`forced-colors: active`）では地の反転が消えるため、`--koyori-mention-color` / `--koyori-mention-background` を `HighlightText` / `Highlight` にして示します。リンクの札も同じ色になります。ほかの状態はブラウザーの強制配色（`Canvas` / `CanvasText` / `LinkText`）に任せます。
 - リンクの札はキーボードで操作でき、フォーカス時に 2px の輪、ホバー時（マウスなど）に下線が出ます。
 - 札の高さは 24px 未満です。文中のリンクは WCAG 2.5.8（ターゲットのサイズ）の例外に当たります。
 - 状態は読み上げに含めません。字が状態を伝えるのは、退会した者・名の引けぬ者の定型の句だけです。外れた者であることを伝えたい場合は、文の中で補ってください（例: 「@hanako（このプロジェクトのメンバーではありません）」）。
@@ -106,5 +108,5 @@ pnpm generate && pnpm --filter './packages/*' build
 node scripts/check-mention.cjs
 ```
 
-ブラウザーを使わずに、状態ごとの対比（明暗とも）、地が不透明なトークンであること、部品のサーバー描画が固定 class の HTML と一致することを確かめます。
-`pnpm build-storybook` のあとに Playwright を使える場合（`PLAYWRIGHT_MODULE`）は、部品と HTML の算出スタイルの一致、行の高さ、キーボード操作、強制配色、axe も確かめます。
+ブラウザーを使わずに、状態ごとの対比（明暗とも）、地が不透明なトークンであること、塗る宣言（色・地・縁・不透明度・`filter` など）が `--koyori-mention-*` の変数を通っていて、ほかの規則が塗る宣言を持たないこと、読めない値（`opacity: calc(0.1)` など）を明示的に失敗にすること、部品のサーバー描画が固定 class の HTML と一致し、Vue で渡した属性が根の要素に付くことを確かめます。
+`pnpm build-storybook` のあとに Playwright を使える場合（`PLAYWRIGHT_MODULE`）は、部品と HTML の算出スタイルの一致、行の高さ、キーボード操作、強制配色（リンクの札を含む）、リンクの札の算出色の対比、axe も確かめます。
