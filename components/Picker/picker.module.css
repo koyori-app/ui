@@ -73,6 +73,14 @@
   border-radius: 50%;
 }
 
+/* 項目ごとのアイコン。名前は label が伝えるため装飾として扱う。選択背景・ホバー背景より前に出す。 */
+.optionIcon {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
 /* label の下の補足。行は中身に合わせて伸び、36px の最小は .item が保つ。
    比率の line-height は 1/64px 単位で端数になり、隣接選択の背景に継ぎ目の線が出るため rem で整数にする。 */
 .description {

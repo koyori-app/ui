@@ -9,6 +9,7 @@ interface Item {
   src?: string;
   color?: string;
   description?: string;
+  icon?: any;
 }
 
 export interface PickerOption extends Item {
