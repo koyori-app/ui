@@ -76,27 +76,36 @@ function parseCss(css, media) {
       if (!prelude.startsWith('@media ')) fail(`想定外の at 規則（${prelude}）。検査が読めない`);
       else result.push(...parseCss(body, [media, prelude.slice(7).trim()].filter(Boolean).join(' and ')));
     } else {
+      const entries = body.split(';').map((declaration) => declaration.trim()).filter(Boolean).map((declaration) => {
+        const colon = declaration.indexOf(':');
+        return [declaration.slice(0, colon).trim(), declaration.slice(colon + 1).trim().replace(/\s+/g, ' ')];
+      });
+      // 同じ性質を 2 回書くと、下でまとめるときに前の宣言が消え、その !important などを見落とす。
+      const seen = new Set();
+      for (const [property] of entries) {
+        if (seen.has(property)) fail(`${media ? `@media ${media} ` : ''}${prelude}: ${property} を 2 回宣言している。1 回にまとめる`);
+        seen.add(property);
+      }
       result.push({
         media,
         selectors: prelude.split(',').map((selector) => selector.trim().replace(/\s+/g, ' ')),
-        declarations: Object.fromEntries(body.split(';').map((declaration) => declaration.trim()).filter(Boolean).map((declaration) => {
-          const colon = declaration.indexOf(':');
-          return [declaration.slice(0, colon).trim(), declaration.slice(colon + 1).trim().replace(/\s+/g, ' ')];
-        })),
+        declarations: Object.fromEntries(entries),
       });
     }
     index = cursor;
   }
   return result;
 }
+// CSS のエスケープ（`!\69mportant` など）は下の字面の判定をすり抜けるので、mention.css にはバックスラッシュを書かせない。
+if (mentionCss.includes('\\')) fail('mention.css に \\ がある。エスケープは検査が読めないので使わない');
 const rules = parseCss(mentionCss, null);
+const ruleName = (rule) => `${rule.media ? `@media ${rule.media} ` : ''}${rule.selectors.join(', ')}`;
 // !important は詳細度と宣言の順で勝ち負けを決める下の計算を覆す（負けるはずの宣言が描画では勝つ）ので、変数・普通の性質とも使わせない。
 for (const rule of rules) {
   for (const [property, value] of Object.entries(rule.declarations)) {
-    if (/!\s*important/i.test(value)) fail(`${rule.media ? `@media ${rule.media} ` : ''}${rule.selectors.join(', ')}: ${property} に !important がある。勝ち負けの計算が描画と食い違う`);
+    if (/!\s*important/i.test(value)) fail(`${ruleName(rule)}: ${property} に !important がある。勝ち負けの計算が描画と食い違う`);
   }
 }
-const ruleName = (rule) => `${rule.media ? `@media ${rule.media} ` : ''}${rule.selectors.join(', ')}`;
 
 const FORCED = '(forced-colors: active)';
 const knownMedia = [null, '(hover: hover) and (pointer: fine)', FORCED];
