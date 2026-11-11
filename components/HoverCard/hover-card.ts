@@ -283,8 +283,8 @@ export function connectHoverCard(root: HTMLElement | null, panel: HTMLElement | 
     const active = document.activeElement;
     const focusHere = card.contains(active) || origin.contains(active);
     if (card.contains(active)) origin.focus({ preventScroll: true });
-    dismissed.add(origin);
-    if (focused) dismissed.add(focused);
+    // 閉じた札は、ポインターかフォーカスがそこ（起点かカード）にあるときだけ抑止する。札の外へ出たあとの閉じる待ちの間に押した Esc では抑止しない。
+    if (focusHere || pointerOnCard || engaged(origin)) dismissed.add(origin);
     dismissWaiting();
     close();
     // フォーカスが起点かカードにあるときだけ、Esc をここで受け止める（外の Dialog やメニューは閉じない）。

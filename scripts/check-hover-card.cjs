@@ -445,6 +445,29 @@ const crossing = async framework => {
     await s.tick(1000);
     assert.equal(await s.shown(), false, 'crossing a mention after Escape does not open the focused mention');
     assert.equal(await s.log(), 'open:hanako close:hanako open:yupix close:yupix');
+    // Esc で閉じたのは yupix のカード。フォーカスのある hanako は抑止しないので、ポインターを載せれば開く。
+    await s.hover(s.link('hanako'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true, 'hovering the focused mention opens it after Escape closed another card');
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix close:yupix open:hanako');
+    await s.finish();
+  }
+  // ホバーで開いて札の外へ出たあと、閉じる待ちの間に Esc を押しても、離れていた札は抑止しない（戻れば開く）。
+  {
+    const s = await prepare();
+    await s.hover(s.link('hanako'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true);
+    await s.away();
+    await s.tick(50);
+    await s.page.keyboard.press('Escape');
+    assert.equal(await s.shown(), false);
+    await s.hover(s.link('hanako'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true, 'a mention the pointer had left is not suppressed by Escape');
     await s.finish();
   }
   // フォーカスのある札が入れ替わったあと、ポインターを離しても、あとで別の札を横切っても、フォーカスのある札は開き直らない。
