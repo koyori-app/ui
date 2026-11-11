@@ -114,10 +114,10 @@ for (const rule of rules) {
 }
 
 // (a) 塗る宣言は、変数に結び付けて固定で確かめる。変数の値（トークン）は下で明暗とも計算する。
+const DECORATION = 'var(--koyori-mention-decoration-line) var(--koyori-mention-decoration-style) var(--koyori-mention-decoration-color)';
 const bindings = [
-  ['.koyori-mention', { color: 'var(--koyori-mention-color)', background: 'var(--koyori-mention-background)', border: '1px var(--koyori-mention-border-style) var(--koyori-mention-border-color)' }],
-  ['.koyori-mention-avatar', { color: 'var(--koyori-mention-avatar-color)', background: 'var(--koyori-mention-avatar-background)' }],
-  ['a.koyori-mention[href]', { color: 'var(--koyori-mention-color)' }],
+  ['.koyori-mention', { color: 'var(--koyori-mention-color)', background: 'var(--koyori-mention-background)', 'text-decoration': DECORATION }],
+  ['a.koyori-mention[href]', { color: 'var(--koyori-mention-color)', 'text-decoration': DECORATION }],
 ];
 for (const [selector, expected] of bindings) {
   const found = rules.filter((rule) => rule.media === null && rule.selectors.length === 1 && rule.selectors[0] === selector);
@@ -129,24 +129,16 @@ for (const [selector, expected] of bindings) {
 }
 
 // (b) 許可リスト。ここに無い性質を書いた規則は失敗にする（拒否リストでは box-shadow・mask・text-shadow などの塗る性質を取りこぼす）。
-//   LAYOUT: 塗らない性質（配置・大きさ・余白・角丸・字形・outline の位置）。どの規則に書いてもよい。
-//   perRule: 規則ごとに許す、塗る・見た目を変える性質。null は別の所で値を確かめる（上の (a)・下の不透明度と filter）。文字列はその値だけを許す。
-const LAYOUT = new Set([
-  'display', 'position', 'inset', 'flex', 'align-items', 'justify-content', 'gap', 'box-sizing', 'overflow', 'object-fit',
-  'width', 'height', 'margin-block', 'margin-inline-start', 'padding', 'border-radius',
-  'font-weight', 'font-size', 'line-height', 'vertical-align', 'white-space', 'text-underline-offset',
-]);
-const avatarGrayRule = ['outside', 'gone', 'unknown'].map((status) => `.koyori-mention-${status} .koyori-mention-avatar`).join(', ');
+//   LAYOUT: 塗らない性質（余白・角丸・字形・折り返し・下線の位置）。どの規則に書いてもよい。display は含めない（下の perRule で inline だけを許す）。
+//   perRule: 規則ごとに許す、塗る・見た目を変える性質。null は別の所で値を確かめる（上の (a)）。文字列はその値だけを許す。
+const LAYOUT = new Set(['padding', 'border-radius', 'font-weight', 'white-space', 'text-underline-offset']);
 const FORCED_SELF = '.koyori-mention-member.koyori-mention-self';
 const perRule = new Map([
-  ['.koyori-mention', { color: null, background: null, border: null }],
-  ['.koyori-mention-avatar', { color: null, background: null }],
-  // 頭文字は data-initials を描く。ほかの文字列を足さない。
-  ['.koyori-mention-avatar::before', { content: 'attr(data-initials)' }],
-  // 外れた者・退会した者・名の引けぬ者のアバターは、灰色にして薄くする。値は下で計算する。
-  [avatarGrayRule, { opacity: null, filter: null }],
-  ['a.koyori-mention[href]', { color: null, 'text-decoration': 'none', cursor: 'pointer', '-webkit-tap-highlight-color': 'transparent' }],
-  [`@media (hover: hover) and (pointer: fine) a.koyori-mention[href]:hover`, { 'text-decoration': 'underline' }],
+  // display: none や inline-block で行の高さが変わらないよう、inline だけを許す。
+  ['.koyori-mention', { display: 'inline', color: null, background: null, 'text-decoration': null }],
+  ['a.koyori-mention[href]', { color: null, 'text-decoration': null, cursor: 'pointer', '-webkit-tap-highlight-color': 'transparent' }],
+  // ホバーで線の種類・色・太さを変えさせない（灰色のリンクは破線のまま）。
+  [`@media (hover: hover) and (pointer: fine) a.koyori-mention[href]:hover`, { 'text-decoration-line': 'underline' }],
   // 輪の位置は固定する。負の値にすると輪が札の内側（札の地の上）に入り、本人の札では地と同じ色になって見えなくなる。
   ['a.koyori-mention[href]:focus-visible', { outline: 'var(--koyori-focus-width) solid var(--koyori-focus-color)', 'outline-offset': 'var(--koyori-focus-offset)' }],
   [`@media ${FORCED} ${FORCED_SELF}`, { 'forced-color-adjust': 'none' }],
@@ -174,7 +166,7 @@ const elementClasses = {
   unknown: ['koyori-mention', 'koyori-mention-unknown'],
 };
 const statuses = Object.keys(elementClasses);
-const MENTION_CUSTOMS = ['color', 'background', 'border-color', 'border-style', 'avatar-size', 'avatar-color', 'avatar-background'].map((name) => `--koyori-mention-${name}`);
+const MENTION_CUSTOMS = ['color', 'background', 'decoration-line', 'decoration-style', 'decoration-color'].map((name) => `--koyori-mention-${name}`);
 // 強制配色の本人が使う固定値（d）。輪の色は、本人が forced-color-adjust: none で系統色に替わらないので自分で決める。
 const FORCED_CUSTOMS = { '--koyori-mention-color': 'HighlightText', '--koyori-mention-background': 'Highlight', '--koyori-focus-color': 'CanvasText' };
 // class だけのセレクターで、どれかの状態の札の class の部分集合になるものだけを返す（そうでなければ null）。
@@ -184,7 +176,7 @@ const stateClasses = (selector) => {
   return statuses.some((status) => classes.every((name) => elementClasses[status].includes(name))) ? classes : null;
 };
 // 変数（--）の宣言は、状態の札の class だけのセレクター（@media の外）で、--koyori-mention-* に限る。
-// avatar など札でない要素のセレクターや、--koyori-color-* などのトークンの再定義は、描画に効くのに状態の計算に入らないので失敗にする。
+// 札でない要素のセレクターや、--koyori-color-* などのトークンの再定義は、描画に効くのに状態の計算に入らないので失敗にする。
 // 例外は強制配色の本人（d）だけ。
 for (const rule of rules) {
   const names = Object.keys(rule.declarations).filter((name) => name.startsWith('--'));
@@ -240,104 +232,94 @@ const finite = (label, value) => {
   fail(`${label}: 値が数にならない（${value}）`);
   return false;
 };
-// 不透明度は 0〜1 の素の数だけを読む。calc() など、読めない式は明示的に失敗にする。
-const avatarGrayDeclarations = (status) => rules.filter((rule) => rule.media === null && rule.selectors.includes(`.koyori-mention-${status} .koyori-mention-avatar`)).map((rule) => rule.declarations);
-const avatarOpacity = (status, label) => {
-  let opacity = 1;
-  for (const declarations of avatarGrayDeclarations(status)) {
-    if (declarations.opacity === undefined) continue;
-    if (!/^(?:[01]|0?\.\d+|[01]\.\d+)$/.test(declarations.opacity)) { fail(`${label}: opacity（${declarations.opacity}）を読めない。0〜1 の数だけを書く`); return undefined; }
-    opacity = Number(declarations.opacity);
-    if (!(opacity >= 0 && opacity <= 1)) { fail(`${label}: opacity（${declarations.opacity}）が 0〜1 でない`); return undefined; }
-  }
-  return opacity;
-};
-const avatarFilter = (status) => avatarGrayDeclarations(status).map((declarations) => declarations.filter).filter((value) => value !== undefined).at(-1);
-
 const tokenName = (value) => /^var\(--koyori-color-([a-z-]+)\)$/.exec(value ?? '')?.[1];
-const grayscale = ([red, green, blue]) => {
-  const gray = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-  return [gray, gray, gray];
-};
 const over = (foreground, alpha, background) => foreground.map((channel, index) => alpha * channel + (1 - alpha) * background[index]);
 const fixed = (value) => value.toFixed(2);
 
+const GRAY = ['outside', 'gone', 'unknown'];
+// 説明の地（surface）とカードの地（surface-raised）。地なしの状態は、この両方の上で測る。
+const BACKDROPS = ['surface', 'surface-raised'];
+
 const table = [];
 for (const [themeName, tokens] of themes) {
-  const resolveToken = (status, property, allowTransparent = false) => {
+  const hexOf = (status, label, name) => {
+    const color = tokens[name];
+    if (!/^#[0-9a-f]{6}$/.test(color ?? '')) {
+      fail(`${status}（${themeName}）: ${label} の --koyori-color-${name} は不透明な 6 桁の hex でない（${color ?? '未定義'}）`);
+      return undefined;
+    }
+    return color;
+  };
+  const resolveToken = (status, property) => {
     const value = declared[status][property];
-    if (allowTransparent && value === 'transparent') return null;
     const name = tokenName(value);
     if (!name) {
       fail(`${status}（${themeName}）: ${property} は var(--koyori-color-…) だけを許す（${value ?? '宣言なし'}）。地は不透明なトークンにする`);
       return undefined;
     }
-    const color = tokens[name];
-    if (!/^#[0-9a-f]{6}$/.test(color ?? '')) {
-      fail(`${status}（${themeName}）: ${property} の --koyori-color-${name} は不透明な 6 桁の hex でない（${color ?? '未定義'}）`);
-      return undefined;
-    }
-    return color;
+    return hexOf(status, property, name);
   };
+  const backdropColors = BACKDROPS.map((name) => [name, hexOf('地', name, name)]);
   for (const status of statuses) {
+    const gray = GRAY.includes(status);
     const color = resolveToken(status, '--koyori-mention-color');
-    const background = resolveToken(status, '--koyori-mention-background');
-    const avatarColor = resolveToken(status, '--koyori-mention-avatar-color');
-    const avatarBackground = resolveToken(status, '--koyori-mention-avatar-background');
-    const borderStyle = declared[status]['--koyori-mention-border-style'];
-    const borderColor = resolveToken(status, '--koyori-mention-border-color', true);
-    const row = { theme: themeName, status };
-    table.push(row);
-    if (!color || !background) continue;
-    row.text = contrast(color, background);
-    if (finite(`${status}（${themeName}）: 字と地の対比`, row.text) && !(row.text >= 4.5)) fail(`${status}（${themeName}）: 字と地 ${fixed(row.text)}:1 < 4.5`);
-
-    if (status === 'self') {
-      const memberBackground = resolveToken('member', '--koyori-mention-background');
-      if (memberBackground && memberBackground === background) fail(`self（${themeName}）: 地が member と同じ（反転で分かれない）`);
-    }
-
-    if (status === 'member' || status === 'self') {
-      if (borderStyle !== 'solid') fail(`${status}（${themeName}）: border-style が solid でない（${borderStyle}）`);
-    } else {
-      if (borderStyle !== 'dashed') fail(`${status}（${themeName}）: border-style が dashed でない（${borderStyle}）。色の薄さだけで分けない`);
-      if (borderColor) {
-        row.border = contrast(borderColor, background);
-        if (finite(`${status}（${themeName}）: 縁と地の対比`, row.border) && !(row.border >= 3)) fail(`${status}（${themeName}）: 縁と地 ${fixed(row.border)}:1 < 3`);
-      } else fail(`${status}（${themeName}）: 縁の色が透明（破線が見えない）`);
-    }
-
-    if (avatarColor && avatarBackground) {
-      const opacity = avatarOpacity(status, `${status}（${themeName}）`);
-      const filter = avatarFilter(status);
-      if (filter !== undefined && filter !== 'grayscale(1)') fail(`${status}（${themeName}）: 想定外の filter（${filter}）。検査が計算できない`);
-      if (opacity === undefined) continue;
-      const backdrop = hexToRgb(background);
-      let foregroundRgb = over(hexToRgb(avatarColor), opacity, backdrop);
-      let avatarBackgroundRgb = over(hexToRgb(avatarBackground), opacity, backdrop);
-      // filter は要素ごと（不透明度の前）にかかる。灰色化したあとで札の地に重ねる。
-      if (filter === 'grayscale(1)') {
-        foregroundRgb = over(grayscale(hexToRgb(avatarColor)), opacity, backdrop);
-        avatarBackgroundRgb = over(grayscale(hexToRgb(avatarBackground)), opacity, backdrop);
+    const line = declared[status]['--koyori-mention-decoration-line'];
+    const style = declared[status]['--koyori-mention-decoration-style'];
+    const decorationValue = declared[status]['--koyori-mention-decoration-color'];
+    if (gray) {
+      const background = declared[status]['--koyori-mention-background'];
+      if (background !== 'transparent') fail(`${status}（${themeName}）: 地なしの状態に地がある（${background ?? '宣言なし'}）。外れた者・退会した者・名の引けぬ者は地を敷かない`);
+      if (line !== 'underline') fail(`${status}（${themeName}）: decoration-line が underline でない（${line}）。色の薄さだけで分けない`);
+      if (style !== 'dashed') fail(`${status}（${themeName}）: decoration-style が dashed でない（${style}）。色の薄さだけで分けない`);
+      const decoration = tokenName(decorationValue) ? resolveToken(status, '--koyori-mention-decoration-color') : undefined;
+      if (!tokenName(decorationValue)) fail(`${status}（${themeName}）: --koyori-mention-decoration-color は var(--koyori-color-…) だけを許す（${decorationValue ?? '宣言なし'}）`);
+      for (const [backdropName, backdrop] of backdropColors) {
+        const row = { theme: themeName, status, backdrop: backdropName };
+        table.push(row);
+        if (!backdrop) continue;
+        if (color) {
+          row.text = contrast(color, backdrop);
+          if (finite(`${status}（${themeName}・${backdropName}）: 字と地の対比`, row.text) && !(row.text >= 4.5)) fail(`${status}（${themeName}・${backdropName}）: 字と地 ${fixed(row.text)}:1 < 4.5`);
+        }
+        if (decoration) {
+          row.line = contrast(decoration, backdrop);
+          if (finite(`${status}（${themeName}・${backdropName}）: 下線と地の対比`, row.line) && !(row.line >= 3)) fail(`${status}（${themeName}・${backdropName}）: 下線と地 ${fixed(row.line)}:1 < 3`);
+        }
       }
-      row.avatar = contrastRgb(foregroundRgb, avatarBackgroundRgb);
-      if (finite(`${status}（${themeName}）: アバターの対比`, row.avatar) && !(row.avatar >= 4.5)) fail(`${status}（${themeName}）: アバターの頭文字と地 ${fixed(row.avatar)}:1 < 4.5`);
+    } else {
+      const background = resolveToken(status, '--koyori-mention-background');
+      const row = { theme: themeName, status, backgroundName: tokenName(declared[status]['--koyori-mention-background']) };
+      table.push(row);
+      if (line !== 'none') fail(`${status}（${themeName}）: decoration-line が none でない（${line}）`);
+      if (style !== 'solid') fail(`${status}（${themeName}）: decoration-style が solid でない（${style}）`);
+      if (decorationValue !== 'currentcolor') fail(`${status}（${themeName}）: decoration-color が currentcolor でない（${decorationValue}）`);
+      if (color && background) {
+        row.text = contrast(color, background);
+        if (finite(`${status}（${themeName}）: 字と地の対比`, row.text) && !(row.text >= 4.5)) fail(`${status}（${themeName}）: 字と地 ${fixed(row.text)}:1 < 4.5`);
+      }
     }
   }
+  // self は member と地も字の色も違う（輝度だけでは分かれないので、色相と太さで分ける）。
+  const memberBackground = resolveToken('member', '--koyori-mention-background');
+  const selfBackground = resolveToken('self', '--koyori-mention-background');
+  if (memberBackground && selfBackground && memberBackground === selfBackground) fail(`self（${themeName}）: 地が member と同じ（本人が member と分かれない）`);
+  const memberColor = resolveToken('member', '--koyori-mention-color');
+  const selfColor = resolveToken('self', '--koyori-mention-color');
+  if (memberColor && selfColor && memberColor === selfColor) fail(`self（${themeName}）: 字の色が member と同じ（本人が member と分かれない）`);
 }
 
-console.log('| 面 | 状態 | 字 / 地 | 縁 / 地 | アバターの頭文字 / 地 |');
+console.log('| 面 | 状態 | 地 | 字 / 地 | 下線 / 地 |');
 console.log('| --- | --- | --- | --- | --- |');
 for (const row of table) {
   const cell = (value) => (value === undefined ? '—' : fixed(value));
-  console.log(`| ${row.theme} | ${row.status} | ${cell(row.text)} | ${cell(row.border)} | ${cell(row.avatar)} |`);
+  console.log(`| ${row.theme} | ${row.status} | ${row.backdrop ?? row.backgroundName ?? '—'} | ${cell(row.text)} | ${cell(row.line)} |`);
 }
 
 if (failures.length > 0) {
   console.error(`\n${failures.length} 件の失敗:\n${failures.map((message) => `- ${message}`).join('\n')}`);
   process.exit(1);
 }
-console.log('A: 明暗 2 面 × 5 状態の対比（字・縁・アバター）と、地が不透明なトークンであることを確認しました。');
+console.log('A: 明暗 2 面 × 5 状態の対比（字・下線。地なしの状態は surface と surface-raised の両方）と、地が不透明なトークンか地なしであることを確認しました。');
 
 // ---------- B. 配布物（dist） ----------
 
@@ -352,13 +334,18 @@ for (const framework of ['vue', 'react']) {
     [/\.koyori-mention-outside[,{]/, 'outside'],
     [/\.koyori-mention-gone[,{]/, 'gone'],
     [/\.koyori-mention-unknown[,{]/, 'unknown'],
-    [/\.koyori-mention-avatar\{/, 'アバター'],
-    [/a\.koyori-mention\[href\]/, 'リンクの札'],
+    [/a\.koyori-mention\[href\]\{/, 'リンクの札'],
+    [/a\.koyori-mention\[href\]:hover\{/, 'ホバー'],
   ]) assert.match(css, pattern, `${framework}: dist/style.css に ${label} の規則がある`);
+  assert.doesNotMatch(css, /koyori-mention-avatar/, `${framework}: dist/style.css に消した koyori-mention-avatar の規則が残っていない`);
+  // メンション用のトークン 4 つが明暗の 2 回ずつ。--koyori-color-mention: は -mention-subtle: に当たらないよう、直後のコロンまで含めて数える。
+  for (const token of ['--koyori-color-mention:', '--koyori-color-mention-subtle:', '--koyori-color-mention-self:', '--koyori-color-mention-self-subtle:']) {
+    assert.equal(css.split(token).length - 1, 2, `${framework}: dist/style.css に ${token} が明暗の 2 回ある`);
+  }
   assert.equal((css.match(/--koyori-font-family:/g) || []).length, 1, `${framework}: トークンは配布 CSS に 1 回だけ`);
   assert.match(read(indexPath), /^import '\.\/generated\/components\/Mention\/mention\.css';/m, `${framework}: 公開エントリーが mention.css を読み込む`);
 }
-console.log('B: 両方の dist/style.css に固定 class の規則があり、トークンの重複がなく、index.ts が mention.css を読み込むことを確認しました。');
+console.log('B: 両方の dist/style.css に固定 class の規則とメンション用のトークン（明暗）があり、アバターの規則が残らず、トークンの重複がなく、index.ts が mention.css を読み込むことを確認しました。');
 
 // ---------- C. サーバー描画（部品の出力 = 固定 class の HTML） ----------
 
@@ -371,30 +358,27 @@ function normalize(html) {
   });
 }
 
-// 期待する HTML は 2.6 の形を文字列で書く（mentionClassNames・avatarInitials は使わない）。
-const expectedHtml = ({ classes, tag = 'span', href, avatar, label }) => {
-  const avatarHtml = avatar ? `<span class="koyori-mention-avatar" data-initials="${avatar.initials}" aria-hidden="true">${avatar.src ? `<img src="${avatar.src}" alt="">` : ''}</span>` : '';
-  return `<${tag} class="${classes}"${href ? ` href="${href}"` : ''}>${avatarHtml}<span class="koyori-mention-label">${label}</span></${tag}>`;
-};
+// 期待する HTML は文字列で書く（mentionClassNames は使わない）。
+const expectedHtml = ({ classes, tag = 'span', href, label }) => `<${tag} class="${classes}"${href ? ` href="${href}"` : ''}><span class="koyori-mention-label">${label}</span></${tag}>`;
 const cases = [
-  ['member + 頭文字', { label: '@aki', avatar: { name: 'aki' } },
-    { classes: 'koyori-mention koyori-mention-member', avatar: { initials: 'a' }, label: '@aki' }],
-  ['member + 画像 + href', { label: '@taro', href: '/acme/users/1', avatar: { name: 'taro', src: '/img/taro.png' } },
-    { classes: 'koyori-mention koyori-mention-member', tag: 'a', href: '/acme/users/1', avatar: { initials: 't', src: '/img/taro.png' }, label: '@taro' }],
-  ['member + self', { label: '@aki', self: true, avatar: { name: 'aki' } },
-    { classes: 'koyori-mention koyori-mention-member koyori-mention-self', avatar: { initials: 'a' }, label: '@aki' }],
-  ['outside + 頭文字', { label: '@hanako', status: 'outside', avatar: { name: 'hanako' } },
-    { classes: 'koyori-mention koyori-mention-outside', avatar: { initials: 'h' }, label: '@hanako' }],
-  ['gone + 画像', { label: '@jiro', status: 'gone', avatar: { name: 'jiro', src: '/img/jiro.png' } },
-    { classes: 'koyori-mention koyori-mention-gone', avatar: { initials: 'j', src: '/img/jiro.png' }, label: '@jiro' }],
-  ['unknown・アバターなし', { label: '@（不明な利用者）', status: 'unknown' },
-    { classes: 'koyori-mention koyori-mention-unknown', label: '@（不明な利用者）' }],
-  ['outside では self が付かない', { label: '@hanako', status: 'outside', self: true, avatar: { name: 'hanako' } },
-    { classes: 'koyori-mention koyori-mention-outside', avatar: { initials: 'h' }, label: '@hanako' }],
-  ['avatar: null', { label: '@aki', avatar: null },
+  ['member', { label: '@aki' },
     { classes: 'koyori-mention koyori-mention-member', label: '@aki' }],
-  ['avatar.src: null（img なし）', { label: '@aki', avatar: { name: 'aki', src: null } },
-    { classes: 'koyori-mention koyori-mention-member', avatar: { initials: 'a' }, label: '@aki' }],
+  ['member + href', { label: '@taro', href: '/acme/users/1' },
+    { classes: 'koyori-mention koyori-mention-member', tag: 'a', href: '/acme/users/1', label: '@taro' }],
+  ['member + self', { label: '@aki', self: true },
+    { classes: 'koyori-mention koyori-mention-member koyori-mention-self', label: '@aki' }],
+  ['self + href', { label: '@aki', self: true, href: '/acme/users/2' },
+    { classes: 'koyori-mention koyori-mention-member koyori-mention-self', tag: 'a', href: '/acme/users/2', label: '@aki' }],
+  ['outside', { label: '@hanako', status: 'outside' },
+    { classes: 'koyori-mention koyori-mention-outside', label: '@hanako' }],
+  ['outside + href', { label: '@hanako', status: 'outside', href: '/acme/users/3' },
+    { classes: 'koyori-mention koyori-mention-outside', tag: 'a', href: '/acme/users/3', label: '@hanako' }],
+  ['gone', { label: '@（退会した利用者）', status: 'gone' },
+    { classes: 'koyori-mention koyori-mention-gone', label: '@（退会した利用者）' }],
+  ['unknown', { label: '@（不明な利用者）', status: 'unknown' },
+    { classes: 'koyori-mention koyori-mention-unknown', label: '@（不明な利用者）' }],
+  ['outside では self が付かない', { label: '@hanako', status: 'outside', self: true },
+    { classes: 'koyori-mention koyori-mention-outside', label: '@hanako' }],
 ];
 
 async function serverRender() {
@@ -415,8 +399,7 @@ async function serverRender() {
     for (const [name, props, expected] of cases) {
       const want = normalize(expectedHtml(expected));
       const vue = normalize(await renderToString(createSSRApp(vueUi.Mention, props)));
-      // React 19 は img の前に画像の preload の link を足す。部品の出力ではないので除く。
-      const react = normalize(renderToStaticMarkup(createElement(reactUi.Mention, props)).replace(/<link rel="preload"[^>]*>/g, ''));
+      const react = normalize(renderToStaticMarkup(createElement(reactUi.Mention, props)));
       assert.equal(vue, want, `Vue（${name}）: 部品の出力が固定 class の HTML と一致する`);
       assert.equal(react, want, `React（${name}）: 部品の出力が固定 class の HTML と一致する`);
       // label の前後に空白が入らない。
@@ -428,8 +411,8 @@ async function serverRender() {
     // class・data-*・title は根の要素に付く。根が fragment（v-if が 2 つ並ぶ形）だと、Vue は非 props 属性を落として警告する。
     // React の部品は宣言した props だけを描く（ほかの部品と同じ）ので、ここでは Vue だけを見る。
     for (const [name, props, tag] of [
-      ['span', { label: '@aki', avatar: { name: 'aki' } }, 'span'],
-      ['a（href）', { label: '@taro', href: '/acme/users/1', avatar: { name: 'taro' } }, 'a'],
+      ['span', { label: '@aki' }, 'span'],
+      ['a（href）', { label: '@taro', href: '/acme/users/1' }, 'a'],
       ['self', { label: '@aki', self: true }, 'span'],
     ]) {
       const html = await renderToString(createSSRApp(vueUi.Mention, { ...props, class: 'extra', 'data-case': 'x', title: '補足' }));
@@ -441,7 +424,7 @@ async function serverRender() {
     }
 
     for (const [name, ui] of [['Vue', vueUi], ['React', reactUi]]) {
-      const { mentionClassNames, MENTION_CLASS_NAMES, avatarInitials } = ui;
+      const { mentionClassNames, MENTION_CLASS_NAMES } = ui;
       assert.deepEqual(mentionClassNames(undefined), ['koyori-mention', 'koyori-mention-member'], `${name}: 省略は member`);
       assert.deepEqual(mentionClassNames(null), ['koyori-mention', 'koyori-mention-member'], `${name}: null は member`);
       assert.deepEqual(mentionClassNames('weird'), ['koyori-mention', 'koyori-mention-unknown'], `${name}: 知らない値は unknown`);
@@ -449,7 +432,6 @@ async function serverRender() {
       assert.deepEqual(mentionClassNames('__proto__'), ['koyori-mention', 'koyori-mention-unknown'], `${name}: __proto__ も unknown`);
       assert.deepEqual(mentionClassNames('gone', true), ['koyori-mention', 'koyori-mention-gone'], `${name}: member 以外に self を付けない`);
       assert.deepEqual(mentionClassNames('member', true), ['koyori-mention', 'koyori-mention-member', 'koyori-mention-self'], `${name}: member には self を付ける`);
-      assert.equal(avatarInitials('aki'), 'a', `${name}: avatarInitials を公開している`);
 
       // CSS にある class と過不足なく一致する。label は構造のための class で、規則を持たない。
       const inCss = new Set([...mentionCss.matchAll(/\.(koyori-mention[a-z-]*)/g)].map((match) => match[1]));
@@ -523,15 +505,16 @@ async function browserChecks() {
         await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-mention--${name}&viewMode=story`);
         await page.locator('#storybook-root .koyori-mention').first().waitFor();
       };
-      // 札とアバターの算出スタイル。[data-case] ごとに集める。
+      // 札の算出スタイル。地を塗った枠（[data-backdrop]）ごとに、[data-case] の札を `${backdrop}/${case}` のキーで集める。
       const collect = () => page.evaluate(() => {
-        const chipProperties = ['color', 'backgroundColor', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderTopLeftRadius', 'borderBottomRightRadius', 'paddingLeft', 'paddingRight', 'height', 'fontWeight'];
-        const avatarProperties = ['width', 'height', 'backgroundColor', 'opacity', 'filter'];
+        const chipProperties = ['display', 'color', 'backgroundColor', 'textDecorationLine', 'textDecorationStyle', 'textDecorationColor', 'textUnderlineOffset', 'borderTopLeftRadius', 'borderBottomRightRadius', 'paddingTop', 'paddingLeft', 'paddingRight', 'fontWeight'];
         const pick = (element, properties) => Object.fromEntries(properties.map((name) => [name, getComputedStyle(element)[name]]));
-        return Object.fromEntries([...document.querySelectorAll('#storybook-root [data-case]')].map((item) => {
+        return Object.fromEntries([...document.querySelectorAll('#storybook-root [data-backdrop] [data-case]')].map((item) => {
           const chip = item.querySelector('.koyori-mention');
-          const avatar = chip.querySelector('.koyori-mention-avatar');
-          return [item.getAttribute('data-case'), { chip: { ...pick(chip, chipProperties), width: chip.getBoundingClientRect().width }, avatar: avatar ? pick(avatar, avatarProperties) : null }];
+          const frame = item.closest('[data-backdrop]');
+          const rect = chip.getBoundingClientRect();
+          const key = `${frame.getAttribute('data-backdrop')}/${item.getAttribute('data-case')}`;
+          return [key, { chip: { ...pick(chip, chipProperties), width: rect.width, height: rect.height }, backdrop: getComputedStyle(frame).backgroundColor }];
         }));
       });
       const a11y = async (name) => {
@@ -541,29 +524,60 @@ async function browserChecks() {
         assert.deepEqual(violations, [], `${framework}/${name}: axe の違反`);
       };
 
-      const ids = ['member', 'member-image', 'self', 'outside', 'gone', 'unknown'];
+      const ids = ['member', 'self', 'outside', 'gone', 'unknown'];
+      const backdrops = ['surface', 'surface-raised'];
+      const keys = backdrops.flatMap((backdrop) => ids.map((id) => `${backdrop}/${id}`));
+      const isGray = (id) => ['outside', 'gone', 'unknown'].includes(id);
+      // 札の実効の地。地なし（α 0）なら枠の地、不透明（α 1）ならその色。半透明の地は対比が枠に左右されるので失敗にする。
+      const effectiveBackground = (chip, backdrop, label) => {
+        const { rgb, alpha } = parseRgba(chip.backgroundColor);
+        if (alpha === 0) return parseRgba(backdrop).rgb;
+        assert.equal(alpha, 1, `${label}: 半透明の地（${chip.backgroundColor}）`);
+        return rgb;
+      };
       for (const [part, html, theme] of [['states', 'fixed-class-html', '墨'], ['states-light', 'fixed-class-html-light', 'ライト']]) {
         await open(part);
         const component = await collect();
         await open(html);
         const fixedHtml = await collect();
-        assert.deepEqual(Object.keys(component), ids, `${framework}（${theme}）: 札の並び`);
+        assert.deepEqual(Object.keys(component), keys, `${framework}（${theme}）: 札の並び`);
         assert.deepEqual(fixedHtml, component, `${framework}（${theme}）: 部品と固定 class の HTML の算出スタイルが一致する`);
-        for (const id of ids) {
-          const { chip } = component[id];
-          const ratio = contrastRgb(parseRgb(chip.color), parseRgb(chip.backgroundColor));
-          assert(ratio >= 4.5, `${framework}（${theme}）${id}: 算出色の字と地 ${fixed(ratio)}:1 < 4.5`);
-          const dashed = ['outside', 'gone', 'unknown'].includes(id);
-          assert.equal(chip.borderTopStyle, dashed ? 'dashed' : 'solid', `${framework}（${theme}）${id}: 縁の種類`);
+        for (const key of keys) {
+          const id = key.split('/')[1];
+          const { chip, backdrop } = component[key];
+          const label = `${framework}（${theme}）${key}`;
+          assert.equal(chip.display, 'inline', `${label}: 札は inline`);
+          assert.equal(chip.paddingTop, '0px', `${label}: 上下の padding を持たない`);
+          assert.equal(chip.paddingLeft, '3px', `${label}: 左の padding`);
+          assert.equal(chip.paddingRight, '3px', `${label}: 右の padding`);
+          assert.equal(chip.borderTopLeftRadius, '4px', `${label}: 角丸 4px`);
+          assert.equal(chip.fontWeight, id === 'self' ? '600' : id === 'member' ? '500' : chip.fontWeight, `${label}: 字の太さ`);
+          const ratio = contrastRgb(parseRgb(chip.color), effectiveBackground(chip, backdrop, label));
+          assert(ratio >= 4.5, `${label}: 算出色の字と実効の地 ${fixed(ratio)}:1 < 4.5`);
+          if (isGray(id)) {
+            assert.equal(chip.backgroundColor, 'rgba(0, 0, 0, 0)', `${label}: 地なし`);
+            assert.equal(chip.textDecorationLine, 'underline', `${label}: 下線`);
+            assert.equal(chip.textDecorationStyle, 'dashed', `${label}: 破線（色の薄さだけで分けない）`);
+            const line = contrastRgb(parseRgb(chip.textDecorationColor), parseRgb(backdrop));
+            assert(line >= 3, `${label}: 下線と枠の地 ${fixed(line)}:1 < 3`);
+          } else {
+            assert.equal(chip.textDecorationLine, 'none', `${label}: 下線なし`);
+          }
         }
-        assert.notEqual(component.self.chip.backgroundColor, component.member.chip.backgroundColor, `${framework}（${theme}）: self の地が member と違う`);
+        for (const backdrop of backdrops) {
+          const self = component[`${backdrop}/self`].chip;
+          const member = component[`${backdrop}/member`].chip;
+          assert.notEqual(self.backgroundColor, member.backgroundColor, `${framework}（${theme}・${backdrop}）: self の地が member と違う`);
+          assert.notEqual(self.color, member.color, `${framework}（${theme}・${backdrop}）: self の字の色が member と違う`);
+        }
       }
 
       // リンクの札の算出色。ストーリーの順に並べる。
       const collectLinks = () => page.evaluate(() => [...document.querySelectorAll('#storybook-root a.koyori-mention')].map((link) => ({
-        self: link.classList.contains('koyori-mention-self'),
+        kind: link.classList.contains('koyori-mention-self') ? 'self' : link.classList.contains('koyori-mention-outside') ? 'outside' : 'member',
         color: getComputedStyle(link).color,
         backgroundColor: getComputedStyle(link).backgroundColor,
+        backdrop: getComputedStyle(link.closest('[data-backdrop]')).backgroundColor,
       })));
       // 強制配色の系統色の算出値。forced-color-adjust: none の要素で読む。
       const systemColors = () => page.evaluate(() => {
@@ -579,14 +593,14 @@ async function browserChecks() {
         return { highlightText: color, highlight: backgroundColor, canvas, canvasText };
       });
 
-      // リンクの札も、算出色の字と地が 4.5:1 以上（本人のリンクを含む）。
+      // リンクの札も、算出色の字と地が 4.5:1 以上（本人のリンクを含む）。地なしの札は枠の地で測る。
       await open('link');
       const links = await collectLinks();
-      assert.equal(links.length, 2, `${framework}: リンクの札が 2 つ（通常・本人）`);
-      assert.deepEqual(links.map((item) => item.self), [false, true], `${framework}: リンクの札の並び`);
+      assert.deepEqual(links.map((item) => item.kind), ['member', 'self', 'outside'], `${framework}: リンクの札の並び（member・self・outside）`);
       for (const item of links) {
-        const ratio = contrastRgb(parseRgb(item.color), parseRgb(item.backgroundColor));
-        assert(ratio >= 4.5, `${framework}: リンクの札（${item.self ? 'self' : 'member'}）の算出色の字と地 ${fixed(ratio)}:1 < 4.5`);
+        const { rgb, alpha } = parseRgba(item.backgroundColor);
+        const ratio = contrastRgb(parseRgb(item.color), alpha === 0 ? parseRgb(item.backdrop) : rgb);
+        assert(ratio >= 4.5, `${framework}: リンクの札（${item.kind}）の算出色の字と実効の地 ${fixed(ratio)}:1 < 4.5`);
       }
 
       // 強制配色でも self が member と見分けられ、字が読める。リンクの札も同じ。フォーカスの輪は札の外（Canvas の上）に描かれるので、
@@ -597,46 +611,65 @@ async function browserChecks() {
         await page.emulateMedia({ forcedColors: 'active', colorScheme: scheme });
         const system = await systemColors();
         const forced = await collect();
-        assert.notEqual(forced.self.chip.backgroundColor, forced.member.chip.backgroundColor, `${tag}: self の地が member と違う`);
-        assert.equal(forced.self.chip.color, system.highlightText, `${tag}: self の字が HighlightText`);
-        assert.equal(forced.self.chip.backgroundColor, system.highlight, `${tag}: self の地が Highlight`);
-        for (const id of ids) {
-          const ratio = contrastRgb(flatten(forced[id].chip.color, system.canvas), flatten(forced[id].chip.backgroundColor, system.canvas));
-          assert(ratio >= 4.5, `${tag}: ${id} の字と地 ${fixed(ratio)}:1 < 4.5`);
+        for (const backdrop of backdrops) {
+          const self = forced[`${backdrop}/self`].chip;
+          assert.notEqual(self.backgroundColor, forced[`${backdrop}/member`].chip.backgroundColor, `${tag}・${backdrop}: self の地が member と違う`);
+          assert.equal(self.color, system.highlightText, `${tag}・${backdrop}: self の字が HighlightText`);
+          assert.equal(self.backgroundColor, system.highlight, `${tag}・${backdrop}: self の地が Highlight`);
+        }
+        for (const key of keys) {
+          const id = key.split('/')[1];
+          const { chip } = forced[key];
+          const ratio = contrastRgb(flatten(chip.color, system.canvas), flatten(chip.backgroundColor, system.canvas));
+          assert(ratio >= 4.5, `${tag}: ${key} の字と地 ${fixed(ratio)}:1 < 4.5`);
+          if (isGray(id)) {
+            assert.equal(chip.textDecorationLine, 'underline', `${tag}: ${key} の下線（色だけで分けない）`);
+            assert.equal(chip.textDecorationStyle, 'dashed', `${tag}: ${key} の破線（色だけで分けない）`);
+          }
         }
         await open('link');
         const forcedLinks = await collectLinks();
         for (const item of forcedLinks) {
           const ratio = contrastRgb(flatten(item.color, system.canvas), flatten(item.backgroundColor, system.canvas));
-          assert(ratio >= 4.5, `${tag}: リンクの札（${item.self ? 'self' : 'member'}）の字と地 ${fixed(ratio)}:1 < 4.5`);
+          assert(ratio >= 4.5, `${tag}: リンクの札（${item.kind}）の字と地 ${fixed(ratio)}:1 < 4.5`);
         }
-        const selfLink = forcedLinks.find((item) => item.self);
+        const selfLink = forcedLinks.find((item) => item.kind === 'self');
         assert.equal(selfLink.color, system.highlightText, `${tag}: self のリンクの札の字が HighlightText`);
         assert.equal(selfLink.backgroundColor, system.highlight, `${tag}: self のリンクの札の地が Highlight`);
-        // Tab で 1 つ目（member）→ 2 つ目（self）の順にフォーカスし、輪の色を読む。
+        // Tab で 1 つ目（member）→ 2 つ目（self）→ 3 つ目（outside）の順にフォーカスし、輪の色を読む。
         for (const item of forcedLinks) {
           await page.keyboard.press('Tab');
-          const ring = await page.evaluate(() => ({ focused: document.activeElement?.classList.contains('koyori-mention-self'), style: getComputedStyle(document.activeElement).outlineStyle, color: getComputedStyle(document.activeElement).outlineColor }));
-          assert.equal(ring.focused, item.self, `${tag}: Tab の順（${item.self ? 'self' : 'member'}）`);
-          assert.equal(ring.style, 'solid', `${tag}: ${item.self ? 'self' : 'member'} のリンクの札に輪が出る`);
+          const ring = await page.evaluate(() => {
+            const active = document.activeElement;
+            const kind = active?.classList.contains('koyori-mention-self') ? 'self' : active?.classList.contains('koyori-mention-outside') ? 'outside' : 'member';
+            return { kind, style: getComputedStyle(active).outlineStyle, color: getComputedStyle(active).outlineColor };
+          });
+          assert.equal(ring.kind, item.kind, `${tag}: Tab の順（${item.kind}）`);
+          assert.equal(ring.style, 'solid', `${tag}: ${item.kind} のリンクの札に輪が出る`);
           // 本人は forced-color-adjust: none なので、輪の色を自分で CanvasText にしている。ほかはブラウザーが系統色に置き換える。
-          if (item.self) assert.equal(ring.color, system.canvasText, `${tag}: self のリンクの輪が CanvasText（${ring.color}）`);
+          if (item.kind === 'self') assert.equal(ring.color, system.canvasText, `${tag}: self のリンクの輪が CanvasText（${ring.color}）`);
           const ratio = contrastRgb(flatten(ring.color, system.canvas), flatten(system.canvas, system.canvas));
-          assert(ratio >= 3, `${tag}: ${item.self ? 'self' : 'member'} のリンクの輪と Canvas ${fixed(ratio)}:1 < 3`);
+          assert(ratio >= 3, `${tag}: ${item.kind} のリンクの輪と Canvas ${fixed(ratio)}:1 < 3`);
         }
       }
       await page.emulateMedia({ forcedColors: 'none', colorScheme: null });
 
       // 札で行の高さを広げない。
+      // Inter・Noto Sans JP は同梱しない Web フォントなので、入っていない環境では太さごとに別のフォールバックの書体
+      // （上下の余白の違うもの）が選ばれ、札の箱と関係なく行が伸びる。測る間だけ書体を 1 つに固めて、札の箱が行を広げるかだけを見る。
       await open('in-text');
+      await page.addStyleTag({ content: '#storybook-root * { font-family: "Noto Sans CJK JP", "Noto Sans JP", sans-serif !important; }' });
       const withMention = await page.getByTestId('with').boundingBox();
       const without = await page.getByTestId('without').boundingBox();
       assert.equal(withMention.height, without.height, `${framework}: 札のある行と無い行で段落の高さが同じ`);
 
       // リンクの札。フォーカスの輪・ホバーの下線・Enter での遷移。
       await open('link');
-      const link = page.locator('#storybook-root a.koyori-mention').first();
-      assert.equal(await link.evaluate((el) => getComputedStyle(el).textDecorationLine), 'none', `${framework}: ホバー前は下線なし`);
+      const decoration = (locator) => locator.evaluate((el) => ({ line: getComputedStyle(el).textDecorationLine, style: getComputedStyle(el).textDecorationStyle }));
+      const link = page.locator('#storybook-root a.koyori-mention-member').first();
+      const outsideLink = page.locator('#storybook-root a.koyori-mention-outside').first();
+      assert.deepEqual(await decoration(link), { line: 'none', style: 'solid' }, `${framework}: member はホバー前は下線なし`);
+      assert.deepEqual(await decoration(outsideLink), { line: 'underline', style: 'dashed' }, `${framework}: outside はホバー前から破線の下線`);
       await page.keyboard.press('Tab');
       assert(await link.evaluate((el) => el === document.activeElement), `${framework}: Tab で札にフォーカスが当たる`);
       const outline = await link.evaluate((el) => ({ style: getComputedStyle(el).outlineStyle, width: getComputedStyle(el).outlineWidth }));
@@ -645,7 +678,10 @@ async function browserChecks() {
       await page.waitForFunction(() => location.hash === '#mention-taro');
       await page.mouse.move(0, 0);
       await link.hover();
-      assert.equal(await link.evaluate((el) => getComputedStyle(el).textDecorationLine), 'underline', `${framework}: ホバーで下線`);
+      assert.deepEqual(await decoration(link), { line: 'underline', style: 'solid' }, `${framework}: member はホバーで実線の下線`);
+      await page.mouse.move(0, 0);
+      await outsideLink.hover();
+      assert.deepEqual(await decoration(outsideLink), { line: 'underline', style: 'dashed' }, `${framework}: outside はホバーしても破線のまま`);
 
       for (const name of stories) {
         await open(name);
@@ -653,7 +689,7 @@ async function browserChecks() {
       }
       assert.deepEqual(errors, [], `${framework}: コンソールのエラー・警告`);
       await page.close();
-      console.log(`D（${framework}）: 部品と固定 class の HTML の算出スタイル（明暗）・算出色の対比（リンクの札を含む）・強制配色（明暗両方。リンクの札とフォーカスの輪を含む）・行の高さ・リンクの操作・axe を確認しました。`);
+      console.log(`D（${framework}）: 部品と固定 class の HTML の算出スタイル（明暗・説明とコメントの地）・算出色の対比と下線（リンクの札を含む）・強制配色（明暗両方。リンクの札とフォーカスの輪を含む）・行の高さ・リンクの操作・axe を確認しました。`);
     }
   } finally {
     await browser.close();

@@ -1,11 +1,12 @@
 ---
 title: Mention
-description: 利用者への言及を示す丸い札。部品と、HTML に書ける固定 class の両方で同じ見た目になる。
+description: 利用者への言及を、色を付けた字と薄い地で示す札。部品と、HTML に書ける固定 class の両方で同じ見た目になる。
 ---
 
 import MentionPreview from '../../../components/MentionPreview.astro';
 
-Mention は `@名` を頭のアバター付きの丸い札で出します。いま入れる者・本人・外れた者・退会した者・名の引けぬ者の 5 つの状態を、色と縁で分けます。
+Mention は `@名` を、色を付けた字と薄い地で出します。いま入れる者・本人・外れた者・退会した者・名の引けぬ者の 5 つの状態を、色と下線で分けます。
+アバターは札には出さず、ホバーカードなど別の場所で出します。
 説明文やコメントのように、サーバーが組んだ HTML を差し込む場所では部品を置けないため、同じ見た目になる固定 class も `style.css` に含めています。
 
 ## プレビュー
@@ -21,38 +22,36 @@ Mention は `@名` を頭のアバター付きの丸い札で出します。い�
 | `label` | `string` | 必須 | 見える字。`@` も含めてそのまま出す（例: `@taro`、`@（退会した利用者）`） |
 | `status` | `'member' \| 'outside' \| 'gone' \| 'unknown'` | `member` | 状態。知らない値は `unknown` として描く |
 | `self` | `boolean` | — | 本人へのメンション。`status` が `member` のときだけ効く |
-| `avatar` | `{ name: string; src?: string \| null } \| null` | — | 渡すと頭にアバターを出す。`src` が無ければ `name` の頭文字。定型の句の札では省く |
 | `href` | `string` | — | 渡すと `a` 要素（リンク）にする |
 
 Vue では、渡した `class`・`data-*`・`title` などの属性が根の要素（`span` か `a`）に付きます。React の部品は上の props だけを描き、ほかの属性は描きません（ほかの部品と同じです）。
 
-頭文字は Avatar と同じ `avatarInitials` で決めます（「yupix」は「y」。大文字にはしません）。
-`src` の URL の安全性は利用側で確かめてください。画像が読み込めなかったときは、`alt=""` の壊れた画像は描かれず、下の頭文字が見えます。
-
 ## 状態と見た目
 
-| 状態 | 字 / 地 | 墨 | ライト | 縁 |
+| 状態 | 字 / 地 | 墨 | ライト | 下線 |
 | --- | --- | --- | --- | --- |
-| member | `text` / `accent-soft` | 13.98 | 16.00 | なし |
-| self（member + `self`） | `on-accent` / `accent` | 17.47 | 18.85 | なし |
-| outside・gone・unknown | `text-secondary` / `surface` | 8.38 | 7.38 | 破線の `border-strong`（地に対して 3.71 / 3.65） |
-| アバターの頭文字 | `text` / `accent-subtle` | 14.50 | 16.57 | — |
+| member | `mention` / `mention-subtle` | 6.64 | 4.88 | リンクならホバーで実線 |
+| self（member + `self`） | `mention-self` / `mention-self-subtle`、太さ 600 | 8.09 | 5.08 | 同上 |
+| outside・gone・unknown | `text-secondary` / 地なし | surface 8.38・surface-raised 7.81 | 7.38 | 破線の `border-strong`（墨 3.71・3.46、ライト 3.65） |
 
-- 地はすべて不透明なトークンです。半透明の地は、重ねるページの背景によって対比が変わるため使いません。
-- 外れた者・退会した者・名の引けぬ者は、色の薄さだけでなく破線の縁で分けます。アバターは薄く灰色にします。
+- 地は不透明なトークンか、地なしです。半透明の地は、重ねるページの背景によって対比が変わるため使いません。
+- 地なしの状態は、説明の地（`surface`）とカードの地（`surface-raised`）の両方で測ります。
+- 明るい面の `info-subtle` は灰色なので、メンションの地は専用のトークン（`--koyori-color-mention`・`-mention-subtle`・`-mention-self`・`-mention-self-subtle`）で持ちます。
+- 外れた者・退会した者・名の引けぬ者は、色の薄さだけでなく破線の下線で分けます。
 
 ## HTML から使う
 
 説明文やコメントなど、HTML を差し込む場所では、固定 class を付けた要素を書きます。
 
 ```html
-<!-- いま入れる者（リンク・画像あり） -->
-<a class="koyori-mention koyori-mention-member" href="/acme/users/…"><span class="koyori-mention-avatar" data-initials="t" aria-hidden="true"><img src="…" alt=""></span><span class="koyori-mention-label">@taro</span></a>
-<!-- 本人（頭文字だけ） -->
-<span class="koyori-mention koyori-mention-member koyori-mention-self"><span class="koyori-mention-avatar" data-initials="a" aria-hidden="true"></span><span class="koyori-mention-label">@aki</span></span>
+<!-- いま入れる者（リンク） -->
+<a class="koyori-mention koyori-mention-member" href="/acme/users/…"><span class="koyori-mention-label">@taro</span></a>
+<!-- 本人 -->
+<span class="koyori-mention koyori-mention-member koyori-mention-self"><span class="koyori-mention-label">@aki</span></span>
 <!-- 外れた者 -->
-<span class="koyori-mention koyori-mention-outside"><span class="koyori-mention-avatar" data-initials="h" aria-hidden="true"></span><span class="koyori-mention-label">@hanako</span></span>
-<!-- 名の引けぬ者（アバターなし） -->
+<span class="koyori-mention koyori-mention-outside"><span class="koyori-mention-label">@hanako</span></span>
+<!-- 退会した者・名の引けぬ者 -->
+<span class="koyori-mention koyori-mention-gone"><span class="koyori-mention-label">@（退会した利用者）</span></span>
 <span class="koyori-mention koyori-mention-unknown"><span class="koyori-mention-label">@（不明な利用者）</span></span>
 ```
 
@@ -61,44 +60,40 @@ Vue では、渡した `class`・`data-*`・`title` などの属性が根の要�
 | `koyori-mention` | `span` か `a[href]` | 札。必須 |
 | `koyori-mention-member` / `-outside` / `-gone` / `-unknown` | 札 | 状態。どれか 1 つ |
 | `koyori-mention-self` | 札（member と一緒に） | 本人。member が無いと効かない |
-| `koyori-mention-avatar` | 札の最初の子の `span` | `data-initials` に頭文字、`aria-hidden="true"`。画像は中に `<img alt="">` |
-| `koyori-mention-label` | 札の最後の子の `span` | 見える字。字を span で包み、前後に空白を入れない |
+| `koyori-mention-label` | 札の唯一の子の `span` | 見える字。字を span で包み、前後に空白を入れない |
 
 HTML を組むコードでは、部品と同じ出力になるよう次を使います。いずれも `@koyori-app/ui-vue`（React は `ui-react`）から import できます。
 
 - `mentionClassNames(status, self)` は札に付ける class の配列を返します。省略は `member`、知らない値は `unknown` に倒し、`self` は `member` のときだけ付けます。
-- `avatarInitials(name)` は `data-initials` に入れる頭文字を返します。
 - `MENTION_CLASS_NAMES` は固定 class の全集合です。HTML のサニタイザーの許可リストにそのまま使えます。
 
 ```ts
-import { avatarInitials, mentionClassNames, MENTION_CLASS_NAMES } from '@koyori-app/ui-vue';
+import { mentionClassNames, MENTION_CLASS_NAMES } from '@koyori-app/ui-vue';
 
 mentionClassNames('outside');       // ['koyori-mention', 'koyori-mention-outside']
 mentionClassNames('member', true);  // ['koyori-mention', 'koyori-mention-member', 'koyori-mention-self']
-avatarInitials('aki');              // 'a'
 ```
 
 ### cascade layer の注意
 
-リンクの札は `a.koyori-mention[href]`（詳細度 0,2,1）で、本文側の `a` の色と下線より強くしています。
+リンクの札は `a.koyori-mention[href]`（詳細度 0,2,1）で、本文側の `a` の色と下線より強くしています（`a.koyori-mention[href]` が `color` と `text-decoration` を持ちます）。
 ただし、利用側が `style.css` を `@layer` の中に入れ、本文側の `a { color; text-decoration }` を層の外に書くと、層の外の規則が詳細度に関係なく勝ち、札が本文のリンクの色と下線で描かれます。
 その場合は、本文側の規則を `a:not(.koyori-mention)` にして札を外してください。
 
 ## アクセシビリティ
 
 - 札の要素に `role` や `aria-*` は付けません。読み上げは見える字（`label`）が名前になります。
-- アバターは装飾なので `aria-hidden="true"` です。頭文字は `data-initials` を CSS の `::before` で描くため、コピーした文にも読み上げにも混ざりません。画像の `alt` は空です。
-- 状態を色だけで伝えません。外れた者・退会した者・名の引けぬ者は破線の縁を付け、字と地の対比は明暗とも 4.5:1 以上です。
-- 本人は白黒を反転した面で示します。強制配色（`forced-colors: active`）では地の反転が消えるため、`--koyori-mention-color` / `--koyori-mention-background` を `HighlightText` / `Highlight` にして示します。リンクの札も同じ色になり、フォーカスの輪は `CanvasText` で描いて背景の `Canvas` との対比を保ちます。ほかの状態はブラウザーの強制配色（`Canvas` / `CanvasText` / `LinkText`）に任せます。
+- 状態を色だけで伝えません。外れた者・退会した者・名の引けぬ者は破線の下線を引き、字と地の対比は明暗とも 4.5:1 以上です。
+- 本人は黄の字と地、太さ 600 で示します。強制配色（`forced-colors: active`）では青と黄の違いが消えるため、`--koyori-mention-color` / `--koyori-mention-background` を `HighlightText` / `Highlight` にして示します。リンクの札も同じ色になり、フォーカスの輪は `CanvasText` で描いて背景の `Canvas` との対比を保ちます。ほかの状態はブラウザーの強制配色（`Canvas` / `CanvasText` / `LinkText`）に任せます。
 - リンクの札はキーボードで操作でき、フォーカス時に 2px の輪、ホバー時（マウスなど）に下線が出ます。
 - 札の高さは 24px 未満です。文中のリンクは WCAG 2.5.8（ターゲットのサイズ）の例外に当たります。
 - 状態は読み上げに含めません。字が状態を伝えるのは、退会した者・名の引けぬ者の定型の句だけです。外れた者であることを伝えたい場合は、文の中で補ってください（例: 「@hanako（このプロジェクトのメンバーではありません）」）。
 
 ## スタイル
 
-- 色は札の要素に置いた `--koyori-mention-color`・`--koyori-mention-background`・`--koyori-mention-border-color`・`--koyori-mention-border-style`・`--koyori-mention-avatar-size`・`--koyori-mention-avatar-color`・`--koyori-mention-avatar-background` で決まります。
+- 色と下線は札の要素に置いた `--koyori-mention-color`・`--koyori-mention-background`・`--koyori-mention-decoration-line`・`--koyori-mention-decoration-style`・`--koyori-mention-decoration-color` で決まります。
 - これらは札の要素自身に宣言しているため、祖先に書いても効きません。`.my-area .koyori-mention { --koyori-mention-background: …; }` のように、札を選んで上書きしてください。上書きした色の対比は 4.5:1 以上を保ってください。
-- 高さは字の大きさの 1.25em で、上下の margin を引いて行の高さを広げません。字が 13px 未満だと、1rem のアバターが上下にわずかにはみ出します。
+- 札は行の中の字として描き（`display: inline`）、上下の padding を持たないので行の高さを広げません。
 - `white-space: nowrap` のため、とても長い名は狭い幅で行からはみ出します。省略表示は含みません。
 
 ## 検証
@@ -108,5 +103,5 @@ pnpm generate && pnpm --filter './packages/*' build
 node scripts/check-mention.cjs
 ```
 
-ブラウザーを使わずに、状態ごとの対比（明暗とも）、地が不透明なトークンであること、塗る宣言（色・地・縁・不透明度・`filter` など）が `--koyori-mention-*` の変数を通っていて、ほかの規則が塗る宣言を持たないこと、読めない値（`opacity: calc(0.1)` など）を明示的に失敗にすること、部品のサーバー描画が固定 class の HTML と一致し、Vue で渡した属性が根の要素に付くことを確かめます。
+ブラウザーを使わずに、状態ごとの対比（明暗とも。地なしの状態は surface と surface-raised の両方で測る）、地が不透明なトークンか地なしであること、塗る宣言（色・地・下線〈`text-decoration`〉など）が `--koyori-mention-*` の変数を通っていて、ほかの規則が塗る宣言を持たないこと、部品のサーバー描画が固定 class の HTML と一致し、Vue で渡した属性が根の要素に付くことを確かめます。
 `pnpm build-storybook` のあとに Playwright を使える場合（`PLAYWRIGHT_MODULE`）は、部品と HTML の算出スタイルの一致、行の高さ、キーボード操作、強制配色（明暗の両方。リンクの札とフォーカスの輪を含む）、リンクの札の算出色の対比、axe も確かめます。

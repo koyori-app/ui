@@ -102,10 +102,10 @@ AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を�
 `label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
 重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
 
-Mention は `@名` を頭のアバター付きの丸い札で出します。`label`（`@` を含めた字）、`status`（`member`・`outside`・`gone`・`unknown`。既定 `member`）、`self`（本人。`member` のときだけ）、`avatar: { name, src? }`、`href`（付けると `a` 要素）を受け取ります。
-地はすべて不透明なトークンで、字と地の対比は明暗とも 4.5:1 以上です。外れた者・退会した者・名の引けぬ者は破線の縁を付け、色だけで分けません。
-説明文のように HTML を差し込む場所では、部品を置けないため、固定 class（`koyori-mention` と `koyori-mention-member` などの状態 class）を付けた要素を書きます。CSS は `style.css` に入り、部品と同じ見た目になります。
-class は `mentionClassNames(status, self)`、頭文字は `avatarInitials(name)`、許可リストは `MENTION_CLASS_NAMES` で組めます。
+Mention は `@名` を色付きの字と薄い地で出します（アバターは出しません）。`label`（`@` を含めた字）、`status`（`member`・`outside`・`gone`・`unknown`。既定 `member`）、`self`（本人。`member` のときだけ）、`href`（付けると `a` 要素）を受け取ります。
+member は青、本人は黄の字と地で、地はすべて不透明なトークン（`--koyori-color-mention*`）です。外れた者・退会した者・名の引けぬ者は地を敷かず、灰色の字に破線の下線を引き、色だけで分けません。
+説明文のように HTML を差し込む場所では、固定 class（`koyori-mention` と `koyori-mention-member` などの状態 class）を付けた要素を書きます。CSS は `style.css` に入り、部品と同じ見た目になります。
+class は `mentionClassNames(status, self)`、許可リストは `MENTION_CLASS_NAMES` で組めます。
 状態ごとの対比とサーバー描画は `node scripts/check-mention.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行。CI の Check でも走ります）。
 
 Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダルです。`open`・`title`・`description`・`onClose` を受け取り、

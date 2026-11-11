@@ -50,8 +50,7 @@ export { default as Spinner, type SpinnerProps } from './generated/components/Sp
 export { default as Meter, type MeterProps } from './generated/components/Meter/Meter.vue';
 export type { MeterTone } from './generated/components/Meter/meter.js';
 export { default as Mention, type MentionProps } from './generated/components/Mention/Mention.vue';
-export { mentionClassNames, MENTION_CLASS_NAMES, type MentionStatus, type MentionAvatar } from './generated/components/Mention/mention.js';
-export { avatarInitials } from './generated/components/Avatar/avatar.js';
+export { mentionClassNames, MENTION_CLASS_NAMES, type MentionStatus } from './generated/components/Mention/mention.js';
 export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.vue';
 export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.vue';
 export { type PaginationRange } from './generated/components/Pagination/pagination.js';
