@@ -168,6 +168,16 @@ export const ItemIcons: Story = {
     </Picker>`,
   }),
 };
+// icon を入れても #item-icon を渡さない場合。アイコンの span も隙間も出さず、アイコンのない行と同じ並びになる。
+export const ItemIconsWithoutSlot: Story = {
+  args: {
+    label: '優先度', defaultOpen: true,
+    items: [
+      { value: 'urgent', label: '緊急', icon: '#dc2626' },
+      { value: 'none', label: '未設定' },
+    ],
+  },
+};
 export const CustomTrigger: Story = {
   args: { selectionMode: 'multiple', defaultSelectedValues: ['design', 'frontend', 'backend', 'review'] },
   render: (args) => ({
