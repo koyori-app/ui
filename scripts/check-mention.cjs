@@ -113,21 +113,39 @@ for (const [selector, expected] of bindings) {
   }
 }
 
-// (b) それ以外の規則が、塗る宣言（色・地・縁・不透明度・filter など）を持たない。設計上の規則だけを許可リストに書く。
-const isPaint = (name) => /^(?:color|background(?:-.+)?|opacity|filter|backdrop-filter|visibility|mix-blend-mode|forced-color-adjust|-webkit-text-fill-color)$/.test(name) || (name.startsWith('border') && !name.includes('radius'));
+// (b) 許可リスト。ここに無い性質を書いた規則は失敗にする（拒否リストでは box-shadow・mask・text-shadow などの塗る性質を取りこぼす）。
+//   LAYOUT: 塗らない性質（配置・大きさ・余白・角丸・字形・outline の位置）。どの規則に書いてもよい。
+//   perRule: 規則ごとに許す、塗る・見た目を変える性質。null は別の所で値を確かめる（上の (a)・下の不透明度と filter）。文字列はその値だけを許す。
+const LAYOUT = new Set([
+  'display', 'position', 'inset', 'flex', 'align-items', 'justify-content', 'gap', 'box-sizing', 'overflow', 'object-fit',
+  'width', 'height', 'margin-block', 'margin-inline-start', 'padding', 'border-radius',
+  'font-weight', 'font-size', 'line-height', 'vertical-align', 'white-space', 'text-underline-offset', 'outline-offset',
+]);
 const avatarGrayRule = ['outside', 'gone', 'unknown'].map((status) => `.koyori-mention-${status} .koyori-mention-avatar`).join(', ');
-const paintAllowed = new Map([
-  ['.koyori-mention', ['color', 'background', 'border']],
-  ['.koyori-mention-avatar', ['color', 'background']],
-  ['a.koyori-mention[href]', ['color']],
+const FORCED_SELF = '.koyori-mention-member.koyori-mention-self';
+const perRule = new Map([
+  ['.koyori-mention', { color: null, background: null, border: null }],
+  ['.koyori-mention-avatar', { color: null, background: null }],
+  // 頭文字は data-initials を描く。ほかの文字列を足さない。
+  ['.koyori-mention-avatar::before', { content: 'attr(data-initials)' }],
   // 外れた者・退会した者・名の引けぬ者のアバターは、灰色にして薄くする。値は下で計算する。
-  [avatarGrayRule, ['opacity', 'filter']],
-  [`@media ${FORCED} .koyori-mention-member.koyori-mention-self`, ['forced-color-adjust']],
+  [avatarGrayRule, { opacity: null, filter: null }],
+  ['a.koyori-mention[href]', { color: null, 'text-decoration': 'none', cursor: 'pointer', '-webkit-tap-highlight-color': 'transparent' }],
+  [`@media (hover: hover) and (pointer: fine) a.koyori-mention[href]:hover`, { 'text-decoration': 'underline' }],
+  ['a.koyori-mention[href]:focus-visible', { outline: 'var(--koyori-focus-width) solid var(--koyori-focus-color)' }],
+  [`@media ${FORCED} ${FORCED_SELF}`, { 'forced-color-adjust': 'none' }],
 ]);
 for (const rule of rules) {
-  const allowed = paintAllowed.get(ruleName(rule)) ?? [];
-  for (const property of Object.keys(rule.declarations)) {
-    if (isPaint(property) && !allowed.includes(property)) fail(`${ruleName(rule)}: ${property} を宣言している。塗る宣言は --koyori-mention-* の変数を通す（設計上の規則は check-mention.cjs の許可リストに足す）`);
+  if (!rule.selectors.some((selector) => selector.includes('.koyori-mention'))) fail(`${ruleName(rule)}: mention.css に Mention と関係ないセレクターの規則がある`);
+  const allowed = perRule.get(ruleName(rule)) ?? {};
+  for (const [property, value] of Object.entries(rule.declarations)) {
+    if (property.startsWith('--')) continue; // 変数は (c)・(d) で確かめる。
+    if (/\b(?:url|image-set|image|element|paint)\(/.test(value)) fail(`${ruleName(rule)}: ${property} が画像を参照している（${value}）`);
+    if (Object.hasOwn(allowed, property)) {
+      if (allowed[property] !== null && allowed[property] !== value) fail(`${ruleName(rule)}: ${property} は ${allowed[property]} でなければならない（${value}）`);
+    } else if (!LAYOUT.has(property)) {
+      fail(`${ruleName(rule)}: ${property} は許可リストにない。塗る・見た目を変える宣言は --koyori-mention-* の変数を通す（設計上の規則は check-mention.cjs の許可リストに足す）`);
+    }
   }
 }
 
@@ -140,16 +158,42 @@ const elementClasses = {
   unknown: ['koyori-mention', 'koyori-mention-unknown'],
 };
 const statuses = Object.keys(elementClasses);
-const isCustom = (name) => name.startsWith('--koyori-mention-');
-const customOf = (status) => {
+const MENTION_CUSTOMS = ['color', 'background', 'border-color', 'border-style', 'avatar-size', 'avatar-color', 'avatar-background'].map((name) => `--koyori-mention-${name}`);
+// 強制配色の本人が使う固定値（d）。輪の色は、本人が forced-color-adjust: none で系統色に替わらないので自分で決める。
+const FORCED_CUSTOMS = { '--koyori-mention-color': 'HighlightText', '--koyori-mention-background': 'Highlight', '--koyori-focus-color': 'CanvasText' };
+// class だけのセレクターで、どれかの状態の札の class の部分集合になるものだけを返す（そうでなければ null）。
+const stateClasses = (selector) => {
+  if (!/^(?:\.[a-z-]+)+$/.test(selector)) return null;
+  const classes = selector.slice(1).split('.');
+  return statuses.some((status) => classes.every((name) => elementClasses[status].includes(name))) ? classes : null;
+};
+// 変数（--）の宣言は、状態の札の class だけのセレクター（@media の外）で、--koyori-mention-* に限る。
+// avatar など札でない要素のセレクターや、--koyori-color-* などのトークンの再定義は、描画に効くのに状態の計算に入らないので失敗にする。
+// 例外は強制配色の本人（d）だけ。
+for (const rule of rules) {
+  const names = Object.keys(rule.declarations).filter((name) => name.startsWith('--'));
+  if (names.length === 0) continue;
+  if (rule.media !== null) {
+    const intended = rule.media === FORCED && rule.selectors.length === 1 && rule.selectors[0] === FORCED_SELF
+      && names.every((name) => Object.hasOwn(FORCED_CUSTOMS, name) && rule.declarations[name] === FORCED_CUSTOMS[name]);
+    if (!intended) fail(`${ruleName(rule)}: @media の中で変数（${names.join('・')}）を変えてよいのは、強制配色の本人（${Object.entries(FORCED_CUSTOMS).map(([name, value]) => `${name}: ${value}`).join(' / ')}）だけ`);
+    continue;
+  }
+  for (const selector of rule.selectors) {
+    if (!stateClasses(selector)) fail(`${ruleName(rule)}: 変数（${names.join('・')}）を、状態の札の class だけのセレクターでない規則（${selector}）で宣言している。札でない要素への宣言は、検査が計算しないまま描画に効く`);
+  }
+  for (const name of names) {
+    if (!MENTION_CUSTOMS.includes(name)) fail(`${ruleName(rule)}: 変数 ${name} を宣言している。宣言してよいのは ${MENTION_CUSTOMS.join('・')} だけ（トークンの再定義は不可）`);
+  }
+}
+const customOf = (status, withForced = false) => {
   const applied = [];
   rules.forEach((rule, order) => {
-    const entries = Object.entries(rule.declarations).filter(([name]) => isCustom(name));
-    if (entries.length === 0 || rule.media !== null) return;
+    const entries = Object.entries(rule.declarations).filter(([name]) => name.startsWith('--'));
+    if (entries.length === 0 || !(rule.media === null || (withForced && rule.media === FORCED))) return;
     for (const selector of rule.selectors) {
-      if (!/^(?:\.[a-z-]+)+$/.test(selector)) { fail(`${ruleName(rule)}: --koyori-mention-* を、class だけの単純なセレクターでない規則で宣言している。検査が計算できない`); continue; }
-      const classes = selector.slice(1).split('.');
-      if (classes.every((name) => elementClasses[status].includes(name))) applied.push({ specificity: classes.length, order, entries });
+      const classes = stateClasses(selector);
+      if (classes && classes.every((name) => elementClasses[status].includes(name))) applied.push({ specificity: classes.length, order, entries });
     }
   });
   applied.sort((a, b) => a.specificity - b.specificity || a.order - b.order);
@@ -157,23 +201,21 @@ const customOf = (status) => {
 };
 const declared = Object.fromEntries(statuses.map((status) => [status, customOf(status)]));
 
-// (d) @media の中で変数を変えてよいのは、強制配色の本人だけ。値も固定する。
-for (const rule of rules) {
-  if (rule.media === null || !Object.keys(rule.declarations).some(isCustom)) continue;
-  const customNames = Object.keys(rule.declarations).filter(isCustom).sort();
-  const intended = rule.media === FORCED && rule.selectors.length === 1 && rule.selectors[0] === '.koyori-mention-member.koyori-mention-self'
-    && customNames.join() === '--koyori-mention-background,--koyori-mention-color'
-    && rule.declarations['--koyori-mention-color'] === 'HighlightText' && rule.declarations['--koyori-mention-background'] === 'Highlight';
-  if (!intended) fail(`${ruleName(rule)}: @media の中で --koyori-mention-* を変えてよいのは、強制配色の本人（HighlightText / Highlight）だけ`);
-}
+// (d) 強制配色の本人。規則・宣言が必ずあること（宣言が消えても forced-color-adjust: none だけが残ると、系統色を使わない札になる）。
 {
-  const forcedSelf = rules.filter((rule) => rule.media === FORCED && rule.selectors.includes('.koyori-mention-member.koyori-mention-self'));
-  if (forcedSelf.length === 0) fail('強制配色の本人の規則がない');
-  for (const rule of forcedSelf) {
-    if (rule.declarations['forced-color-adjust'] !== 'none') fail('強制配色の本人: forced-color-adjust: none がない');
-    for (const property of ['color', 'background']) {
-      if (property in rule.declarations) fail(`強制配色の本人: ${property} を直に書かない。リンクの札の color（a.koyori-mention[href]）に負ける。--koyori-mention-${property} で上書きする`);
-    }
+  const forcedSelf = rules.filter((rule) => rule.media === FORCED && rule.selectors.length === 1 && rule.selectors[0] === FORCED_SELF);
+  if (forcedSelf.length === 0) fail(`強制配色の本人の規則（@media ${FORCED} ${FORCED_SELF}）がない`);
+  const merged = Object.assign({}, ...forcedSelf.map((rule) => rule.declarations));
+  for (const [name, value] of Object.entries({ 'forced-color-adjust': 'none', ...FORCED_CUSTOMS })) {
+    if (merged[name] !== value) fail(`強制配色の本人: ${name}: ${value} がない（${merged[name] ?? '宣言なし'}）`);
+  }
+  for (const property of ['color', 'background']) {
+    if (property in merged) fail(`強制配色の本人: ${property} を直に書かない。リンクの札の color（a.koyori-mention[href]）に負ける。--koyori-mention-${property} で上書きする`);
+  }
+  // 強制配色の規則が、同じ詳細度の後ろの規則に上書きされないこと（宣言の順で負けると、本人の札が系統色を使わない）。
+  const winner = customOf('self', true);
+  for (const [name, value] of Object.entries(FORCED_CUSTOMS)) {
+    if (winner[name] !== value) fail(`強制配色の本人: ${name} の効く値が ${winner[name] ?? '宣言なし'} になる（${value} でなければならない。詳細度か宣言の順で別の規則に負けている）`);
   }
 }
 
@@ -514,9 +556,11 @@ async function browserChecks() {
         document.querySelector('#storybook-root').append(probe);
         const { color, backgroundColor } = getComputedStyle(probe);
         probe.style.backgroundColor = 'Canvas';
+        probe.style.color = 'CanvasText';
         const canvas = getComputedStyle(probe).backgroundColor;
+        const canvasText = getComputedStyle(probe).color;
         probe.remove();
-        return { highlightText: color, highlight: backgroundColor, canvas };
+        return { highlightText: color, highlight: backgroundColor, canvas, canvasText };
       });
 
       // リンクの札も、算出色の字と地が 4.5:1 以上（本人のリンクを含む）。
@@ -529,28 +573,43 @@ async function browserChecks() {
         assert(ratio >= 4.5, `${framework}: リンクの札（${item.self ? 'self' : 'member'}）の算出色の字と地 ${fixed(ratio)}:1 < 4.5`);
       }
 
-      // 強制配色でも self が member と見分けられ、字が読める。リンクの札も同じ。
-      await open('states');
-      await page.emulateMedia({ forcedColors: 'active' });
-      const system = await systemColors();
-      const forced = await collect();
-      assert.notEqual(forced.self.chip.backgroundColor, forced.member.chip.backgroundColor, `${framework}: 強制配色で self の地が member と違う`);
-      assert.equal(forced.self.chip.color, system.highlightText, `${framework}: 強制配色で self の字が HighlightText`);
-      assert.equal(forced.self.chip.backgroundColor, system.highlight, `${framework}: 強制配色で self の地が Highlight`);
-      for (const id of ids) {
-        const ratio = contrastRgb(flatten(forced[id].chip.color, system.canvas), flatten(forced[id].chip.backgroundColor, system.canvas));
-        assert(ratio >= 4.5, `${framework}: 強制配色の ${id} の字と地 ${fixed(ratio)}:1 < 4.5`);
+      // 強制配色でも self が member と見分けられ、字が読める。リンクの札も同じ。フォーカスの輪は札の外（Canvas の上）に描かれるので、
+      // forced-color-adjust: none の本人でも輪が Canvas と 3:1 以上で見えること。系統色は明暗で変わるので、両方の配色で確かめる。
+      for (const scheme of ['light', 'dark']) {
+        const tag = `${framework}（強制配色・${scheme === 'light' ? 'ライト系' : 'ダーク系'}）`;
+        await open('states');
+        await page.emulateMedia({ forcedColors: 'active', colorScheme: scheme });
+        const system = await systemColors();
+        const forced = await collect();
+        assert.notEqual(forced.self.chip.backgroundColor, forced.member.chip.backgroundColor, `${tag}: self の地が member と違う`);
+        assert.equal(forced.self.chip.color, system.highlightText, `${tag}: self の字が HighlightText`);
+        assert.equal(forced.self.chip.backgroundColor, system.highlight, `${tag}: self の地が Highlight`);
+        for (const id of ids) {
+          const ratio = contrastRgb(flatten(forced[id].chip.color, system.canvas), flatten(forced[id].chip.backgroundColor, system.canvas));
+          assert(ratio >= 4.5, `${tag}: ${id} の字と地 ${fixed(ratio)}:1 < 4.5`);
+        }
+        await open('link');
+        const forcedLinks = await collectLinks();
+        for (const item of forcedLinks) {
+          const ratio = contrastRgb(flatten(item.color, system.canvas), flatten(item.backgroundColor, system.canvas));
+          assert(ratio >= 4.5, `${tag}: リンクの札（${item.self ? 'self' : 'member'}）の字と地 ${fixed(ratio)}:1 < 4.5`);
+        }
+        const selfLink = forcedLinks.find((item) => item.self);
+        assert.equal(selfLink.color, system.highlightText, `${tag}: self のリンクの札の字が HighlightText`);
+        assert.equal(selfLink.backgroundColor, system.highlight, `${tag}: self のリンクの札の地が Highlight`);
+        // Tab で 1 つ目（member）→ 2 つ目（self）の順にフォーカスし、輪の色を読む。
+        for (const item of forcedLinks) {
+          await page.keyboard.press('Tab');
+          const ring = await page.evaluate(() => ({ focused: document.activeElement?.classList.contains('koyori-mention-self'), style: getComputedStyle(document.activeElement).outlineStyle, color: getComputedStyle(document.activeElement).outlineColor }));
+          assert.equal(ring.focused, item.self, `${tag}: Tab の順（${item.self ? 'self' : 'member'}）`);
+          assert.equal(ring.style, 'solid', `${tag}: ${item.self ? 'self' : 'member'} のリンクの札に輪が出る`);
+          // 本人は forced-color-adjust: none なので、輪の色を自分で CanvasText にしている。ほかはブラウザーが系統色に置き換える。
+          if (item.self) assert.equal(ring.color, system.canvasText, `${tag}: self のリンクの輪が CanvasText（${ring.color}）`);
+          const ratio = contrastRgb(flatten(ring.color, system.canvas), flatten(system.canvas, system.canvas));
+          assert(ratio >= 3, `${tag}: ${item.self ? 'self' : 'member'} のリンクの輪と Canvas ${fixed(ratio)}:1 < 3`);
+        }
       }
-      await open('link');
-      const forcedLinks = await collectLinks();
-      for (const item of forcedLinks) {
-        const ratio = contrastRgb(flatten(item.color, system.canvas), flatten(item.backgroundColor, system.canvas));
-        assert(ratio >= 4.5, `${framework}: 強制配色のリンクの札（${item.self ? 'self' : 'member'}）の字と地 ${fixed(ratio)}:1 < 4.5`);
-      }
-      const selfLink = forcedLinks.find((item) => item.self);
-      assert.equal(selfLink.color, system.highlightText, `${framework}: 強制配色で self のリンクの札の字が HighlightText`);
-      assert.equal(selfLink.backgroundColor, system.highlight, `${framework}: 強制配色で self のリンクの札の地が Highlight`);
-      await page.emulateMedia({ forcedColors: 'none' });
+      await page.emulateMedia({ forcedColors: 'none', colorScheme: null });
 
       // 札で行の高さを広げない。
       await open('in-text');
@@ -578,7 +637,7 @@ async function browserChecks() {
       }
       assert.deepEqual(errors, [], `${framework}: コンソールのエラー・警告`);
       await page.close();
-      console.log(`D（${framework}）: 部品と固定 class の HTML の算出スタイル（明暗）・算出色の対比（リンクの札を含む）・強制配色（リンクの札を含む）・行の高さ・リンクの操作・axe を確認しました。`);
+      console.log(`D（${framework}）: 部品と固定 class の HTML の算出スタイル（明暗）・算出色の対比（リンクの札を含む）・強制配色（明暗両方。リンクの札とフォーカスの輪を含む）・行の高さ・リンクの操作・axe を確認しました。`);
     }
   } finally {
     await browser.close();

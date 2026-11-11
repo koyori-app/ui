@@ -108,10 +108,13 @@ a.koyori-mention[href]:focus-visible {
   /* 強制配色では地の反転が消えるため、本人は強調の系統色で示す。
      color・background を直に書かず変数を上書きする。a.koyori-mention[href] の color（0,2,1）は
      この規則（0,2,0）より強いので、直に書くとリンクの札の字だけ on-accent の暗い色のまま Highlight の地に乗る。
+     本人は forced-color-adjust: none なので、リンクの札のフォーカスの輪の色（既定は text のトークン）も系統色に替わらない。
+     輪は札の外の Canvas の上に描かれるため、CanvasText にして Canvas との対比を保つ。
      ほかの状態は forced-color-adjust を切らず、ブラウザーの強制配色（Canvas・CanvasText・LinkText）に任せる。 */
   .koyori-mention-member.koyori-mention-self {
     forced-color-adjust: none;
     --koyori-mention-color: HighlightText;
     --koyori-mention-background: Highlight;
+    --koyori-focus-color: CanvasText;
   }
 }
