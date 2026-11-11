@@ -129,13 +129,20 @@ for (const [selector, expected] of bindings) {
 }
 
 // (b) 許可リスト。ここに無い性質を書いた規則は失敗にする（拒否リストでは box-shadow・mask・text-shadow などの塗る性質を取りこぼす）。
-//   LAYOUT: 塗らない性質（余白・角丸・字形・折り返し・下線の位置）。どの規則に書いてもよい。display は含めない（下の perRule で inline だけを許す）。
-//   perRule: 規則ごとに許す、塗る・見た目を変える性質。null は別の所で値を確かめる（上の (a)）。文字列はその値だけを許す。
-const LAYOUT = new Set(['padding', 'border-radius', 'font-weight', 'white-space', 'text-underline-offset']);
+//   perRule: 規則ごとに許す性質。null は別の所で値を確かめる（上の (a)）。文字列はその値だけを許す。
+//   余白・角丸・太さ・行の高さ・下線の位置のような塗らない性質も、規則ごとに値を固定する（行の高さや見た目の寸法を黙って変えさせない）。
 const FORCED_SELF = '.koyori-mention-member.koyori-mention-self';
 const perRule = new Map([
   // display: none や inline-block で行の高さが変わらないよう、inline だけを許す。
-  ['.koyori-mention', { display: 'inline', color: null, background: null, 'text-decoration': null }],
+  // line-height: 1 は、札の字の書体が本文と違うフォールバックでも、札のある行を本文の行の高さより伸ばさないための指定（inline の行の高さは札の line-height でも決まる）。
+  ['.koyori-mention', {
+    display: 'inline', color: null, background: null, 'text-decoration': null,
+    padding: '0 3px', 'border-radius': '4px', 'font-weight': '500', 'line-height': '1', 'text-underline-offset': '0.2em', 'white-space': 'nowrap',
+  }],
+  // 本人は太さだけを 600 にする。
+  [FORCED_SELF, { 'font-weight': '600' }],
+  // 灰色の状態の破線の下線は、モックの位置（0.25em）に置く。
+  ['.koyori-mention-outside, .koyori-mention-gone, .koyori-mention-unknown', { 'text-underline-offset': '0.25em' }],
   ['a.koyori-mention[href]', { color: null, 'text-decoration': null, cursor: 'pointer', '-webkit-tap-highlight-color': 'transparent' }],
   // ホバーで線の種類・色・太さを変えさせない（灰色のリンクは破線のまま）。
   [`@media (hover: hover) and (pointer: fine) a.koyori-mention[href]:hover`, { 'text-decoration-line': 'underline' }],
@@ -151,9 +158,23 @@ for (const rule of rules) {
     if (/\b(?:url|image-set|image|element|paint)\(/.test(value)) fail(`${ruleName(rule)}: ${property} が画像を参照している（${value}）`);
     if (Object.hasOwn(allowed, property)) {
       if (allowed[property] !== null && allowed[property] !== value) fail(`${ruleName(rule)}: ${property} は ${allowed[property]} でなければならない（${value}）`);
-    } else if (!LAYOUT.has(property)) {
-      fail(`${ruleName(rule)}: ${property} は許可リストにない。塗る・見た目を変える宣言は --koyori-mention-* の変数を通す（設計上の規則は check-mention.cjs の許可リストに足す）`);
+    } else {
+      fail(`${ruleName(rule)}: ${property} は許可リストにない。塗る宣言は --koyori-mention-* の変数を通し、余白・太さ・下線の位置などはこの規則に書いてよい値だけを perRule で固定している（意図した変更なら check-mention.cjs の perRule に足す）`);
     }
+  }
+}
+
+// 固定した値は、書いてあること自体も確かめる（消えると、行の高さや見た目の寸法が既定に戻る）。
+for (const [name, expected] of [
+  ['.koyori-mention', ['padding', 'border-radius', 'font-weight', 'line-height', 'text-underline-offset', 'white-space']],
+  [FORCED_SELF, ['font-weight']],
+  ['.koyori-mention-outside, .koyori-mention-gone, .koyori-mention-unknown', ['text-underline-offset']],
+]) {
+  const found = rules.filter((rule) => rule.media === null && ruleName(rule) === name);
+  if (found.length === 0) fail(`${name} の規則がない`);
+  const merged = Object.assign({}, ...found.map((rule) => rule.declarations));
+  for (const property of expected) {
+    if (merged[property] === undefined) fail(`${name}: ${property} がない（${perRule.get(name)[property]} でなければならない）`);
   }
 }
 
@@ -656,12 +677,58 @@ async function browserChecks() {
 
       // 札で行の高さを広げない。
       // Inter・Noto Sans JP は同梱しない Web フォントなので、入っていない環境では太さごとに別のフォールバックの書体
-      // （上下の余白の違うもの）が選ばれ、札の箱と関係なく行が伸びる。測る間だけ書体を 1 つに固めて、札の箱が行を広げるかだけを見る。
+      // （上下の余白の違うもの）が選ばれる。既定の書体のままの測定（下の前半）で、そのフォールバックでも行が伸びないことを見て、
+      // 後半では書体を 1 つに固めて、札の箱そのものが行を広げるかだけを見る。
       await open('in-text');
+      // 書体を固めない既定の書体設定（--koyori-font-family）のままの測定。Inter・Noto Sans JP が無くフォールバックする環境でも、
+      // 札の字の書体が行を伸ばさないこと（札の line-height が本文より大きいと、札のある行だけ高くなる）。
+      // 本文 14px・行高 20px の段落に、全状態・本人・日本語の名の札を 1 つずつ入れ、札を入れない同じ字の段落と高さを比べる。
+      const defaultFontRows = await page.evaluate(() => {
+        const cases = [
+          ['member', 'koyori-mention-member', '@aki'], ['self', 'koyori-mention-member koyori-mention-self', '@aki'],
+          ['outside', 'koyori-mention-outside', '@aki'], ['gone', 'koyori-mention-gone', '@aki'], ['unknown', 'koyori-mention-unknown', '@aki'],
+          ['member', 'koyori-mention-member', '@山田 太郎'], ['self', 'koyori-mention-member koyori-mention-self', '@山田 太郎'],
+          ['gone', 'koyori-mention-gone', '@（退会した利用者）'], ['unknown', 'koyori-mention-unknown', '@（退会した利用者）'], ['outside', 'koyori-mention-outside', '@（退会した利用者）'],
+        ];
+        const frame = document.querySelector('#storybook-root [data-backdrop]');
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'width: 480px; font-family: var(--koyori-font-family); font-size: 14px; line-height: 20px';
+        frame.append(wrap);
+        const paragraph = (html) => {
+          const p = document.createElement('p');
+          p.style.margin = '0';
+          p.innerHTML = html;
+          wrap.append(p);
+          return p;
+        };
+        const rows = cases.map(([status, classes, label]) => {
+          const withChip = paragraph(`担当は <span class="koyori-mention ${classes}"><span class="koyori-mention-label">${label}</span></span> さんです。`);
+          const plain = paragraph(`担当は ${label} さんです。`);
+          return { status, label, withChip: withChip.getBoundingClientRect().height, plain: plain.getBoundingClientRect().height, chip: withChip.querySelector('.koyori-mention').getBoundingClientRect().height };
+        });
+        wrap.remove();
+        return rows;
+      });
+      for (const row of defaultFontRows) {
+        assert.equal(row.withChip, row.plain, `${framework}: 既定の書体で、札（${row.status}・${row.label}）のある行の高さ ${row.withChip}px が札の無い行 ${row.plain}px と違う`);
+        assert.equal(row.plain, 20, `${framework}: 既定の書体で、本文の行の高さが 20px（${row.plain}px）`);
+      }
+      // 札の地は字の内容の高さに敷かれる（inline の地は line-height に左右されない）。line-height を替えても地の見える高さが変わらないこと。
+      const chipHeightAt = (lineHeight) => page.evaluate((value) => {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `width: 480px; font-family: var(--koyori-font-family); font-size: 14px; line-height: ${value}`;
+        wrap.innerHTML = '<p style="margin: 0">担当は <span class="koyori-mention koyori-mention-member"><span class="koyori-mention-label">@aki</span></span> さんです。</p>';
+        document.querySelector('#storybook-root [data-backdrop]').append(wrap);
+        const height = wrap.querySelector('.koyori-mention').getBoundingClientRect().height;
+        wrap.remove();
+        return height;
+      }, lineHeight);
+      assert.equal(await chipHeightAt('1'), await chipHeightAt('20px'), `${framework}: 札の地の高さが line-height で変わらない`);
+      // 書体を 1 つに固めた測定。フォールバックの書体差を除いて、札の箱そのものが行を広げないことを見る。
       await page.addStyleTag({ content: '#storybook-root * { font-family: "Noto Sans CJK JP", "Noto Sans JP", sans-serif !important; }' });
       const withMention = await page.getByTestId('with').boundingBox();
       const without = await page.getByTestId('without').boundingBox();
-      assert.equal(withMention.height, without.height, `${framework}: 札のある行と無い行で段落の高さが同じ`);
+      assert.equal(withMention.height, without.height, `${framework}: 書体を固めて、札のある行と無い行で段落の高さが同じ`);
 
       // リンクの札。フォーカスの輪・ホバーの下線・Enter での遷移。
       await open('link');
@@ -689,7 +756,7 @@ async function browserChecks() {
       }
       assert.deepEqual(errors, [], `${framework}: コンソールのエラー・警告`);
       await page.close();
-      console.log(`D（${framework}）: 部品と固定 class の HTML の算出スタイル（明暗・説明とコメントの地）・算出色の対比と下線（リンクの札を含む）・強制配色（明暗両方。リンクの札とフォーカスの輪を含む）・行の高さ・リンクの操作・axe を確認しました。`);
+      console.log(`D（${framework}）: 部品と固定 class の HTML の算出スタイル（明暗・説明とコメントの地）・算出色の対比と下線（リンクの札を含む）・強制配色（明暗両方。リンクの札とフォーカスの輪を含む）・行の高さ（既定の書体と固めた書体の両方）・リンクの操作・axe を確認しました。`);
     }
   } finally {
     await browser.close();

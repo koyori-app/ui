@@ -35,7 +35,7 @@ Vue では、渡した `class`・`data-*`・`title` などの属性が根の要�
 | outside・gone・unknown | `text-secondary` / 地なし | surface 8.38・surface-raised 7.81 | 7.38 | 破線の `border-strong`（墨 3.71・3.46、ライト 3.65） |
 
 - 地は不透明なトークンか、地なしです。半透明の地は、重ねるページの背景によって対比が変わるため使いません。
-- 地なしの状態は、説明の地（`surface`）とカードの地（`surface-raised`）の両方で測ります。
+- 地なしの状態は、説明の地（`surface`）とカードの地（`surface-raised`）の両方で測ります。灰色の状態（外れた者・退会した者・名の引けぬ者）は地を持たないので、対比を保証するのはこの 2 つの地の上だけです。表の見出しなどそれ以外の地に置く場合は、字 4.5:1・下線 3:1 を利用側で確かめてください。
 - 明るい面の `info-subtle` は灰色なので、メンションの地は専用のトークン（`--koyori-color-mention`・`-mention-subtle`・`-mention-self`・`-mention-self-subtle`）で持ちます。
 - 外れた者・退会した者・名の引けぬ者は、色の薄さだけでなく破線の下線で分けます。
 

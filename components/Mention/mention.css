@@ -4,7 +4,9 @@
 @import '../tokens.css';
 
 /* 札。行の中の字として描く（inline）。地は字の高さにだけ敷き、上下の padding を持たないので行の高さを広げない。
-   名の途中で折り返さない。 */
+   line-height: 1 は、Inter・Noto Sans JP が無くフォールバックの書体になる環境でも、札のある行が本文の行より高くならないための指定。
+   inline の行の高さは、札の line-height（既定は本文から継ぎ、書体のフォールバックの余白が足される）でも決まる。
+   地の高さは字の内容の高さなので、line-height では変わらない。名の途中で折り返さない。 */
 .koyori-mention {
   --koyori-mention-color: var(--koyori-color-mention);
   --koyori-mention-background: var(--koyori-color-mention-subtle);
@@ -17,6 +19,7 @@
   background: var(--koyori-mention-background);
   color: var(--koyori-mention-color);
   font-weight: 500;
+  line-height: 1;
   text-decoration: var(--koyori-mention-decoration-line) var(--koyori-mention-decoration-style) var(--koyori-mention-decoration-color);
   text-underline-offset: 0.2em;
   white-space: nowrap;
@@ -38,6 +41,7 @@
   --koyori-mention-decoration-line: underline;
   --koyori-mention-decoration-style: dashed;
   --koyori-mention-decoration-color: var(--koyori-color-border-strong);
+  text-underline-offset: 0.25em;
 }
 
 /* リンクの札。本文側の a の色と下線より強い詳細度（0,2,1）で、札の字と下線を保つ。 */
