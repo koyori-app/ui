@@ -83,6 +83,11 @@
   --koyori-color-info-subtle: #0c1f36;
   --koyori-color-success: #3dd68c;
   --koyori-color-success-subtle: #0d281a;
+  /* メンションの札。字は info / warning と同じ値。地は不透明にし、字と地の対比を 4.5:1 以上に保つ。 */
+  --koyori-color-mention: #52a9ff;
+  --koyori-color-mention-subtle: #15202d;
+  --koyori-color-mention-self: #ffb224;
+  --koyori-color-mention-self-subtle: #332712;
   --koyori-shadow-panel: 0 24px 56px -16px #000000d9, 0 6px 16px -4px #00000080, inset 0 1px 0 #ffffff0d;
 }
 
@@ -120,5 +125,10 @@
   --koyori-color-info-subtle: #f6f6f8;
   --koyori-color-success: #18794e;
   --koyori-color-success-subtle: #f6f6f8;
+  /* 明るい面の -subtle は灰色なので、メンションの地は別に持つ。 */
+  --koyori-color-mention: #0b62c4;
+  --koyori-color-mention-subtle: #dfebf7;
+  --koyori-color-mention-self: #8f4e00;
+  --koyori-color-mention-self-subtle: #ede3d6;
   --koyori-shadow-panel: 0 24px 56px -20px #11111440, 0 6px 16px -6px #1111141f;
 }

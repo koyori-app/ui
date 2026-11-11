@@ -36,7 +36,7 @@ Story は各パッケージの `src/*.stories.*` に追加します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
 Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）、ダイアログやカードなど浮いた面の角丸は `lg`（12px）を使います。
 配色は墨です。既定は黒い面（ダーク）で、祖先に `data-theme="light"` を付けると明るい面に切り替わります。
-主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーだけです。
+主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーと、例外のメンションの札（青と黄の字と薄い地）だけです。
 メニューやダイアログなど浮いた面は `--koyori-color-surface-raised` で塗ります。部品は地の色を塗らないため、ページの背景は利用側が `--koyori-color-surface` で塗ります。
 選択背景とチェックの色は `--koyori-color-selection` と `--koyori-color-selection-indicator` で調整できます。
 カードなど角丸のある要素を入れ子にする場合は、外側の角丸を `内側の角丸 + 外側の padding` にします。
@@ -101,6 +101,12 @@ Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（�
 AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を超えた分を `+N` にまとめます。
 `label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
 重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
+
+Mention は `@名` を色付きの字と薄い地で出します（アバターは出しません）。`label`（`@` を含めた字）、`status`（`member`・`outside`・`gone`・`unknown`。既定 `member`）、`self`（本人。`member` のときだけ）、`href`（付けると `a` 要素）を受け取ります。
+member は青、本人は黄の字と地で、地はすべて不透明なトークン（`--koyori-color-mention*`）です。外れた者・退会した者・名の引けぬ者は地を敷かず、灰色の字に破線の下線を引き、色だけで分けません。
+説明文のように HTML を差し込む場所では、固定 class（`koyori-mention` と `koyori-mention-member` などの状態 class）を付けた要素を書きます。CSS は `style.css` に入り、部品と同じ見た目になります。
+class は `mentionClassNames(status, self)`、許可リストは `MENTION_CLASS_NAMES` で組めます。
+状態ごとの対比とサーバー描画は `node scripts/check-mention.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行。CI の Check でも走ります）。
 
 Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダルです。`open`・`title`・`description`・`onClose` を受け取り、
 本文は既定スロット、操作ボタンは `actions`（Vue は `#actions` スロット）に置きます。表示状態はアプリ側で持ち、`onClose` で false に戻します。`open` を true のままにすると閉じません（ブラウザーが強制的に閉じても `onClose` を呼んで開き直します）。
@@ -454,7 +460,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Pagination・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

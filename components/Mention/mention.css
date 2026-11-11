@@ -1,0 +1,81 @@
+/* CSS Modules ではなく素の CSS。Mention 部品と、利用側が HTML に書く札が同じ class を使う。
+   色と下線は状態ごとに下の --koyori-mention-* で持つ。地は不透明なトークンか、地を敷かない transparent に限り、
+   ページの地に対比を左右させない。scripts/check-mention.cjs がこの宣言を読んで、明暗両方の対比を計算する。 */
+@import '../tokens.css';
+
+/* 札。行の中の字として描く（inline）。地は字の高さにだけ敷き、上下の padding を持たないので行の高さを広げない。
+   line-height: 1 は、Inter・Noto Sans JP が無くフォールバックの書体になる環境でも、札のある行が本文の行より高くならないための指定。
+   inline の行の高さは、札の line-height（既定は本文から継ぎ、書体のフォールバックの余白が足される）でも決まる。
+   地の高さは字の内容の高さなので、line-height では変わらない。名の途中で折り返さない。 */
+.koyori-mention {
+  --koyori-mention-color: var(--koyori-color-mention);
+  --koyori-mention-background: var(--koyori-color-mention-subtle);
+  --koyori-mention-decoration-line: none;
+  --koyori-mention-decoration-style: solid;
+  --koyori-mention-decoration-color: currentcolor;
+  display: inline;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--koyori-mention-background);
+  color: var(--koyori-mention-color);
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: var(--koyori-mention-decoration-line) var(--koyori-mention-decoration-style) var(--koyori-mention-decoration-color);
+  text-underline-offset: 0.2em;
+  white-space: nowrap;
+}
+
+/* 本人。warning 系の黄の字と地で示す。member と重ねたときだけ効く。 */
+.koyori-mention-member.koyori-mention-self {
+  --koyori-mention-color: var(--koyori-color-mention-self);
+  --koyori-mention-background: var(--koyori-color-mention-self-subtle);
+  font-weight: 600;
+}
+
+/* 外れた者・退会した者・名の引けぬ者。地を敷かず、色の薄さだけで分けないよう破線の下線を引く。 */
+.koyori-mention-outside,
+.koyori-mention-gone,
+.koyori-mention-unknown {
+  --koyori-mention-color: var(--koyori-color-text-secondary);
+  --koyori-mention-background: transparent;
+  --koyori-mention-decoration-line: underline;
+  --koyori-mention-decoration-style: dashed;
+  --koyori-mention-decoration-color: var(--koyori-color-border-strong);
+  text-underline-offset: 0.25em;
+}
+
+/* リンクの札。本文側の a の色と下線より強い詳細度（0,2,1）で、札の字と下線を保つ。 */
+a.koyori-mention[href] {
+  color: var(--koyori-mention-color);
+  text-decoration: var(--koyori-mention-decoration-line) var(--koyori-mention-decoration-style) var(--koyori-mention-decoration-color);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ホバーで下線を引く。線の種類と色は状態のまま（外れた者などのリンクは破線のまま）。 */
+@media (hover: hover) and (pointer: fine) {
+  a.koyori-mention[href]:hover {
+    text-decoration-line: underline;
+  }
+}
+
+a.koyori-mention[href]:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+@media (forced-colors: active) {
+  /* 強制配色では地と字の色が系統色に置き換わり、本人の黄と member の青の違いが消えるため、本人は強調の系統色で示す。
+     color・background を直に書かず変数を上書きする。a.koyori-mention[href] の color（0,2,1）は
+     この規則（0,2,0）より強いので、直に書くとリンクの札の字だけ黄の字のまま Highlight の地に乗る。
+     本人は forced-color-adjust: none なので、リンクの札のフォーカスの輪の色（既定は text のトークン）も系統色に替わらない。
+     輪は札の外の Canvas の上に描かれるため、CanvasText にして Canvas との対比を保つ。
+     ほかの状態は forced-color-adjust を切らず、ブラウザーの強制配色（Canvas・CanvasText・LinkText）に任せる。
+     灰色の状態の破線の下線は、色が系統色になっても線の種類で分かれる。 */
+  .koyori-mention-member.koyori-mention-self {
+    forced-color-adjust: none;
+    --koyori-mention-color: HighlightText;
+    --koyori-mention-background: Highlight;
+    --koyori-focus-color: CanvasText;
+  }
+}
