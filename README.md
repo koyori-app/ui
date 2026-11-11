@@ -255,6 +255,14 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 `id`・`content`・`placement` を指定します。[使い方・無効トリガーの扱い](apps/docs/src/content/docs/components/tooltip.mdx)を参照してください。
 Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレームワークの操作・配置・アクセシビリティを検証できます（`TOOLTIP_TEST_PORT` でポート変更可能）。
 
+## HoverCard
+
+`HoverCard` は起点にポインターを載せる・フォーカスすると、起点の下（入らなければ上）に操作できる中身（リンクなど）のカードを開きます。中身は利用側が `content`（Vue は `#content` スロット）に入れます。
+ポインターは 400ms 載せると開き、起点からもカードからも離れて 150ms で閉じます（`openDelay`・`closeDelay`）。起点とカードの間を移っても閉じません。タッチの操作では開きません。
+起点は子の要素に加え、`container` と `selector` で外の要素（`v-html` の中の `a` など）も渡せます。Esc で閉じ、カードの中にいたときは起点へフォーカスを戻します。Tab は 起点 → カード → 起点の次、の順に進みます。
+`label`（カードの読み上げ名）が必須です。[使い方と注意点](apps/docs/src/content/docs/components/hover-card.mdx)を参照してください。
+Storybook のビルド後、`node scripts/check-hover-card.cjs` で両フレームワークの開閉の遅れ・間の移動・Esc・フォーカス・タッチ・外の起点・位置を検証できます（`HOVER_CARD_TEST_PORT`・`HOVER_CARD_TEST_FRAMEWORK` で変更可能）。
+
 ## Calendar
 
 `Calendar` は月のカレンダーをページ内に表示し、1 日を選びます。値は `'YYYY-MM-DD'` の文字列で、

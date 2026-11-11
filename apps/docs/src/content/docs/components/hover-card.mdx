@@ -1,0 +1,83 @@
+---
+title: HoverCard
+description: 起点にポインターを載せる・フォーカスすると、リンクなど操作できる中身を持つカードを開きます。
+---
+
+import HoverCardPreview from '../../../components/HoverCardPreview.astro';
+
+HoverCard は、メンションやユーザー名などの起点に、操作できる中身（プロフィールとリンクなど）のカードを添えます。短い補足だけなら [Tooltip](../tooltip/) を使います。Tooltip は中身を操作できません。
+
+ポインターを 400ms 載せると開き、起点からもカードからも離れて 150ms で閉じます。横切っただけでは開かず、起点とカードの間の隙間を渡っても閉じません。キーボードで起点にフォーカスしても、同じ 400ms の後に開きます。開くたびに利用側が中身を取りに行く使い方を想定し、Tab で札を素通りするたびには取りに行かせません。
+
+<HoverCardPreview />
+
+## 使い方
+
+カードの中身は利用側が持ちます。React は `content` に描画済みのノード、Vue は `#content` スロットに入れます。起点は 2 通りで渡せ、開閉の挙動は同じです。
+
+### 子を起点にする
+
+React は children、Vue は default slot に **フォーカスできる要素を 1 つ** 渡します。リンクやボタンをそのまま使えます。
+
+```vue
+<HoverCard label="hanako のプロフィール">
+  <a href="/users/hanako">@hanako</a>
+  <template #content>…</template>
+</HoverCard>
+```
+
+### 外の要素を起点にする
+
+`v-html` や `dangerouslySetInnerHTML` で描いた本文の中のリンクなど、部品ではない要素を起点にするときは、容れ物の要素を `container`、起点を選ぶセレクターを `selector` に渡します。カードは 1 つで、起点の差し替えには `onOpenChange` を使います。起点を 1 つずつ登録しないので、本文を描き直して札が入れ替わっても登録し直しは要りません（開いているカードの起点が外れたら閉じます）。
+
+```vue
+<div ref="body" v-html="html" />
+<HoverCard :container="body" selector="a.koyori-mention[data-user-id]" :label="`${name} のプロフィール`"
+  :on-open-change="(open, el) => (userId = open ? el.dataset.userId : null)">
+  <template #content><ProfileCard :user-id="userId" /></template>
+</HoverCard>
+```
+
+```tsx
+// React: ref.current は初回の描画では null なので、container は state で渡す
+const [body, setBody] = useState<HTMLElement | null>(null);
+<div ref={setBody} dangerouslySetInnerHTML={{ __html: html }} />
+<HoverCard container={body} selector="a.koyori-mention[data-user-id]" label={`${name} のプロフィール`}
+  onOpenChange={(open, el) => setUserId(open ? el.dataset.userId ?? null : null)} content={<ProfileCard userId={userId} />} />
+```
+
+- `container` を指定すると children は起点になりません。`selector` の既定は `[data-hover-card-trigger]` です
+- カードを出さない札（引けない人・退会した人など）は、セレクターで外します（例: `[data-user-id]` を付けたものだけ）
+- カードの根は `span` で、中身に `div` や `p` を置くなら、HoverCard を `p` の中に置かないでください。サーバー描画の HTML 解析で `p` が切れ、ハイドレーションが合わなくなります
+- 中身は常に描画しておき、`onOpenChange` で利用側が切り替えます。閉じたときに中身を空にすると、次に開いた札で前の人の中身が一瞬見えることを防げます
+- CodeMirror などの編集中の DOM には使いません。開いている間に起点へ `aria-details` を付け外しするため、編集の監視に拾われることがあります
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | カードの読み上げ名。開くたびに変えてよい（例: 「hanako のプロフィール」） |
+| `id` | `string` | 自動 | カードの id。省略すると接続時に `koyori-hover-card-<乱数>` を付ける |
+| `container` | `HTMLElement \| null` | なし | 外の要素を起点にするときの容れ物 |
+| `selector` | `string` | `[data-hover-card-trigger]` | `container` の中で起点にする要素 |
+| `openDelay` | `number` | `400` | ポインター・フォーカスから開くまで（ms） |
+| `closeDelay` | `number` | `150` | 起点とカードの両方から離れてから閉じるまで（ms） |
+| `disabled` | `boolean` | `false` | 開かない。開いていれば閉じる |
+| `defaultOpen` | `boolean` | `false` | 子の起点で、マウント直後に遅れなしで開く。Storybook の撮影用。`container` 指定時は無視 |
+| `onOpenChange` | `(open, trigger) => void` | なし | 開いたとき `true`、閉じたとき `false`。`trigger` はそのときの起点要素。Vue は `:on-open-change` で渡す |
+| `content` | node / `#content` スロット | なし | カードの中身 |
+| `children` | node / default slot | なし | 起点。`container` 指定時は使わない |
+
+## 操作と配置
+
+- 起点の下に開き、入らなければ上に開きます。左端は起点に揃え、画面の端に寄せます。中身が後から伸びても、起点から離れません。入りきらないときは広い側に最大の高さまで伸び、中はスクロールします。
+- Popover API があるブラウザーではトップレイヤーに出し、祖先の `overflow` や `transform` による切り取りを避けます。ない場合は `fixed` 表示になります。
+- タッチの操作では開きません。タップは起点の既定の動作（リンクの移動など）のままです。タップでフォーカスが入ったときも開きません。
+- Esc は表示中のカードだけを閉じ、外の Dialog やメニューへは伝えません。カードの中にフォーカスがあったときは起点に戻します。ホバーだけで開いたときは、別の要素のフォーカスを奪いません。起点を離れるまで再表示しません。
+- Tab は 起点 → カードの中のリンク → 起点の次の要素、の順に進みます。カードの最初のリンクから Shift + Tab で起点へ戻ります。
+
+## アクセシビリティとスタイル
+
+カードは `role="dialog"`（モーダルではない）と `aria-label` を持ち、開いている間だけ起点に `aria-details` で関連付けます。起点の名前・役割は変えません。`aria-describedby` を使わないのは、フォーカスのたびにプロフィール全文が読まれるのを避けるためです。
+
+背景・文字・枠線・影・角丸は共通トークンを使い、幅は `--koyori-hover-card-width`（288px）です。余白と区切り線は中身が持ちます。現れるときは起点の側から 4px 寄ってくる 120ms の動きで、`prefers-reduced-motion` では動かしません。強制配色では枠と文字をシステム色にします。
