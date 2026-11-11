@@ -55,7 +55,7 @@ const meta = {
     const [mounted, setMounted] = useState(true);
     return <div style={{ padding: 64, maxWidth: 520, lineHeight: 1.8 }}>
       <button>前へ</button>
-      <p>来週のレビューは {mounted && <HoverCard {...args} onOpenChange={record} content={<ProfileCard name="hanako" />}>{hanako}</HoverCard>} が担当します。</p>
+      <div style={{ margin: '1em 0' }}>来週のレビューは {mounted && <HoverCard {...args} onOpenChange={record} content={<ProfileCard name="hanako" />}>{hanako}</HoverCard>} が担当します。</div>
       <button>次へ</button> <button onClick={() => setMounted(false)}>HoverCard を破棄</button>
       <Log log={log} />
     </div>;
@@ -82,15 +82,16 @@ export const ExternalTriggers: Story = {
     // ref.current は初回の描画では null なので、container は state で渡す。
     const [body, setBody] = useState<HTMLElement | null>(null);
     const [user, setUser] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(true);
     const { log, record } = useLog();
     const html = '<p style="margin: 0">レビューは <a class="demo-mention" href="#profile-hanako" data-user="hanako">@hanako</a> と <a class="demo-mention" href="#profile-yupix" data-user="yupix">@yupix</a> が見ます。退会した <a class="demo-mention" href="#left">@taro</a> の分は引き継ぎ済みです。</p>';
     return <div style={{ padding: 64, maxWidth: 520, lineHeight: 1.8 }}>
       <button>前へ</button>
       <div ref={setBody} data-testid="body" dangerouslySetInnerHTML={{ __html: html }} />
-      <HoverCard {...args} label="メンションのプロフィール" container={body} selector="a.demo-mention[data-user]"
+      {mounted && <HoverCard {...args} label="メンションのプロフィール" container={body} selector="a.demo-mention[data-user]"
         onOpenChange={(open, trigger) => { setUser(open ? trigger.dataset.user ?? null : null); record(open, trigger); }}
-        content={user ? <ProfileCard name={user} /> : null} />
-      <button>次へ</button>
+        content={user ? <ProfileCard name={user} /> : null} />}
+      <button>次へ</button> <button onClick={() => setMounted(false)}>HoverCard を破棄</button>
       <Log log={log} />
     </div>;
   },

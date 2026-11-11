@@ -16,8 +16,31 @@ let browser;
 let axeSource;
 
 // 1 つの story を開き、ページのエラーを集める。時計は story の読み込み後に止める。
-const open = async (framework, name, { clock = true, ...contextOptions } = {}) => {
+// 生きているリスナーを数える（破棄で取り残しがないかを直接見る）。ページの読み込み前に入れる。
+const countListeners = () => {
+  const live = new WeakMap();
+  const key = (type, options) => type + '|' + (options === true || (options && options.capture) ? 'capture' : 'bubble');
+  const add = EventTarget.prototype.addEventListener;
+  const remove = EventTarget.prototype.removeEventListener;
+  EventTarget.prototype.addEventListener = function (type, listener, options) {
+    if (listener) {
+      const keys = live.get(this) ?? new Map();
+      live.set(this, keys);
+      keys.set(key(type, options), (keys.get(key(type, options)) ?? new Set()).add(listener));
+    }
+    return add.call(this, type, listener, options);
+  };
+  EventTarget.prototype.removeEventListener = function (type, listener, options) {
+    live.get(this)?.get(key(type, options))?.delete(listener);
+    return remove.call(this, type, listener, options);
+  };
+  window.__listeners = (target, type, capture = false) => live.get(target)?.get(key(type, capture))?.size ?? 0;
+  window.__listenersOn = target => Array.from(live.get(target)?.values() ?? [], set => set.size).reduce((sum, size) => sum + size, 0);
+};
+
+const open = async (framework, name, { clock = true, instrument = false, ...contextOptions } = {}) => {
   const context = await browser.newContext({ viewport: { width: 800, height: 600 }, ...contextOptions });
+  if (instrument) await context.addInitScript(countListeners);
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -159,8 +182,10 @@ const behaviour = async (framework, name, label) => {
   await s.frame();
   await s.page.keyboard.press('Tab');
   assert.match(await s.active(), /^A:プロフィールを見る/);
+  await s.page.evaluate(() => { window.escapeReached = 0; document.addEventListener('keydown', event => { if (event.key === 'Escape') window.escapeReached++; }); });
   await s.page.keyboard.press('Escape');
   assert.equal(await s.shown(), false, `${name}: Escape closes the card`);
+  assert.equal(await s.page.evaluate(() => window.escapeReached), 0, `${name}: Escape with focus in the card is not passed on`);
   assert.equal(await s.active(), 'A:@hanako', `${name}: Escape inside the card returns focus to the trigger`);
   await s.tick(1000);
   assert.equal(await s.shown(), false, `${name}: Escape does not reopen while focus stays`);
@@ -173,8 +198,10 @@ const behaviour = async (framework, name, label) => {
   await s.page.keyboard.press('Escape');
   assert.equal(await s.shown(), false);
   assert.equal(await s.active(), 'A:@hanako', `${name}: Escape on the trigger keeps focus there`);
-  // ホバーだけで開いたカードを Esc で閉じても、別の要素のフォーカスは奪わない。
+  assert.equal(await s.page.evaluate(() => window.escapeReached), 0, `${name}: Escape with focus on the trigger is not passed on`);
+  // ホバーだけで開いたカードを Esc で閉じても、別の要素のフォーカスは奪わず、Esc も止めない（入力欄などへ届く）。
   await previous.focus();
+  await previous.evaluate(button => { window.buttonEscape = null; button.addEventListener('keydown', event => { if (event.key === 'Escape') window.buttonEscape = { prevented: event.defaultPrevented }; }); });
   await s.hover(trigger);
   await s.tick(400);
   await s.frame();
@@ -182,7 +209,45 @@ const behaviour = async (framework, name, label) => {
   await s.page.keyboard.press('Escape');
   assert.equal(await s.shown(), false);
   assert.equal(await s.active(), 'BUTTON:前へ', `${name}: Escape does not steal focus when opened by hover`);
+  assert.deepEqual(await s.page.evaluate(() => window.buttonEscape), { prevented: false }, `${name}: Escape opened by hover reaches the focused element untouched`);
+  assert.equal(await s.page.evaluate(() => window.escapeReached), 1, `${name}: Escape opened by hover bubbles on`);
   await s.away();
+  await s.tick(1000);
+
+  // Tab の候補。tabindex=-1・無効・非表示・inert は飛ばす。
+  await previous.focus();
+  await s.page.keyboard.press('Tab');
+  await s.tick(400);
+  await s.frame();
+  assert.equal(await s.shown(), true);
+  await s.page.evaluate(() => {
+    const make = html => Object.assign(document.createElement('template'), { innerHTML: html }).content.firstElementChild;
+    document.querySelector('[role="dialog"]').prepend(make('<a href="#skip" tabindex="-1" data-injected>飛ばす</a>'));
+    document.querySelector('[role="dialog"]').append(make('<button disabled tabindex="0" data-injected>無効</button>'));
+    document.querySelector('a[data-user="hanako"]').after(make('<button disabled tabindex="0" data-injected>無効の次</button>'), make('<button hidden tabindex="0" data-injected>非表示</button>'), make('<div inert data-injected><a href="#inert">inert</a></div>'));
+  });
+  await s.page.keyboard.press('Tab');
+  assert.match(await s.active(), /^A:プロフィールを見る/, `${name}: Tab from the trigger skips tabindex=-1 links`);
+  await s.page.keyboard.press('Tab');
+  assert.equal(await s.active(), after, `${name}: Tab from the last item skips disabled, hidden and inert elements`);
+  assert.equal(await s.shown(), false, `${name}: the card closes and focus is not left inside it`);
+  await s.page.evaluate(() => document.querySelectorAll('[data-injected]').forEach(element => element.remove()));
+  await s.away();
+  await s.tick(1000);
+
+  // マウスで押して得たフォーカスでは開いたままにしない。
+  await s.hover(trigger);
+  await s.tick(400);
+  await s.frame();
+  assert.equal(await s.shown(), true);
+  await card.getByRole('link', { name: /プロフィールを見る/ }).click();
+  assert.match(await s.active(), /^A:プロフィールを見る/);
+  await s.away();
+  await s.tick(149);
+  assert.equal(await s.shown(), true, `${name}: still open at 149ms after a click inside`);
+  await s.tick(1);
+  assert.equal(await s.shown(), false, `${name}: a click inside does not keep the card open once the pointer leaves`);
+  assert.equal(await trigger.getAttribute('aria-details'), null);
   await s.tick(1000);
 
   // 9. axe（開いた状態）。axe が時計を使うので、最後に時計を流してから走らせる。
@@ -233,6 +298,155 @@ const delegated = async framework => {
   await s.finish();
 };
 
+// 札から札へ移る・フォーカスとポインターが別の札にあるときの開閉。
+const crossing = async framework => {
+  const prepare = async () => {
+    const s = await open(framework, 'external-triggers');
+    s.focusHanako = async () => {
+      await s.button('前へ').focus();
+      await s.page.keyboard.press('Tab');
+      assert.equal(await s.active(), 'A:@hanako');
+      await s.tick(400);
+      await s.frame();
+      assert.equal(await s.shown(), true);
+    };
+    return s;
+  };
+  // 札から札へ移り、どちらにも開かないまま札の外へ出ると閉じる。
+  {
+    const s = await prepare();
+    await s.hover(s.link('hanako'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true);
+    await s.hover(s.link('yupix'));
+    await s.tick(200);
+    await s.away();
+    await s.tick(150);
+    assert.equal(await s.shown(), false, 'the card closes after the pointer leaves for a place that is not a mention');
+    assert.equal(await s.link('hanako').getAttribute('aria-details'), null);
+    assert.equal(await s.link('yupix').getAttribute('aria-details'), null);
+    await s.tick(1000);
+    assert.equal(await s.shown(), false);
+    assert.equal(await s.log(), 'open:hanako close:hanako', 'the mention that was only crossed never opens');
+    await s.finish();
+  }
+  // カードの最後から Tab で隣の札へ出ると、普通に Tab で来たときと同じ遅れで開く。
+  {
+    const s = await prepare();
+    await s.focusHanako();
+    await s.page.keyboard.press('Tab');
+    assert.match(await s.active(), /^A:プロフィールを見る/);
+    await s.page.keyboard.press('Tab');
+    assert.equal(await s.active(), 'A:@yupix');
+    assert.equal(await s.log(), 'open:hanako close:hanako');
+    await s.tick(399);
+    assert.equal(await s.shown(), false, 'the next mention waits for the open delay');
+    await s.tick(1);
+    await s.frame();
+    assert.equal(await s.shown(), true, 'tabbing out of the card onto a mention opens it');
+    assert.match(await s.card.innerText(), /yupix/);
+    assert.equal(await s.log(), 'open:hanako close:hanako open:yupix');
+    await s.finish();
+  }
+  // 札にフォーカスがある間に、別の札を横切っても開かない。
+  {
+    const s = await prepare();
+    await s.focusHanako();
+    await s.hover(s.link('yupix'));
+    await s.tick(100);
+    await s.away();
+    await s.tick(1000);
+    assert.equal(await s.log(), 'open:hanako', 'a mention that was only crossed does not open while another has focus');
+    assert.equal(await s.shown(), true);
+    assert.match(await s.card.innerText(), /hanako/);
+    await s.finish();
+  }
+  // カードの中にフォーカスがある間に、札を横切っても入れ替わらない。
+  {
+    const s = await prepare();
+    await s.focusHanako();
+    await s.page.keyboard.press('Tab');
+    assert.match(await s.active(), /^A:プロフィールを見る/);
+    await s.hover(s.link('yupix'));
+    await s.tick(100);
+    await s.away();
+    await s.tick(1000);
+    assert.equal(await s.log(), 'open:hanako', 'crossing a mention does not swap the card while focus is inside it');
+    assert.match(await s.card.innerText(), /hanako/);
+    assert.match(await s.active(), /^A:プロフィールを見る/);
+    await s.finish();
+  }
+};
+
+// 折り返した札。カードは、下に開くなら最後の行、上に開くなら最初の行の箱に付く。
+const wrapped = async framework => {
+  for (const side of ['bottom', 'top']) {
+    const s = await open(framework, 'external-triggers');
+    const link = s.link('hanako');
+    await s.page.getByTestId('body').evaluate((element, side) => {
+      Object.assign(element.style, side === 'bottom' ? { position: 'fixed', left: '64px', top: '120px', width: '150px', paddingLeft: '100px', textIndent: '-100px' } : { position: 'fixed', left: '64px', bottom: '24px', width: '150px' });
+      element.querySelector('a[data-user="hanako"]').textContent = 'とても長い名前の @hanako さん';
+    }, side);
+    const rects = await link.evaluate(element => Array.from(element.getClientRects(), r => ({ left: r.left, top: r.top, right: r.right, bottom: r.bottom })));
+    assert(rects.length >= 2, `${side}: the mention wraps over lines`);
+    const first = rects[0];
+    const last = rects[rects.length - 1];
+    if (side === 'bottom') assert(last.left > first.left + 4, 'the last line starts to the right of the first');
+    else assert(first.left > last.left + 4, 'the first line starts to the right of the last');
+    await s.page.mouse.move((first.left + first.right) / 2, (first.top + first.bottom) / 2);
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true);
+    assert.equal(await s.card.getAttribute('data-side'), side);
+    const c = await s.card.boundingBox();
+    if (side === 'bottom') {
+      near(c.x, last.left, 'the card is aligned to the left edge of the last line box');
+      near(c.y, last.bottom + 8, 'the card sits below the last line box');
+    } else {
+      near(c.x, first.left, 'the card is aligned to the left edge of the first line box');
+      near(c.y + c.height, first.top - 8, 'the card sits above the first line box');
+    }
+    await s.finish();
+  }
+};
+
+// 部品だけを破棄したとき、容れ物に残った札にリスナーが残らない。
+const detached = async framework => {
+  const s = await open(framework, 'external-triggers', { instrument: true });
+  const body = await s.page.getByTestId('body').elementHandle();
+  await s.hover(s.link('hanako'));
+  await s.tick(400);
+  await s.frame();
+  assert.equal(await s.shown(), true);
+  const counts = () => s.page.evaluate(element => ({
+    body: window.__listenersOn(element),
+    keydown: window.__listeners(document, 'keydown', true),
+    resize: window.__listeners(window, 'resize'),
+    scroll: window.__listeners(window, 'scroll', true),
+  }), body);
+  const before = await counts();
+  assert(before.body > 0, 'the container has the component listeners while it is mounted');
+  await s.button('HoverCard を破棄').dispatchEvent('click');
+  await s.card.waitFor({ state: 'detached' });
+  const after = await counts();
+  assert.equal(after.body, 0, 'destroy removes every listener from the container');
+  assert.equal(after.keydown, before.keydown - 1, 'destroy removes the document keydown listener');
+  assert.equal(after.resize, before.resize - 1, 'destroy removes the window resize listener');
+  assert.equal(after.scroll, before.scroll - 1, 'destroy removes the window scroll listener');
+  assert.equal(await s.link('hanako').getAttribute('aria-details'), null, 'destroy removes aria-details');
+  await s.away();
+  await s.hover(s.link('hanako'));
+  await s.tick(1000);
+  assert.equal(await s.log(), 'open:hanako', 'hovering a mention left in the container no longer opens or logs');
+  assert.equal(await s.page.locator('[role="dialog"]').count(), 0);
+  await s.button('前へ').focus();
+  await s.button('前へ').evaluate(button => { window.buttonEscape = null; button.addEventListener('keydown', event => { if (event.key === 'Escape') window.buttonEscape = { prevented: event.defaultPrevented }; }); });
+  await s.page.keyboard.press('Escape');
+  assert.deepEqual(await s.page.evaluate(() => window.buttonEscape), { prevented: false }, 'Escape reaches other elements after destroy');
+  await s.finish();
+};
+
 (async () => {
   try {
     await new Promise((resolve, reject) => {
@@ -247,6 +461,9 @@ const delegated = async framework => {
       await behaviour(framework, 'default', 'hanako のプロフィール');
       await behaviour(framework, 'external-triggers', 'メンションのプロフィール');
       await delegated(framework);
+      await crossing(framework);
+      await wrapped(framework);
+      await detached(framework);
 
       // 7. タッチでは開かない。タップは起点の既定の動作のまま。
       for (const name of ['default', 'external-triggers']) {
@@ -305,13 +522,29 @@ const delegated = async framework => {
         await s.finish();
       }
 
-      // 15. 開いた状態（defaultOpen）。動きを減らす・強制配色、明暗の axe。
+      // 15. 動きを減らす設定。開いた直後の動きを、設定ごとのコンテキストで確かめる（動きが終わってから設定を変えても CSS の指定は確かめられない）。
+      for (const reducedMotion of ['reduce', 'no-preference']) {
+        const s = await open(framework, 'default', { reducedMotion });
+        await s.card.evaluate(el => { window.animationsStarted = 0; el.addEventListener('animationstart', () => window.animationsStarted++); });
+        await s.hover(s.link('hanako'));
+        await s.tick(400);
+        const running = await s.card.evaluate(el => el.getAnimations().length);
+        await sleep(250);
+        const started = await s.page.evaluate(() => window.animationsStarted);
+        if (reducedMotion === 'reduce') {
+          assert.equal(running, 0, 'no animation right after opening with reduced motion');
+          assert.equal(started, 0, 'no animation starts with reduced motion');
+        } else {
+          assert(started >= 1, 'the card animates in when motion is allowed');
+        }
+        await s.finish();
+      }
+      // 開いた状態（defaultOpen）。強制配色、明暗の axe。
       {
         const s = await open(framework, 'open', { clock: false });
         await s.card.waitFor({ state: 'visible' });
         await s.card.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
-        await s.page.emulateMedia({ reducedMotion: 'reduce', forcedColors: 'active' });
-        assert.equal(await s.card.evaluate(el => el.getAnimations().length), 0, 'no animation with reduced motion');
+        await s.page.emulateMedia({ forcedColors: 'active' });
         const border = await s.card.evaluate(el => { const css = getComputedStyle(el); return `${css.borderTopWidth} ${css.borderTopStyle}`; });
         assert.equal(border, '1px solid', 'the border stays in forced colors');
         const colors = await s.card.evaluate(el => { const text = el.querySelector('.demo-card-bio'); return `${getComputedStyle(el).color} on ${getComputedStyle(el).backgroundColor} / ${getComputedStyle(text).color}`; });
@@ -344,7 +577,7 @@ const delegated = async framework => {
         assert.equal(await s.log(), 'open:hanako', 'destroy does not call onOpenChange and stops listening');
         await s.finish();
       }
-      console.log(`${framework}: HoverCard open/close delays, gap crossing, Escape, focus and Tab order, touch, delegation, top placement, growth, dialog, reduced motion, destroy and axe passed`);
+      console.log(`${framework}: HoverCard open/close delays, gap crossing, Escape, focus and Tab order, touch, delegation, mention-to-mention moves, wrapped triggers, top placement, growth, dialog, reduced motion, destroy and axe passed`);
     }
   } finally {
     await browser?.close();

@@ -52,7 +52,7 @@ const meta = {
     setup: () => ({ args, mounted: ref(true), ...useLog() }),
     template: `<div style="padding: 64px; max-width: 520px; line-height: 1.8">
       <button>前へ</button>
-      <p>来週のレビューは <HoverCard v-if="mounted" v-bind="args" :on-open-change="record"><a class="demo-mention" href="#profile-hanako" data-user="hanako">@hanako</a><template #content><ProfileCard name="hanako" /></template></HoverCard> が担当します。</p>
+      <div style="margin: 1em 0">来週のレビューは <HoverCard v-if="mounted" v-bind="args" :on-open-change="record"><a class="demo-mention" href="#profile-hanako" data-user="hanako">@hanako</a><template #content><ProfileCard name="hanako" /></template></HoverCard> が担当します。</div>
       <button>次へ</button> <button @click="mounted = false">HoverCard を破棄</button>
       <output data-testid="log" style="display: block">{{ log.join(' ') }}</output>
     </div>`,
@@ -82,7 +82,7 @@ export const ExternalTriggers: Story = {
       const html = '<p style="margin: 0">レビューは <a class="demo-mention" href="#profile-hanako" data-user="hanako">@hanako</a> と <a class="demo-mention" href="#profile-yupix" data-user="yupix">@yupix</a> が見ます。退会した <a class="demo-mention" href="#left">@taro</a> の分は引き継ぎ済みです。</p>';
       const user = ref<string | null>(null);
       const { log, record } = useLog();
-      return { args, html, body: ref<HTMLElement | null>(null), user, log, change(open: boolean, trigger: HTMLElement) {
+      return { args, html, body: ref<HTMLElement | null>(null), mounted: ref(true), user, log, change(open: boolean, trigger: HTMLElement) {
         user.value = open ? trigger.dataset.user ?? null : null;
         record(open, trigger);
       } };
@@ -90,10 +90,10 @@ export const ExternalTriggers: Story = {
     template: `<div style="padding: 64px; max-width: 520px; line-height: 1.8">
       <button>前へ</button>
       <div ref="body" data-testid="body" v-html="html"></div>
-      <HoverCard v-bind="args" label="メンションのプロフィール" :container="body" selector="a.demo-mention[data-user]" :on-open-change="change">
+      <HoverCard v-if="mounted" v-bind="args" label="メンションのプロフィール" :container="body" selector="a.demo-mention[data-user]" :on-open-change="change">
         <template #content><ProfileCard v-if="user" :name="user" /></template>
       </HoverCard>
-      <button>次へ</button>
+      <button>次へ</button> <button @click="mounted = false">HoverCard を破棄</button>
       <output data-testid="log" style="display: block">{{ log.join(' ') }}</output>
     </div>`,
   }),
