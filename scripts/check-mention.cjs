@@ -90,6 +90,12 @@ function parseCss(css, media) {
   return result;
 }
 const rules = parseCss(mentionCss, null);
+// !important は詳細度と宣言の順で勝ち負けを決める下の計算を覆す（負けるはずの宣言が描画では勝つ）ので、変数・普通の性質とも使わせない。
+for (const rule of rules) {
+  for (const [property, value] of Object.entries(rule.declarations)) {
+    if (/!\s*important/i.test(value)) fail(`${rule.media ? `@media ${rule.media} ` : ''}${rule.selectors.join(', ')}: ${property} に !important がある。勝ち負けの計算が描画と食い違う`);
+  }
+}
 const ruleName = (rule) => `${rule.media ? `@media ${rule.media} ` : ''}${rule.selectors.join(', ')}`;
 
 const FORCED = '(forced-colors: active)';
@@ -119,7 +125,7 @@ for (const [selector, expected] of bindings) {
 const LAYOUT = new Set([
   'display', 'position', 'inset', 'flex', 'align-items', 'justify-content', 'gap', 'box-sizing', 'overflow', 'object-fit',
   'width', 'height', 'margin-block', 'margin-inline-start', 'padding', 'border-radius',
-  'font-weight', 'font-size', 'line-height', 'vertical-align', 'white-space', 'text-underline-offset', 'outline-offset',
+  'font-weight', 'font-size', 'line-height', 'vertical-align', 'white-space', 'text-underline-offset',
 ]);
 const avatarGrayRule = ['outside', 'gone', 'unknown'].map((status) => `.koyori-mention-${status} .koyori-mention-avatar`).join(', ');
 const FORCED_SELF = '.koyori-mention-member.koyori-mention-self';
@@ -132,7 +138,8 @@ const perRule = new Map([
   [avatarGrayRule, { opacity: null, filter: null }],
   ['a.koyori-mention[href]', { color: null, 'text-decoration': 'none', cursor: 'pointer', '-webkit-tap-highlight-color': 'transparent' }],
   [`@media (hover: hover) and (pointer: fine) a.koyori-mention[href]:hover`, { 'text-decoration': 'underline' }],
-  ['a.koyori-mention[href]:focus-visible', { outline: 'var(--koyori-focus-width) solid var(--koyori-focus-color)' }],
+  // 輪の位置は固定する。負の値にすると輪が札の内側（札の地の上）に入り、本人の札では地と同じ色になって見えなくなる。
+  ['a.koyori-mention[href]:focus-visible', { outline: 'var(--koyori-focus-width) solid var(--koyori-focus-color)', 'outline-offset': 'var(--koyori-focus-offset)' }],
   [`@media ${FORCED} ${FORCED_SELF}`, { 'forced-color-adjust': 'none' }],
 ]);
 for (const rule of rules) {
