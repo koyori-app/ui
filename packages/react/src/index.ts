@@ -2,6 +2,7 @@ import './generated/components/shared/utilities.css';
 
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.js';
 export { default as Tooltip, type TooltipProps } from './generated/components/Tooltip/Tooltip.js';
+export { default as HoverCard, type HoverCardProps } from './generated/components/HoverCard/HoverCard.js';
 export { default as Tabs, type TabsProps } from './generated/components/Tabs/Tabs.js';
 export { type TabItem } from './generated/components/Tabs/tabs.js';
 export { default as TabPanel, type TabPanelProps } from './generated/components/TabPanel/TabPanel.js';
