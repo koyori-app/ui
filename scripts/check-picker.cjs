@@ -31,8 +31,8 @@ let browser;
       const settle = () => page.waitForTimeout(80);
       const axe = readdirSync(`${root}/node_modules/.pnpm`).find(name => name.startsWith('axe-core@'));
       const runAxe = async () => {
-        // 読み込み直後は Storybook の a11y アドオンが axe を走らせていることがある。アドオンの import は window.axe を
-        // 上書きするので、待つたびに注入し直して自前の axe で測る。アドオンが終わらなければ期限で落とす。
+        // 読み込み直後は Storybook の a11y アドオンが axe を import して window.axe を上書きし、走らせていることがある。
+        // そのとき測ると "already running" になるので、注入し直して自前の axe（既定の設定）で測り直す。
         for (let attempt = 0; attempt < 50; attempt++) {
           await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
           const result = await page.evaluate(async () => {
@@ -42,7 +42,7 @@ let browser;
           if (!result.busy) return assert.deepEqual(result.violations, []);
           await page.waitForTimeout(100);
         }
-        throw new Error('Storybook の a11y アドオンの axe が 5 秒たっても終わらない');
+        throw new Error('axe を 50 回注入し直しても、自前の axe で測れない');
       };
       await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--item-icons&viewMode=story`);
       const priorities = page.getByRole('listbox', { name: '優先度' });
@@ -105,9 +105,13 @@ let browser;
         const bareUrgent = bare.getByRole('option', { name: '緊急', exact: true });
         const bareUnset = bare.getByRole('option', { name: '未設定', exact: true });
         assert.equal(await bareUrgent.locator(':scope > span').count(), 3, '選択背景・label・チェック印だけ');
-        // 開くときの変形の途中で測ると小数以下がずれるので、px に丸めて比べる（隙間が残れば gap の分だけ大きくずれる）
-        const labelX = async row => Math.round((await row.getByText(row === bareUrgent ? '緊急' : '未設定', { exact: true }).boundingBox()).x);
-        assert.equal(await labelX(bareUrgent), await labelX(bareUnset), 'label の位置がアイコンのない行と同じ');
+        // 開くときの変形（menu-in）の途中で測ると小数以下がずれるので、動きが終わるのを待ち、2 つの label を同じフレームで測る
+        await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+        const [urgentX, unsetX] = await bare.evaluate(list => ['緊急', '未設定'].map(name => {
+          const label = [...list.querySelectorAll('[role="option"] span')].find(span => span.textContent.trim() === name);
+          return label.getBoundingClientRect().x;
+        }));
+        assert.equal(urgentX, unsetX, 'label の位置がアイコンのない行と同じ');
       }
       assert.deepEqual(errors, []);
       await page.close();
