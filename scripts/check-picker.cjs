@@ -31,14 +31,18 @@ let browser;
       const settle = () => page.waitForTimeout(80);
       const axe = readdirSync(`${root}/node_modules/.pnpm`).find(name => name.startsWith('axe-core@'));
       const runAxe = async () => {
-        await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
-        // 読み込み直後は Storybook の a11y アドオンが axe を走らせていることがあるので、終わるまで待って再実行する。
-        assert.deepEqual(await page.evaluate(async () => {
-          for (;;) {
-            try { return (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id); }
-            catch (error) { if (!/already running/.test(String(error))) throw error; await new Promise(resolve => setTimeout(resolve, 100)); }
-          }
-        }), []);
+        // 読み込み直後は Storybook の a11y アドオンが axe を走らせていることがある。アドオンの import は window.axe を
+        // 上書きするので、待つたびに注入し直して自前の axe で測る。アドオンが終わらなければ期限で落とす。
+        for (let attempt = 0; attempt < 50; attempt++) {
+          await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
+          const result = await page.evaluate(async () => {
+            try { return { violations: (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id) }; }
+            catch (error) { if (/already running/.test(String(error))) return { busy: true }; throw error; }
+          });
+          if (!result.busy) return assert.deepEqual(result.violations, []);
+          await page.waitForTimeout(100);
+        }
+        throw new Error('Storybook の a11y アドオンの axe が 5 秒たっても終わらない');
       };
       await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--item-icons&viewMode=story`);
       const priorities = page.getByRole('listbox', { name: '優先度' });
@@ -63,6 +67,9 @@ let browser;
       // 当たり判定を足して旗の中心を調べ、アイコンの position: relative で背景より前に出ていることを確かめる。
       assert(await high.evaluate(row => {
         const flag = row.querySelector('svg[data-flag]');
+        // 先頭の子が選択背景（絶対配置で当たり判定なし）であることを先に確かめる。並びが変わったら黙って通さない
+        const background = getComputedStyle(row.firstElementChild);
+        if (background.position !== 'absolute' || background.pointerEvents !== 'none') throw new Error('行の先頭の子が選択背景ではない');
         row.firstElementChild.style.pointerEvents = 'auto';
         const r = flag.getBoundingClientRect();
         const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
@@ -98,7 +105,9 @@ let browser;
         const bareUrgent = bare.getByRole('option', { name: '緊急', exact: true });
         const bareUnset = bare.getByRole('option', { name: '未設定', exact: true });
         assert.equal(await bareUrgent.locator(':scope > span').count(), 3, '選択背景・label・チェック印だけ');
-        assert.equal((await bareUrgent.getByText('緊急', { exact: true }).boundingBox()).x, (await bareUnset.getByText('未設定', { exact: true }).boundingBox()).x, 'label の位置がアイコンのない行と同じ');
+        // 開くときの変形の途中で測ると小数以下がずれるので、px に丸めて比べる（隙間が残れば gap の分だけ大きくずれる）
+        const labelX = async row => Math.round((await row.getByText(row === bareUrgent ? '緊急' : '未設定', { exact: true }).boundingBox()).x);
+        assert.equal(await labelX(bareUrgent), await labelX(bareUnset), 'label の位置がアイコンのない行と同じ');
       }
       assert.deepEqual(errors, []);
       await page.close();
