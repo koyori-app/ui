@@ -713,17 +713,18 @@ async function browserChecks() {
         assert.equal(row.withChip, row.plain, `${framework}: 既定の書体で、札（${row.status}・${row.label}）のある行の高さ ${row.withChip}px が札の無い行 ${row.plain}px と違う`);
         assert.equal(row.plain, 20, `${framework}: 既定の書体で、本文の行の高さが 20px（${row.plain}px）`);
       }
-      // 札の地は字の内容の高さに敷かれる（inline の地は line-height に左右されない）。line-height を替えても地の見える高さが変わらないこと。
-      const chipHeightAt = (lineHeight) => page.evaluate((value) => {
+      // 札の地は字の内容の高さに敷かれる（inline の地は line-height に左右されない）。札自身に line-height を当てても地の見える高さが変わらないこと。
+      // 札は自分の line-height: 1 を持つので、外側の line-height を替えても比べにならない。札の要素に直接当てて比べる。
+      const chipHeightWith = (chipStyle) => page.evaluate((style) => {
         const wrap = document.createElement('div');
-        wrap.style.cssText = `width: 480px; font-family: var(--koyori-font-family); font-size: 14px; line-height: ${value}`;
-        wrap.innerHTML = '<p style="margin: 0">担当は <span class="koyori-mention koyori-mention-member"><span class="koyori-mention-label">@aki</span></span> さんです。</p>';
+        wrap.style.cssText = 'width: 480px; font-family: var(--koyori-font-family); font-size: 14px; line-height: 20px';
+        wrap.innerHTML = `<p style="margin: 0">担当は <span class="koyori-mention koyori-mention-member" style="${style}"><span class="koyori-mention-label">@aki</span></span> さんです。</p>`;
         document.querySelector('#storybook-root [data-backdrop]').append(wrap);
         const height = wrap.querySelector('.koyori-mention').getBoundingClientRect().height;
         wrap.remove();
         return height;
-      }, lineHeight);
-      assert.equal(await chipHeightAt('1'), await chipHeightAt('20px'), `${framework}: 札の地の高さが line-height で変わらない`);
+      }, chipStyle);
+      assert.equal(await chipHeightWith('line-height: 20px'), await chipHeightWith(''), `${framework}: 札の地の高さが札自身の line-height で変わらない`);
       // 書体を 1 つに固めた測定。フォールバックの書体差を除いて、札の箱そのものが行を広げないことを見る。
       await page.addStyleTag({ content: '#storybook-root * { font-family: "Noto Sans CJK JP", "Noto Sans JP", sans-serif !important; }' });
       const withMention = await page.getByTestId('with').boundingBox();

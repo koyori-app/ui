@@ -93,7 +93,8 @@ mentionClassNames('member', true);  // ['koyori-mention', 'koyori-mention-member
 
 - 色と下線は札の要素に置いた `--koyori-mention-color`・`--koyori-mention-background`・`--koyori-mention-decoration-line`・`--koyori-mention-decoration-style`・`--koyori-mention-decoration-color` で決まります。
 - これらは札の要素自身に宣言しているため、祖先に書いても効きません。`.my-area .koyori-mention { --koyori-mention-background: …; }` のように、札を選んで上書きしてください。上書きした色の対比は 4.5:1 以上を保ってください。
-- 札は行の中の字として描き（`display: inline`）、上下の padding を持たないので行の高さを広げません。
+- 札は行の中の字として描き（`display: inline`）、上下の padding を持たず、札自身の `line-height` を 1 にしています。本文の行高がおよそ 1.4 以上なら、行の高さを広げません。それより詰めた行高（およそ 1.3 以下）で、本文と札の太さで別の書体が選ばれる環境（Inter・Noto Sans JP が無い環境など）では、札のある行が 1〜2px 伸びることがあります。
+- 札は文の中で使う部品です。flex・grid の子に直接置くと `display: inline` が block 扱いになり、地の高さが `line-height: 1` で決まって字に接するほど縮みます。span などで包んで、札を inline のまま置いてください。
 - `white-space: nowrap` のため、とても長い名は狭い幅で行からはみ出します。省略表示は含みません。
 
 ## 検証
