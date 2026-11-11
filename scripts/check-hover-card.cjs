@@ -362,7 +362,7 @@ const crossing = async framework => {
     assert.match(await s.card.innerText(), /hanako/);
     await s.finish();
   }
-  // カードの中にフォーカスがある間に、札を横切っても入れ替わらない。
+  // カードの中にフォーカスがある間は、札を横切っても、とどまっても入れ替わらない。フォーカスはカードの中に残る。
   {
     const s = await prepare();
     await s.focusHanako();
@@ -375,6 +375,52 @@ const crossing = async framework => {
     assert.equal(await s.log(), 'open:hanako', 'crossing a mention does not swap the card while focus is inside it');
     assert.match(await s.card.innerText(), /hanako/);
     assert.match(await s.active(), /^A:プロフィールを見る/);
+    await s.hover(s.link('yupix'));
+    await s.tick(600);
+    await s.frame();
+    assert.equal(await s.log(), 'open:hanako', 'resting on a mention does not swap the card while focus is inside it');
+    assert.match(await s.card.innerText(), /hanako/);
+    assert.equal(await s.shown(), true);
+    assert.match(await s.active(), /^A:プロフィールを見る/, 'focus stays in the card');
+    // フォーカスがカードから出たら通常に戻る。Esc で起点へ戻り、ポインターを離してから載せ直すと開く。
+    await s.away();
+    await s.page.keyboard.press('Escape');
+    assert.equal(await s.shown(), false);
+    await s.hover(s.link('yupix'));
+    await s.tick(400);
+    await s.frame();
+    assert.equal(await s.shown(), true, 'after focus leaves the card, hovering another mention opens it again');
+    assert.match(await s.card.innerText(), /yupix/);
+    await s.finish();
+  }
+  // 起点にフォーカスがあってカードが開いている間に、別の札にポインターがとどまっても、フォーカスは body に落ちない。
+  {
+    const s = await prepare();
+    await s.focusHanako();
+    await s.hover(s.link('yupix'));
+    await s.tick(600);
+    await s.frame();
+    assert.equal(await s.active(), 'A:@hanako', 'focus stays on the focused mention');
+    await s.finish();
+  }
+  // 札にフォーカスがあって開く予約が待つ間に、別の札を横切っても、その札は開く。
+  {
+    const s = await prepare();
+    await s.button('前へ').focus();
+    await s.page.keyboard.press('Tab');
+    assert.equal(await s.active(), 'A:@hanako');
+    await s.tick(100);
+    await s.hover(s.link('yupix'));
+    await s.tick(100);
+    await s.away();
+    assert.equal(await s.shown(), false);
+    await s.tick(399);
+    assert.equal(await s.shown(), false, 'the open delay restarts from the moment the pointer leaves');
+    await s.tick(1);
+    await s.frame();
+    assert.equal(await s.shown(), true, 'the focused mention still opens after another was crossed');
+    assert.match(await s.card.innerText(), /hanako/);
+    assert.equal(await s.log(), 'open:hanako');
     await s.finish();
   }
 };
