@@ -47,9 +47,27 @@ const color = (name) => {
   assert(match, `--theme-switch-${name} を 6 桁の 16 進数で定義する`);
   return match[1];
 };
-// 太陽（黄）は昼空（青）との対比が 3:1 に届かない。位置・光の輪・aria-checked で状態を伝える（docs にも書く）。
+// 太陽の黄は昼空の青に埋もれるので、濃い橙の縁取りで輪郭を出す。縁取りと昼空の両端が 3:1 以上。
+for (const sky of ['day-top', 'day-bottom']) {
+  assert.ok(contrast(color('sun-rim'), color(sky)) >= 3, `太陽の縁取りと昼空（${sky}）は 3:1 以上`);
+}
 for (const sky of ['night-top', 'night-bottom']) {
   assert.ok(contrast(color('moon'), color(sky)) >= 3, `月と夜空（${sky}）は 3:1 以上`);
+}
+assert.match(css, /box-shadow:\s*0 0 0 [\d.]+px var\(--theme-switch-sun-rim\)/, '太陽の縁取りは昼のつまみの外側の線');
+// トラックの枠（border-strong）と、置かれる面（surface / surface-raised）の対比。明暗の両方。
+assert.match(css, /border: 1px solid var\(--koyori-color-border-strong\)/, 'トラックは 1px の border-strong の枠を持つ');
+const tokens = read('components/tokens.css');
+const [darkTokens, lightTokens] = [tokens.slice(0, tokens.indexOf("[data-theme='light']")), tokens.slice(tokens.indexOf("[data-theme='light']"))];
+const token = (block, name) => {
+  const match = block.match(new RegExp(`--koyori-color-${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`));
+  assert(match, `--koyori-color-${name} を tokens.css から読める`);
+  return match[1];
+};
+for (const [scheme, block] of [['ダーク', darkTokens], ['ライト', lightTokens]]) {
+  for (const surface of ['surface', 'surface-raised']) {
+    assert.ok(contrast(token(block, 'border-strong'), token(block, surface)) >= 3, `トラックの枠と面（${scheme} / ${surface}）は 3:1 以上`);
+  }
 }
 
 // ---------- B. 配布物（style.css・export・サーバー描画） ----------
@@ -165,10 +183,13 @@ async function browserChecks() {
         await story('light');
         assert.equal(await checked(), 'false', `${at}: Light は aria-checked=false`);
         await atX(0, 'Light は太陽（左）');
+        const rim = () => track.evaluate((el) => ({ border: getComputedStyle(el).borderTopWidth, shadow: getComputedStyle(el.lastElementChild).boxShadow.split(') ')[0] }));
+        assert.deepEqual(await rim(), { border: '1px', shadow: 'rgb(124, 52, 0' }, `${at}: 昼はトラックに 1px の枠、太陽に濃い橙の縁取り`);
         await a11y();
         await story('dark');
         assert.equal(await checked(), 'true', `${at}: Dark は aria-checked=true`);
         await atX(SPAN, 'Dark は月（右）');
+        assert.deepEqual(await rim(), { border: '1px', shadow: 'rgba(0, 0, 0, 0' }, `${at}: 夜は月に縁取りが付かない`);
         await a11y();
         await story('default');
         assert.equal(await checked(), side(colorScheme), `${at}: Default は OS と同じ側`);
