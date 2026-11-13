@@ -41,10 +41,13 @@ import { themeScript } from '@koyori-app/ui-react';
 <ThemePicker label="テーマ" />
 ```
 
+React で `<html>` ごと hydrate する構成（Next.js の App Router など）では、`themeScript` が `data-theme` を書き換えるため、`<html>` に `suppressHydrationWarning` を付けます。
+
 - `html[data-theme]` は常に `light` か `dark` の 2 値です。「システム」は OS の配色を調べて、この 2 値のどちらかにします。
 - 選択は `localStorage` の `koyori-theme` に `light` / `dark` で保持します。「システム」は保持を消した状態です。
 - `themeScript` は最初の描画より前に `data-theme` を決め、OS の配色が変わったときも付け直します。
   置かないと、再読み込みのたびに既定のダークで描いてから切り替わり、保持も OS の変化も当たりません。
+- `setTheme` は選択を `window` の `koyori-theme-change` イベント（`detail` は選択）で知らせます。同じページの ThemePicker と `themeScript` はこれに追従するので、保存できない環境でも選んだ配色は OS の変化で戻りません。
 - CSP で inline script を禁じているアプリは、`<script>` に nonce を付けてください。
 - ページの地は利用側が `--koyori-color-surface` で塗ります。部品は地の色を塗りません。
 - 別のタブでの変更は、そのタブを再読み込みするまで反映されません。
@@ -54,6 +57,8 @@ import { themeScript } from '@koyori-app/ui-react';
 | 名前 | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | `label` | `string` | 必須 | 読み上げ名。トリガーは「テーマ: ライト」のように読まれる |
+
+項目の文言（ライト / ダーク / システム）は上書きできません。
 
 ## 関数
 

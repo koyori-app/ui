@@ -19,7 +19,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/ThemePicker/ThemePicker.vue'], ['React', 'packages/react/src/generated/components/ThemePicker/ThemePicker.tsx']]) {
   const source = read(path);
-  assert.match(source, /Picker/, `${name} 版は Picker を合成する`);
+  assert.match(source, /from ['"]\.\.\/Picker\/Picker/, `${name} 版は Picker を合成する`);
   assert.match(source, /searchable(=\{false\}|="false"|=\{\s*false\s*\})/, `${name} 版は検索欄を出さない`);
   // state を theme と名付けると setter が setTheme になり、import した setTheme を覆い隠す。
   assert.doesNotMatch(source, /\[\s*\w+,\s*setTheme\s*\]/, `${name} 版で state の setter が setTheme を覆い隠さない`);
@@ -29,10 +29,12 @@ for (const [name, path] of [['Vue', 'packages/vue/src/generated/components/Theme
 
 const KEY = 'koyori-theme';
 const LIGHT = '(prefers-color-scheme: light)';
+const EVENT = 'koyori-theme-change';
 
 // ブラウザーの代わり。保持（stored）と OS の配色（os）を差し替えられる。
 function makeEnv({ stored, os, getThrows = false, setThrows = false }) {
-  const env = { store: new Map(), os, listeners: [], dataset: {} };
+  const env = { store: new Map(), os, listeners: [], dataset: {}, window: new EventTarget(), events: [] };
+  env.window.addEventListener(EVENT, (event) => env.events.push(event.detail));
   if (stored !== undefined) env.store.set(KEY, stored);
   env.document = { documentElement: { dataset: env.dataset } };
   env.localStorage = {
@@ -50,7 +52,7 @@ function makeEnv({ stored, os, getThrows = false, setThrows = false }) {
   return env;
 }
 
-const GLOBALS = ['document', 'localStorage', 'matchMedia'];
+const GLOBALS = ['document', 'localStorage', 'matchMedia', 'window'];
 function withGlobals(env, run) {
   const saved = GLOBALS.map((name) => Object.getOwnPropertyDescriptor(globalThis, name));
   GLOBALS.forEach((name) => Object.defineProperty(globalThis, name, { value: env[name], configurable: true, writable: true }));
@@ -59,7 +61,7 @@ function withGlobals(env, run) {
   }
 }
 
-const runScript = (themeScript, env) => vm.runInNewContext(themeScript, { document: env.document, localStorage: env.localStorage, matchMedia: env.matchMedia });
+const runScript = (themeScript, env) => vm.runInNewContext(themeScript, { document: env.document, localStorage: env.localStorage, matchMedia: env.matchMedia, window: env.window });
 
 const combos = [];
 for (const stored of [undefined, 'light', 'dark', 'bogus']) for (const os of ['light', 'dark']) combos.push({ stored, os });
@@ -101,6 +103,37 @@ async function distChecks() {
         assert.equal(result, expected(combo), label(`setTheme(storedTheme())（${text}）は themeScript と一致する`));
       }
 
+      // 保存・削除が失敗する環境でも、選んだ配色は OS の変化に負けない。ページ内の選択で判断するため。
+      for (const [stored, choice] of [[undefined, 'light'], [undefined, 'dark'], ['light', 'system'], ['dark', 'system']]) {
+        for (const os of ['light', 'dark']) {
+          const env = makeEnv({ stored, os, setThrows: true });
+          runScript(ui.themeScript, env);
+          withGlobals(env, () => ui.setTheme(choice));
+          const at = `保存が失敗する環境で ${choice} を選ぶ（保持 ${stored ?? 'なし'} / OS ${os}）`;
+          for (const next of [os === 'light' ? 'dark' : 'light', os]) {
+            env.os = next;
+            env.listeners[0]();
+            assert.equal(env.dataset.theme, choice === 'system' ? next : choice, label(`${at}→ OS が ${next} に変わる`));
+          }
+        }
+      }
+      // 別の選択でも、選んだあとの OS の変化はページ内の選択に従う（保持が読める環境でも）。
+      {
+        const env = makeEnv({ stored: 'dark', os: 'dark' });
+        runScript(ui.themeScript, env);
+        withGlobals(env, () => ui.setTheme('system'));
+        env.os = 'light';
+        env.listeners[0]();
+        assert.equal(env.dataset.theme, 'light', label('システムを選んだあと OS の変化に追従する'));
+      }
+
+      // setTheme は現在の選択を window のイベントで知らせる（別の ThemePicker や themeScript が追従する）。
+      {
+        const env = makeEnv({ os: 'dark', setThrows: true });
+        for (const choice of ['light', 'dark', 'system']) withGlobals(env, () => ui.setTheme(choice));
+        assert.deepEqual(env.events, ['light', 'dark', 'system'], label(`setTheme は ${EVENT} で選択を知らせる（保存が失敗しても）`));
+      }
+
       // 保持が読めなくても落ちず、OS に従う。
       for (const os of ['light', 'dark']) {
         const env = makeEnv({ os, getThrows: true });
@@ -135,7 +168,7 @@ async function distChecks() {
     }
 
     // サーバー描画。document などのスタブは外した状態で行う。
-    for (const name of ['document', 'matchMedia']) assert.ok(!(name in globalThis), `サーバー描画の前に ${name} のスタブが残っていない`);
+    for (const name of ['document', 'matchMedia', 'window']) assert.ok(!(name in globalThis), `サーバー描画の前に ${name} のスタブが残っていない`);
     const vueUi = await import(pathToFileURL(resolve(root, 'packages/vue/dist/index.js')));
     const reactUi = await import(pathToFileURL(resolve(root, 'packages/react/dist/index.js')));
     const props = { label: 'テーマ' };
@@ -176,6 +209,7 @@ async function browserChecks() {
     const axeSource = readFileSync(resolve(root, `node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js`), 'utf8');
     browser = await chromium.launch({ headless: true });
 
+    const { themeScript } = await import(pathToFileURL(resolve(root, 'packages/vue/dist/index.js')));
     const SURFACE = { light: 'rgb(255, 255, 255)', dark: 'rgb(12, 12, 14)' };
     const NAMES = { light: 'ライト', dark: 'ダーク', system: 'システム' };
 
@@ -236,8 +270,44 @@ async function browserChecks() {
         assert.equal(await kept(), null, `${at}: システムを選ぶと保持が消える`);
         assert.equal(await theme(), colorScheme, `${at}: システムを選ぶと OS に戻る`);
 
+        // 別の ThemePicker や setTheme の直接呼び出しは、イベントで表示に届く。部品で選んだ選択もイベントで知らせる。
+        await story('default', 'システム');
+        await page.evaluate((type) => window.dispatchEvent(new CustomEvent(type, { detail: 'dark' })), EVENT);
+        await trigger('ダーク').waitFor();
+        await page.evaluate((type) => { window.seen = []; window.addEventListener(type, (event) => window.seen.push(event.detail)); }, EVENT);
+        await trigger('ダーク').click();
+        await page.getByRole('option', { name: 'ライト', exact: true }).click();
+        await trigger('ライト').waitFor();
+        assert.deepEqual(await page.evaluate(() => window.seen), ['light'], `${at}: 部品で選ぶと ${EVENT} で知らせる`);
+
         assert.deepEqual(errors, [], `${at}: ページのエラーが無い`);
         await context.close();
+
+        // 保存・削除が失敗する環境（Safari のプライベートなど）でも、選んだ配色が OS の変化に負けない。
+        const blocked = await browser.newContext({ viewport: { width: 800, height: 700 }, colorScheme });
+        await blocked.addInitScript(() => {
+          Storage.prototype.setItem = () => { throw new Error('blocked'); };
+          Storage.prototype.removeItem = () => { throw new Error('blocked'); };
+        });
+        const stuck = await blocked.newPage();
+        const other = colorScheme === 'light' ? 'dark' : 'light';
+        const follows = (wanted) => stuck.waitForFunction((value) => document.documentElement.dataset.theme === value, wanted);
+        await stuck.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-themepicker--default&viewMode=story`);
+        await stuck.getByRole('button', { name: 'テーマ: システム', exact: true }).waitFor();
+        await stuck.addScriptTag({ content: themeScript }); // アプリでは <head> の themeScript がこの役をする。
+        await stuck.getByRole('button', { name: 'テーマ: システム', exact: true }).click();
+        await stuck.getByRole('option', { name: other === 'light' ? 'ライト' : 'ダーク', exact: true }).click();
+        await follows(other);
+        await stuck.emulateMedia({ colorScheme: other });
+        await stuck.emulateMedia({ colorScheme });
+        await stuck.waitForTimeout(100);
+        assert.equal(await stuck.evaluate(() => document.documentElement.dataset.theme), other, `${at}: 保存が失敗しても選んだ配色が OS の変化で戻らない`);
+        await stuck.getByRole('button', { name: `テーマ: ${NAMES[other]}`, exact: true }).click();
+        await stuck.getByRole('option', { name: 'システム', exact: true }).click();
+        await follows(colorScheme);
+        await stuck.emulateMedia({ colorScheme: other });
+        await follows(other);
+        await blocked.close();
       }
       console.log(`${framework}: ThemePicker の story・切り替え・押し直し・システムへの復帰・面の色・axe を、OS のライト / ダークで確認しました。`);
     }

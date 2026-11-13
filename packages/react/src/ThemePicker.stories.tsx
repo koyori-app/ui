@@ -7,6 +7,8 @@ const stored = (theme: Theme): Decorator => (Story) => { setTheme(theme); return
 const meta = {
   title: 'Components/ThemePicker',
   component: ThemePicker,
+  /* 3 つの story が setTheme を奪い合うため、Docs ページには並べない。 */
+  tags: ['!autodocs'],
   parameters: { layout: 'fullscreen' },
   args: { label: 'テーマ' },
   render: args => (
