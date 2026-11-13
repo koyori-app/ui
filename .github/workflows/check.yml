@@ -46,3 +46,6 @@ jobs:
 
       - name: ThemePicker の保持・OS への追従・サーバー描画
         run: node scripts/check-theme-picker.cjs
+
+      - name: ThemeSwitch の生成物・配布 CSS・サーバー描画
+        run: node scripts/check-theme-switch.cjs

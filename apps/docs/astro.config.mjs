@@ -58,6 +58,7 @@ export default defineConfig({
             { label: 'Tag・Badge', slug: 'components/tag-badge' },
             { label: 'Tabs', slug: 'components/tabs' },
             { label: 'ThemePicker', slug: 'components/theme-picker' },
+            { label: 'ThemeSwitch', slug: 'components/theme-switch' },
             { label: 'SplitPane', slug: 'components/split-pane' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
             { label: 'Tooltip', slug: 'components/tooltip' },

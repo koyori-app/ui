@@ -56,4 +56,5 @@ export { default as PasswordInput, type PasswordInputProps } from './generated/c
 export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.vue';
 export { type PaginationRange } from './generated/components/Pagination/pagination.js';
 export { default as ThemePicker, type ThemePickerProps } from './generated/components/ThemePicker/ThemePicker.vue';
+export { default as ThemeSwitch, type ThemeSwitchProps } from './generated/components/ThemeSwitch/ThemeSwitch.vue';
 export { themeScript, setTheme, storedTheme, type Theme } from './generated/components/ThemePicker/theme.js';

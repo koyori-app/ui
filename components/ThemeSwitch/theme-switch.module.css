@@ -1,0 +1,163 @@
+@import '../tokens.css';
+
+/* 既定（data-theme なし・dark）が夜。:root[data-theme='light'] で昼に入れ替える。
+   位置と絵は html[data-theme] だけで決まるので、サーバー描画でもマウント前から正しい側に描かれる。
+   状態の変化は transition だけで動かす（押し直しても途中から戻る）。キーフレームは星の瞬きだけ。 */
+.track {
+  /* 空と天体の色。配色で入れ替わらない絵の色なので、トークンではなくここに持つ。 */
+  --theme-switch-night: #161c40;
+  --theme-switch-day-top: #1a5fc2;
+  --theme-switch-day-bottom: #2f78d6;
+  --theme-switch-sun: #ffd43b;
+  --theme-switch-moon: #e9ecf5;
+
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 56px;
+  height: 28px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--koyori-color-border-strong);
+  border-radius: 14px;
+  background: var(--theme-switch-night);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    border-color var(--koyori-motion-fast) var(--koyori-ease-out),
+    transform var(--koyori-motion-spring) var(--koyori-ease-spring);
+}
+
+.stars,
+.day,
+.stars::after,
+.day::after {
+  position: absolute;
+  inset: 0;
+}
+
+/* 星。月の反対側（左）に散らす。 */
+.stars {
+  background:
+    radial-gradient(circle at 8px 7px, #fff 0.8px, transparent 1.3px),
+    radial-gradient(circle at 26px 5px, #fff 0.5px, transparent 1px),
+    radial-gradient(circle at 13px 13px, #fff 0.5px, transparent 1px),
+    radial-gradient(circle at 6px 19px, #fff 0.5px, transparent 1px),
+    radial-gradient(circle at 29px 16px, #fff 0.8px, transparent 1.3px);
+  transition:
+    opacity var(--koyori-motion-slow) var(--koyori-ease-out) 80ms,
+    transform var(--koyori-motion-slow) var(--koyori-ease-out) 80ms;
+}
+
+/* 瞬く星。 */
+.stars::after {
+  content: '';
+  background:
+    radial-gradient(circle at 18px 9px, #fff 1px, transparent 1.5px),
+    radial-gradient(circle at 21px 20px, #fff 0.8px, transparent 1.3px);
+}
+
+.day {
+  background: linear-gradient(180deg, var(--theme-switch-day-top), var(--theme-switch-day-bottom));
+  opacity: 0;
+  transition: opacity var(--koyori-motion-slow) var(--koyori-ease-out);
+}
+
+/* 雲。太陽の反対側（右下）。夜は下へ沈む。 */
+.day::after {
+  content: '';
+  background:
+    radial-gradient(circle at 34px 27px, #fff 5px, transparent 5.5px),
+    radial-gradient(circle at 42px 25px, #fff 7px, transparent 7.5px),
+    radial-gradient(circle at 51px 27px, #fff 6px, transparent 6.5px);
+  opacity: 0.92;
+  transform: translateY(10px);
+  transition: transform var(--koyori-motion-slow) var(--koyori-ease-out);
+}
+
+/* トラックの内側は 54×26。20px のつまみが端から 3px 空けて 28px 動く。 */
+.thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  transform: translateX(28px);
+  transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring);
+}
+
+/* 太陽の光の輪。 */
+.thumb::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--koyori-motion-base) var(--koyori-ease-out),
+    transform var(--koyori-motion-base) var(--koyori-ease-out);
+}
+
+/* 天体。月の欠けは mask の穴を動かして作る（円を重ねて隠すと、欠けた側の縁に月の色がにじむ）。
+   穴の中心は登録した長さのプロパティなので遷移できる。@property の無いブラウザーでは即時に変わる。 */
+.thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--theme-switch-moon);
+  --theme-switch-bite-x: 2.5px;
+  --theme-switch-bite-y: 5.5px;
+  mask-image: radial-gradient(circle at var(--theme-switch-bite-x) var(--theme-switch-bite-y), transparent 9.6px, #000 10.4px);
+  transition:
+    background-color var(--koyori-motion-slow) var(--koyori-ease-out),
+    --theme-switch-bite-x var(--koyori-motion-slow) var(--koyori-ease-out),
+    --theme-switch-bite-y var(--koyori-motion-slow) var(--koyori-ease-out);
+}
+
+@property --theme-switch-bite-x { syntax: '<length>'; inherits: false; initial-value: -10px; }
+@property --theme-switch-bite-y { syntax: '<length>'; inherits: false; initial-value: -10px; }
+
+:root[data-theme='light'] .stars { opacity: 0; transform: translateY(6px); transition-delay: 0s; }
+:root[data-theme='light'] .day { opacity: 1; }
+:root[data-theme='light'] .day::after { transform: none; }
+:root[data-theme='light'] .thumb { transform: none; }
+:root[data-theme='light'] .thumb::before { opacity: 0.3; transform: none; }
+:root[data-theme='light'] .thumb::after { background: var(--theme-switch-sun); --theme-switch-bite-x: -10px; --theme-switch-bite-y: -10px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .track:hover { border-color: var(--koyori-color-text); }
+}
+
+.track:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 押し込みは速く、戻りはばねに任せる。 */
+  .track:active { transform: scale(0.94); transition-duration: 80ms; transition-timing-function: var(--koyori-ease-out); }
+  :root:not([data-theme='light']) .stars::after { animation: twinkle 1.8s ease-in-out infinite alternate; }
+}
+
+@keyframes twinkle {
+  to { opacity: 0.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track, .stars, .day, .day::after, .thumb, .thumb::before, .thumb::after { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .track { forced-color-adjust: none; border-color: Highlight; background: Highlight; }
+  .stars, .day, .thumb::before { display: none; }
+  .thumb::after { background: HighlightText; mask-image: none; }
+  :root[data-theme='light'] .track { border-color: ButtonText; background: Canvas; }
+  :root[data-theme='light'] .thumb::after { background: ButtonText; }
+  .track:focus-visible { outline-color: Highlight; }
+}

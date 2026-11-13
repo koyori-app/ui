@@ -36,7 +36,7 @@ Story は各パッケージの `src/*.stories.*` に追加します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
 Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）、ダイアログやカードなど浮いた面の角丸は `lg`（12px）を使います。
 配色は墨です。既定は黒い面（ダーク）で、祖先に `data-theme="light"` を付けると明るい面に切り替わります。
-利用者に切り替えさせるには `ThemePicker` を置き、`<head>` に `themeScript` を inline で入れます（[ThemePicker](#themepicker)）。
+利用者に切り替えさせるには `ThemePicker`（3 択）か `ThemeSwitch`（太陽と月の 2 値のスイッチ）を置き、`<head>` に `themeScript` を inline で入れます（[ThemePicker](#themepicker)）。
 `html[data-theme]` は `light` か `dark` の 2 値のままで、選択は `localStorage` の `koyori-theme` に保持します。
 主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーと、例外のメンションの札（青と黄の字と薄い地）だけです。
 メニューやダイアログなど浮いた面は `--koyori-color-surface-raised` で塗ります。部品は地の色を塗らないため、ページの背景は利用側が `--koyori-color-surface` で塗ります。
@@ -431,6 +431,14 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 `node scripts/check-theme-picker.cjs` で生成物・配布物・サーバー描画を検証します（`pnpm generate` と `pnpm --filter './packages/*' build` のあとに実行。storybook-static があればブラウザー検証も行う）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/theme-picker.mdx)を参照してください。
 
+## ThemeSwitch
+
+`ThemeSwitch` は太陽（左・ライト）と月（右・ダーク）の 2 値のスイッチです。ダークのときは背景が星空になります。props は `label`（必須。入がダークなので「ダークテーマ」のように付ける）だけです。
+表示は `html[data-theme]` の配色で、押すと `setTheme` で反対側に固定します（「システム」へ戻すのは ThemePicker か `setTheme('system')`）。
+動きは transition だけで、星の瞬きだけがキーフレームです。動きを減らす設定で止まります。
+`node scripts/check-theme-switch.cjs` で生成物・配布物・サーバー描画を検証します（storybook-static があればブラウザー検証も行う）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/theme-switch.mdx)を参照してください。
+
 ## Card・Separator
 
 カードと区切り線はコンポーネントではなく、グローバルなクラスで提供します（`components/shared/utilities.css`）。
@@ -471,7 +479,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・ThemePicker・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・ThemePicker・ThemeSwitch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
