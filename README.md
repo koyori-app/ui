@@ -36,6 +36,8 @@ Story は各パッケージの `src/*.stories.*` に追加します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
 Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）、ダイアログやカードなど浮いた面の角丸は `lg`（12px）を使います。
 配色は墨です。既定は黒い面（ダーク）で、祖先に `data-theme="light"` を付けると明るい面に切り替わります。
+利用者に切り替えさせるには `ThemePicker`（3 択）か `ThemeSwitch`（太陽と月の 2 値のスイッチ）を置き、`<head>` に `themeScript` を inline で入れます（[ThemePicker](#themepicker)）。
+`html[data-theme]` は `light` か `dark` の 2 値のままで、選択は `localStorage` の `koyori-theme` に保持します。
 主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーと、例外のメンションの札（青と黄の字と薄い地）だけです。
 メニューやダイアログなど浮いた面は `--koyori-color-surface-raised` で塗ります。部品は地の色を塗らないため、ページの背景は利用側が `--koyori-color-surface` で塗ります。
 選択背景とチェックの色は `--koyori-color-selection` と `--koyori-color-selection-indicator` で調整できます。
@@ -420,6 +422,23 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 動きは「動きを減らす」設定で止まり、強制配色ではシステムの強調色とつまみの位置で入切が伝わります。
 `node scripts/check-switch.cjs` で生成物と配布 CSS を検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/switch.mdx)を参照してください。
+## ThemePicker
+
+`ThemePicker` はライト・ダーク・システムを選ぶ部品で、Picker を合成しています。props は `label`（必須。トリガーは「テーマ: ライト」のように読まれる）だけです。
+選択は `localStorage` の `koyori-theme` に `light` / `dark` で保持し、「システム」は保持を消して OS の配色に合わせます。`html[data-theme]` は常に `light` か `dark` です。
+`<head>` に `themeScript`（inline の `<script>` 用の文字列）を置くと、最初の描画の前に配色が決まり、OS の配色の変化にも追従します。置かないと再読み込みで保持が当たりません。
+別の形で切り替えを出すときは `setTheme(theme)`・`storedTheme()` を使います。
+`node scripts/check-theme-picker.cjs` で生成物・配布物・サーバー描画を検証します（`pnpm generate` と `pnpm --filter './packages/*' build` のあとに実行。storybook-static があればブラウザー検証も行う）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/theme-picker.mdx)を参照してください。
+
+## ThemeSwitch
+
+`ThemeSwitch` は太陽（左・ライト）と月（右・ダーク）の 2 値のスイッチです。ライトは昼空に雲と光の輪をまとった太陽、ダークは星空に浮かぶ月のイラスト調です。props は `label`（必須。入がダークなので「ダークテーマ」のように付ける）だけです。
+表示は `html[data-theme]` の配色で、押すと `setTheme` で反対側に固定します（「システム」へ戻すのは ThemePicker か `setTheme('system')`）。
+動きは transition だけで、星の瞬きだけがキーフレームです。動きを減らす設定で止まります。
+`node scripts/check-theme-switch.cjs` で生成物・配布物・サーバー描画を検証します（storybook-static があればブラウザー検証も行う）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/theme-switch.mdx)を参照してください。
+
 ## Card・Separator
 
 カードと区切り線はコンポーネントではなく、グローバルなクラスで提供します（`components/shared/utilities.css`）。
@@ -460,7 +479,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・ThemePicker・ThemeSwitch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

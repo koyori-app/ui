@@ -1,0 +1,216 @@
+@import '../tokens.css';
+
+/* 既定（data-theme なし・dark）が夜。:root[data-theme='light'] で昼に入れ替える。
+   位置と絵は html[data-theme] だけで決まるので、サーバー描画でもマウント前から正しい側に描かれる。
+   状態の変化は transition だけで動かす（押し直しても途中から戻る）。キーフレームは星の瞬きだけ。 */
+.track {
+  /* 空と天体の色。配色で入れ替わらない絵の色なので、トークンではなくここに持つ。 */
+  --theme-switch-day-top: #3d9bff;
+  --theme-switch-day-bottom: #7cc4ff;
+  --theme-switch-night-top: #0b1030;
+  --theme-switch-night-bottom: #1f2757;
+  --theme-switch-sun-light: #ffe066;
+  --theme-switch-sun: #f7b500;
+  --theme-switch-sun-rim: #7c3400;
+  --theme-switch-moon-light: #e9edf6;
+  --theme-switch-moon: #b9c0d1;
+  --theme-switch-cloud-back: #d6ecff;
+  --theme-switch-spring: 500ms cubic-bezier(0.34, 1.32, 0.64, 1);
+
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 76px;
+  height: 36px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--koyori-color-border-strong);
+  border-radius: 18px;
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 35%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    border-color var(--koyori-motion-fast) var(--koyori-ease-out),
+    transform var(--koyori-motion-spring) var(--koyori-ease-spring);
+}
+
+.day,
+.night,
+.stars,
+.clouds,
+.clouds::before,
+.clouds::after,
+.moon {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 昼空が土台。夜空はその上で opacity だけ切り替える。 */
+.day {
+  background: linear-gradient(180deg, var(--theme-switch-day-top), var(--theme-switch-day-bottom));
+}
+
+.night {
+  background: linear-gradient(180deg, var(--theme-switch-night-top), var(--theme-switch-night-bottom));
+  transition: opacity 450ms ease;
+}
+
+/* 光の輪。つまみの中心に重なる同心円 3 重で、つまみと同じばねで動く。夜は月の側へ移る。 */
+.halo {
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 255 255 / 22%) 0 15px,
+    rgb(255 255 255 / 14%) 15px 22px,
+    rgb(255 255 255 / 8%) 22px 30px,
+    transparent 30px
+  );
+  pointer-events: none;
+  transform: translateX(40px);
+  transition: transform var(--theme-switch-spring);
+}
+
+/* 星。夜は上から降りて現れる。 */
+.stars {
+  transition:
+    opacity 400ms ease,
+    transform 500ms ease;
+}
+
+.stars i {
+  position: absolute;
+  background: #fff;
+}
+
+/* 4 点の星形。瞬く。 */
+.stars i:nth-child(1),
+.stars i:nth-child(2) {
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+.stars i:nth-child(1) { top: 7px; left: 12px; width: 6px; height: 6px; }
+.stars i:nth-child(2) { top: 20px; left: 26px; width: 4px; height: 4px; }
+.stars i:nth-child(3) { top: 6px; left: 34px; width: 3px; height: 3px; border-radius: 50%; }
+.stars i:nth-child(4) { top: 22px; left: 8px; width: 2px; height: 2px; border-radius: 50%; }
+.stars i:nth-child(5) { top: 12px; left: 20px; width: 2px; height: 2px; border-radius: 50%; }
+.stars i:nth-child(6) { top: 24px; left: 42px; width: 2px; height: 2px; border-radius: 50%; }
+
+/* 雲。右下に奥（淡い青）と手前（白）の 2 層。夜は下へ沈む。 */
+.clouds {
+  transform: translateY(24px);
+  transition: transform 500ms ease;
+}
+
+.clouds::before {
+  content: '';
+  background:
+    radial-gradient(circle at 46px 34px, var(--theme-switch-cloud-back) 8px, transparent 8.5px),
+    radial-gradient(circle at 58px 30px, var(--theme-switch-cloud-back) 9px, transparent 9.5px),
+    radial-gradient(circle at 70px 26px, var(--theme-switch-cloud-back) 9px, transparent 9.5px);
+}
+
+.clouds::after {
+  content: '';
+  background:
+    radial-gradient(circle at 50px 38px, #fff 8px, transparent 8.5px),
+    radial-gradient(circle at 62px 35px, #fff 9px, transparent 9.5px),
+    radial-gradient(circle at 74px 32px, #fff 8px, transparent 8.5px);
+}
+
+/* トラックの内側は 74×34。28px のつまみが枠から 3px 空けて 40px 動く。太陽が土台で、夜は月が右から重なる。
+   太陽の縁取り（外側の 1.5px）は昼空との対比を 3:1 以上に保つ。夜は透明にして、月の輪郭を変えない。 */
+.thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--theme-switch-sun-light), var(--theme-switch-sun));
+  box-shadow:
+    0 0 0 1.5px transparent,
+    inset -2px -3px 4px rgb(170 90 0 / 35%),
+    0 2px 5px rgb(0 0 0 / 30%);
+  pointer-events: none;
+  transform: translateX(40px);
+  transition:
+    transform var(--theme-switch-spring),
+    box-shadow 200ms ease;
+}
+
+.moon {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--theme-switch-moon-light), var(--theme-switch-moon));
+  box-shadow: inset -2px -3px 4px rgb(40 50 80 / 35%);
+  transition:
+    transform var(--theme-switch-spring),
+    opacity 200ms ease;
+}
+
+/* クレーター。 */
+.moon::before,
+.moon::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: #a3abbe;
+  box-shadow: inset 1px 1px 1px rgb(0 0 0 / 20%);
+}
+
+.moon::before { top: 13px; left: 6px; width: 8px; height: 8px; }
+.moon::after { top: 6px; left: 15px; width: 5px; height: 5px; }
+
+:root[data-theme='light'] .night { opacity: 0; }
+:root[data-theme='light'] .halo { transform: none; }
+:root[data-theme='light'] .stars { opacity: 0; transform: translateY(-8px); }
+:root[data-theme='light'] .clouds { transform: none; }
+:root[data-theme='light'] .thumb {
+  box-shadow:
+    0 0 0 1.5px var(--theme-switch-sun-rim),
+    inset -2px -3px 4px rgb(170 90 0 / 35%),
+    0 2px 5px rgb(0 0 0 / 30%);
+  transform: none;
+}
+:root[data-theme='light'] .moon { opacity: 0; transform: translateX(100%); }
+
+@media (hover: hover) and (pointer: fine) {
+  .track:hover { border-color: var(--koyori-color-text); }
+}
+
+.track:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 押し込みは速く、戻りはばねに任せる。 */
+  .track:active { transform: scale(0.94); transition-duration: 80ms; transition-timing-function: var(--koyori-ease-out); }
+  :root:not([data-theme='light']) .stars i:nth-child(1) { animation: twinkle 2.2s ease-in-out infinite; }
+  :root:not([data-theme='light']) .stars i:nth-child(2) { animation: twinkle 1.7s ease-in-out 0.4s infinite; }
+}
+
+@keyframes twinkle {
+  50% { opacity: 0.5; transform: scale(0.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track, .night, .halo, .stars, .clouds, .thumb, .moon { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .track, .track:hover { forced-color-adjust: none; border-color: Highlight; background: Highlight; box-shadow: none; }
+  .day, .night, .halo, .stars, .clouds, .moon { display: none; }
+  .thumb, :root[data-theme='light'] .thumb { background: HighlightText; box-shadow: none; }
+  :root[data-theme='light'] .track, :root[data-theme='light'] .track:hover { border-color: ButtonText; background: Canvas; }
+  :root[data-theme='light'] .thumb { background: ButtonText; }
+  .track:focus-visible { outline: var(--koyori-focus-width) solid Highlight; outline-offset: var(--koyori-focus-offset); }
+}
