@@ -433,7 +433,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 
 ## ThemeSwitch
 
-`ThemeSwitch` は太陽（左・ライト）と月（右・ダーク）の 2 値のスイッチです。ダークのときは背景が星空になります。props は `label`（必須。入がダークなので「ダークテーマ」のように付ける）だけです。
+`ThemeSwitch` は太陽（左・ライト）と月（右・ダーク）の 2 値のスイッチです。ライトは昼空に雲と光の輪をまとった太陽、ダークは星空に浮かぶ月のイラスト調です。props は `label`（必須。入がダークなので「ダークテーマ」のように付ける）だけです。
 表示は `html[data-theme]` の配色で、押すと `setTheme` で反対側に固定します（「システム」へ戻すのは ThemePicker か `setTheme('system')`）。
 動きは transition だけで、星の瞬きだけがキーフレームです。動きを減らす設定で止まります。
 `node scripts/check-theme-switch.cjs` で生成物・配布物・サーバー描画を検証します（storybook-static があればブラウザー検証も行う）。

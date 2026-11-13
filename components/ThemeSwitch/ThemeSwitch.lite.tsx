@@ -31,9 +31,16 @@ export default function ThemeSwitch(props: ThemeSwitchProps) {
   return (
     <button type="button" role="switch" class={styles.track} aria-label={props.label}
       aria-checked={state.dark ? 'true' : 'false'} onClick={() => state.toggle()}>
-      <span class={styles.stars} aria-hidden="true" />
       <span class={styles.day} aria-hidden="true" />
-      <span class={styles.thumb} aria-hidden="true" />
+      <span class={styles.night} aria-hidden="true" />
+      <span class={styles.halo} aria-hidden="true" />
+      <span class={styles.stars} aria-hidden="true">
+        <i /><i /><i /><i /><i /><i />
+      </span>
+      <span class={styles.clouds} aria-hidden="true" />
+      <span class={styles.thumb} aria-hidden="true">
+        <span class={styles.moon} />
+      </span>
     </button>
   );
 }
