@@ -134,6 +134,13 @@ async function distChecks() {
         assert.deepEqual(env.events, ['light', 'dark', 'system'], label(`setTheme は ${EVENT} で選択を知らせる（保存が失敗しても）`));
       }
 
+      // 保存・削除が失敗しても、storedTheme はこのページで選んだ選択を返す（後からマウントした ThemePicker もそれを出す）。
+      for (const [stored, choice] of [[undefined, 'light'], ['dark', 'light'], ['dark', 'system']]) {
+        const env = makeEnv({ stored, os: 'dark', setThrows: true });
+        const result = withGlobals(env, () => { ui.setTheme(choice); return ui.storedTheme(); });
+        assert.equal(result, choice, label(`保存が失敗する環境で ${choice} を選ぶと storedTheme は ${choice}（保持 ${stored ?? 'なし'}）`));
+      }
+
       // 保持が読めなくても落ちず、OS に従う。
       for (const os of ['light', 'dark']) {
         const env = makeEnv({ os, getThrows: true });

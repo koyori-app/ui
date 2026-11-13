@@ -20,7 +20,9 @@ export default function ThemePicker(props: ThemePickerProps) {
       setTheme(next);
     },
     sync(event: Event) {
-      state.choice = (event as CustomEvent<Theme>).detail;
+      /* 利用側が自分で出したイベントの知らない値は、themeScript と同じく 'system' として扱う。 */
+      const detail = (event as CustomEvent).detail;
+      state.choice = detail === 'light' || detail === 'dark' ? detail : 'system';
     },
   });
   onMount(() => {

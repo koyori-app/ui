@@ -66,7 +66,7 @@ React で `<html>` ごと hydrate する構成（Next.js の App Router など�
 | --- | --- |
 | `themeScript` | `<head>` に inline で置くスクリプトの文字列 |
 | `setTheme(theme)` | `'light'` / `'dark'` / `'system'` を保持し、`html[data-theme]` に反映する。Dropdown の項目など、別の形で切り替えを出すときに使う |
-| `storedTheme()` | 保持している選択。無い・読めない・知らない値は `'system'` |
+| `storedTheme()` | 現在の選択。このページで選んだものが無ければ保持から読む。無い・読めない・知らない値は `'system'` |
 
 サーバー描画では保持した選択を知らないため、マウントされるまでトリガーは「システム」と表示されます。
 配色そのものは `themeScript` が最初から正しく当てます。
