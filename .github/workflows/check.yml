@@ -43,3 +43,6 @@ jobs:
       # Storybook は作らないので、ブラウザー検証（D）は省かれる。
       - name: Mention の対比・固定 class・サーバー描画
         run: node scripts/check-mention.cjs
+
+      - name: ThemePicker の保持・OS への追従・サーバー描画
+        run: node scripts/check-theme-picker.cjs
