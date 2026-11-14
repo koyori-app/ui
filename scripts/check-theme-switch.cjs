@@ -54,7 +54,9 @@ for (const sky of ['day-top', 'day-bottom']) {
 for (const sky of ['night-top', 'night-bottom']) {
   assert.ok(contrast(color('moon'), color(sky)) >= 3, `月と夜空（${sky}）は 3:1 以上`);
 }
-assert.match(css, /box-shadow:\s*0 0 0 [\d.]+px var\(--theme-switch-sun-rim\)/, '太陽の縁取りは昼のつまみの外側の線');
+// 縁取りは 1px。太いと太陽の周りが強く見える（UI-39）。夜は同じ太さの透明にして、遷移で線が太らないようにする。
+assert.match(css, /box-shadow:\s*0 0 0 1px var\(--theme-switch-sun-rim\)/, '太陽の縁取りは昼のつまみの外側の 1px の線');
+assert.match(css, /box-shadow:\s*0 0 0 1px transparent/, '夜のつまみは同じ太さの透明な線を持つ');
 // トラックの枠（border-strong）と、置かれる面（surface / surface-raised）の対比。明暗の両方。
 assert.match(css, /border: 1px solid var\(--koyori-color-border-strong\)/, 'トラックは 1px の border-strong の枠を持つ');
 const tokens = read('components/tokens.css');

@@ -127,7 +127,7 @@
 }
 
 /* トラックの内側は 74×34。28px のつまみが枠から 3px 空けて 40px 動く。太陽が土台で、夜は月が右から重なる。
-   太陽の縁取り（外側の 1.5px）は昼空との対比を 3:1 以上に保つ。夜は透明にして、月の輪郭を変えない。 */
+   太陽の縁取り（外側の 1px）は昼空との対比を 3:1 以上に保つ。夜は透明にして、月の輪郭を変えない。 */
 .thumb {
   position: absolute;
   top: 3px;
@@ -137,7 +137,7 @@
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, var(--theme-switch-sun-light), var(--theme-switch-sun));
   box-shadow:
-    0 0 0 1.5px transparent,
+    0 0 0 1px transparent,
     inset -2px -3px 4px rgb(170 90 0 / 35%),
     0 2px 5px rgb(0 0 0 / 30%);
   pointer-events: none;
@@ -175,7 +175,7 @@
 :root[data-theme='light'] .clouds { transform: none; }
 :root[data-theme='light'] .thumb {
   box-shadow:
-    0 0 0 1.5px var(--theme-switch-sun-rim),
+    0 0 0 1px var(--theme-switch-sun-rim),
     inset -2px -3px 4px rgb(170 90 0 / 35%),
     0 2px 5px rgb(0 0 0 / 30%);
   transform: none;
