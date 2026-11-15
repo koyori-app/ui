@@ -36,6 +36,7 @@ export default defineConfig({
             { label: 'Card・Separator', slug: 'components/card-separator' },
             { label: 'Calendar', slug: 'components/calendar' },
             { label: 'Checkbox', slug: 'components/checkbox' },
+            { label: 'Combobox', slug: 'components/combobox' },
             { label: 'ContextMenu', slug: 'components/context-menu' },
             { label: 'DataList', slug: 'components/data-list' },
             { label: 'DatePicker', slug: 'components/date-picker' },

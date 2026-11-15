@@ -49,3 +49,6 @@ jobs:
 
       - name: ThemeSwitch の生成物・配布 CSS・サーバー描画
         run: node scripts/check-theme-switch.cjs
+
+      - name: Combobox の候補の移動・強調の分割
+        run: node scripts/check-combobox-logic.cjs

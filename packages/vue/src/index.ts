@@ -58,3 +58,5 @@ export { type PaginationRange } from './generated/components/Pagination/paginati
 export { default as ThemePicker, type ThemePickerProps } from './generated/components/ThemePicker/ThemePicker.vue';
 export { default as ThemeSwitch, type ThemeSwitchProps } from './generated/components/ThemeSwitch/ThemeSwitch.vue';
 export { themeScript, setTheme, storedTheme, type Theme } from './generated/components/ThemePicker/theme.js';
+export { default as Combobox, type ComboboxProps } from './generated/components/Combobox/Combobox.vue';
+export { type ComboboxOption, type ComboboxSection, type ComboboxTag } from './generated/components/Combobox/combobox.js';
