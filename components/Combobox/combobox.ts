@@ -41,16 +41,16 @@ export function comboboxEnabledValues(sections: ComboboxSection[]): string[] {
   return values;
 }
 
-/* 今の候補。activeValue が一覧に無ければ、autoHighlight のとき先頭、そうでなければ無し（''）。 */
-export function comboboxActiveValue(enabled: string[], activeValue: string, autoHighlight: boolean): string {
-  if (activeValue && enabled.includes(activeValue)) return activeValue;
-  return autoHighlight ? enabled[0] ?? '' : '';
+/* 今の候補。activeValue が一覧に無ければ、autoHighlight のとき先頭、そうでなければ無し（null）。 */
+export function comboboxActiveValue(enabled: string[], activeValue: string | null, autoHighlight: boolean): string | null {
+  if (activeValue !== null && enabled.includes(activeValue)) return activeValue;
+  return autoHighlight ? enabled[0] ?? null : null;
 }
 
-/* ↑↓ の移動先。端で回る。候補が無ければ ''。 */
-export function nextComboboxValue(enabled: string[], current: string, key: string): string {
-  if (!enabled.length) return '';
-  const index = enabled.indexOf(current);
+/* ↑↓ の移動先。端で回る。候補が無ければ null。 */
+export function nextComboboxValue(enabled: string[], current: string | null, key: string): string | null {
+  if (!enabled.length) return null;
+  const index = current === null ? -1 : enabled.indexOf(current);
   if (key === 'ArrowDown') return enabled[(index + 1) % enabled.length];
   if (key === 'ArrowUp') return enabled[(index <= 0 ? enabled.length : index) - 1];
   return current;

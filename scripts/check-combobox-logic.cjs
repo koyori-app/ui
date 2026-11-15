@@ -16,6 +16,11 @@ try {
 }
 const { comboboxSections, comboboxEnabledValues, comboboxActiveValue, nextComboboxValue, comboboxLabelParts, isComposingKey } = combobox;
 
+assert.equal(comboboxActiveValue(['', 'a'], null, false), null);
+assert.equal(comboboxActiveValue(['', 'a'], '', true), '');
+assert.equal(nextComboboxValue(['', 'a'], null, 'ArrowDown'), '');
+assert.equal(nextComboboxValue(['', 'a'], '', 'ArrowDown'), 'a');
+
 // comboboxSections
 assert.deepEqual(comboboxSections(undefined), []);
 assert.deepEqual(comboboxSections([]), []);
@@ -33,10 +38,10 @@ assert.equal(comboboxActiveValue(['a', 'c'], 'c', false), 'c');
 assert.equal(comboboxActiveValue(['a', 'c'], 'c', true), 'c');
 assert.equal(comboboxActiveValue(['a', 'c'], 'zzz', true), 'a');
 assert.equal(comboboxActiveValue(['a', 'c'], '', true), 'a');
-assert.equal(comboboxActiveValue(['a', 'c'], 'zzz', false), '');
-assert.equal(comboboxActiveValue(['a', 'c'], '', false), '');
-assert.equal(comboboxActiveValue([], 'a', true), '');
-assert.equal(comboboxActiveValue([], '', false), '');
+assert.equal(comboboxActiveValue(['a', 'c'], 'zzz', false), null);
+assert.equal(comboboxActiveValue(['a', 'c'], null, false), null);
+assert.equal(comboboxActiveValue([], 'a', true), null);
+assert.equal(comboboxActiveValue([], null, false), null);
 
 // nextComboboxValue
 const en = ['a', 'b', 'c'];
@@ -46,8 +51,8 @@ assert.equal(nextComboboxValue(en, '', 'ArrowDown'), 'a');
 assert.equal(nextComboboxValue(en, '', 'ArrowUp'), 'c');
 assert.equal(nextComboboxValue(en, 'a', 'ArrowUp'), 'c', 'wraps before the start');
 assert.equal(nextComboboxValue(en, 'c', 'ArrowUp'), 'b');
-assert.equal(nextComboboxValue([], 'a', 'ArrowDown'), '');
-assert.equal(nextComboboxValue([], '', 'ArrowUp'), '');
+assert.equal(nextComboboxValue([], 'a', 'ArrowDown'), null);
+assert.equal(nextComboboxValue([], null, 'ArrowUp'), null);
 assert.equal(nextComboboxValue(['a'], 'a', 'ArrowDown'), 'a');
 assert.equal(nextComboboxValue(['a'], 'a', 'ArrowUp'), 'a');
 assert.equal(nextComboboxValue(en, 'b', 'Home'), 'b', 'other keys keep the value');

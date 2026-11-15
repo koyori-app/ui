@@ -124,3 +124,16 @@ export const InDialog: Story = {
   parameters: { docs: { story: { inline: false, iframeHeight: 480 } } },
   render: () => <DialogExample />,
 };
+
+function RegressionExample() {
+  const [options, setOptions] = useState<ComboboxOption[]>([]);
+  const [events, setEvents] = useState<string[]>([]);
+  const [tick, setTick] = useState(0);
+  const record = (text: string) => setEvents(old => [...old, text]);
+  return <div style={{ minHeight: 1800 }}>
+    <button onMouseDown={e => e.preventDefault()} onClick={() => { options.push(...Array.from({ length: 60 }, (_, i) => ({ value: i ? String(i) : '', label: `候補${i}` }))); setOptions(options); setTick(tick + 1); }}>候補を追加</button>
+    <Combobox ariaLabel="回帰検証" options={options} value={String(tick)} onOpenChange={v => record(`open:${v}`)} onCaretChange={v => record(`caret:${v}`)} onSelect={v => record(`select:${v}`)} onCommit={v => record(`commit:${v}`)} />
+    <output aria-label="通知">{JSON.stringify(events)}</output>
+  </div>;
+}
+export const Regression: Story = { render: () => <RegressionExample /> };

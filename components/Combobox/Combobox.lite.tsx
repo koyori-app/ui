@@ -70,7 +70,7 @@ export default function Combobox(props: ComboboxProps) {
   const state = useStore({
     uid: '',
     expanded: props.defaultOpen || false,
-    activeValue: '',
+    activeValue: comboboxActiveValue([], null, false),
     get context() { return getFieldContext(fieldContext); },
     enabledValues() {
       return comboboxEnabledValues(comboboxSections(props.options));
@@ -100,7 +100,9 @@ export default function Combobox(props: ComboboxProps) {
     },
     position() {
       positionMenu(anchorRef, rootRef, panelRef, listRef);
-      state.revealActive();
+      if (anchorRef && rootRef && panelRef) {
+        panelRef.style.setProperty('--combobox-top-offset', `${anchorRef.getBoundingClientRect().top - rootRef.getBoundingClientRect().top}px`);
+      }
     },
     revealActive() {
       const target = listRef?.querySelector<HTMLElement>('[data-active="true"]');
@@ -124,14 +126,14 @@ export default function Combobox(props: ComboboxProps) {
       const at = state.caretPosition();
       caretRef = at;
       byPointerRef = false;
-      state.activeValue = '';
+      state.activeValue = null;
       state.expanded = true;
       props.onValueChange?.(input.value, at);
     },
     select(value: string, unavailable?: boolean) {
       if (unavailable || props.disabled) return;
       byPointerRef = false;
-      state.activeValue = '';
+      state.activeValue = null;
       props.onSelect?.(value);
     },
     removeTag(index: number, refocus: boolean) {
@@ -149,7 +151,7 @@ export default function Combobox(props: ComboboxProps) {
     },
     blur() {
       state.expanded = false;
-      state.activeValue = '';
+      state.activeValue = null;
       composingRef = false;
     },
     press(event: { target: EventTarget | null; preventDefault(): void }) {
@@ -157,6 +159,7 @@ export default function Combobox(props: ComboboxProps) {
       if (panelRef?.contains(target)) { event.preventDefault(); return; }
       if (target.closest('button, a, input')) return;
       event.preventDefault();
+      state.expanded = true;
       inputRef?.focus();
     },
     hover(option: { value: string; disabled?: boolean }, event: { screenX: number; screenY: number }) {
@@ -170,7 +173,7 @@ export default function Combobox(props: ComboboxProps) {
     leave() {
       if (!byPointerRef) return;
       byPointerRef = false;
-      state.activeValue = '';
+      state.activeValue = null;
     },
     keydown(event: { key: string; keyCode?: number; altKey?: boolean; repeat?: boolean; isComposing?: boolean; nativeEvent?: { isComposing?: boolean }; preventDefault(): void; stopPropagation(): void }) {
       if (composingRef || isComposingKey(event)) return;
@@ -182,10 +185,11 @@ export default function Combobox(props: ComboboxProps) {
         const wasOpen = state.isOpen();
         state.expanded = true;
         if (event.altKey) return;
-        state.activeValue = nextComboboxValue(values, wasOpen ? state.activeOption() : '', event.key);
+        state.activeValue = nextComboboxValue(values, wasOpen ? state.activeOption() : null, event.key);
       } else if (event.key === 'Enter') {
+        if (event.repeat) { event.preventDefault(); return; }
         const current = state.activeOption();
-        if (state.isOpen() && current) {
+        if (state.isOpen() && current !== null) {
           event.preventDefault();
           state.select(current);
         } else props.onCommit?.(inputRef?.value ?? '');
@@ -194,7 +198,7 @@ export default function Combobox(props: ComboboxProps) {
         event.preventDefault();
         event.stopPropagation();
         state.expanded = false;
-        state.activeValue = '';
+        state.activeValue = null;
       } else if (event.key === 'Backspace') {
         const count = props.tags?.length ?? 0;
         if (!count || event.repeat || inputRef?.selectionStart !== 0 || inputRef?.selectionEnd !== 0) return;
@@ -212,13 +216,16 @@ export default function Combobox(props: ComboboxProps) {
   onUpdate(() => {
     /* Vue では依存付き onUpdate が setup 中にも走るが、SSR には requestAnimationFrame が無い。 */
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => state.position());
-  }, [state.expanded, state.activeValue, props.options, props.tags, props.value, props.disabled, props.autoHighlight]);
+  }, [state.isOpen(), state.activeOption(), comboboxSections(props.options).reduce((count, section) => count + section.options.length, 0), state.expanded, state.activeValue, props.options, props.tags, props.value, props.disabled, props.autoHighlight]);
   onUpdate(() => {
     const open = state.isOpen();
     if (!!openedRef === open) return;
     openedRef = open;
     props.onOpenChange?.(open);
-  }, [state.expanded, props.options, props.disabled]);
+  }, [state.isOpen(), comboboxSections(props.options).reduce((count, section) => count + section.options.length, 0), state.expanded, props.options, props.disabled]);
+  onUpdate(() => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => state.revealActive());
+  }, [state.isOpen(), state.activeOption()]);
   onUnMount(() => cleanupRef?.());
 
   return (

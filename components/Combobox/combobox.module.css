@@ -54,7 +54,7 @@
 }
 
 .panel[data-side='top'] {
-  margin-block: 0 calc(var(--combobox-inset) + 1px);
+  margin-block: 0 var(--combobox-top-offset, calc(var(--combobox-inset) + 1px));
 }
 
 /* listbox の子に separator は置けないので、節の間の線は CSS で引く。 */

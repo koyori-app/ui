@@ -140,3 +140,19 @@ export const InDialog: Story = {
     </div>`,
   }),
 };
+
+export const Regression: Story = { render: () => ({
+  components: { Combobox },
+  setup() {
+    const options = ref<ComboboxOption[]>([]);
+    const events = ref<string[]>([]);
+    const record = (text: string) => events.value.push(text);
+    const add = () => options.value.push(...Array.from({ length: 60 }, (_, i) => ({ value: i ? String(i) : '', label: `候補${i}` })));
+    return { options, events, record, add };
+  },
+  template: `<div style="min-height: 1800px">
+    <button @mousedown.prevent @click="add">候補を追加</button>
+    <Combobox aria-label="回帰検証" :options="options" value="1" :on-open-change="v => record('open:' + v)" :on-caret-change="v => record('caret:' + v)" :on-select="v => record('select:' + v)" :on-commit="v => record('commit:' + v)" />
+    <output aria-label="通知">{{ JSON.stringify(events) }}</output>
+  </div>`,
+}) };

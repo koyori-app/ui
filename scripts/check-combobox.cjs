@@ -78,6 +78,68 @@ let browser;
         assert.equal(bar.opacity, '1', at('帯が見えている'));
       };
 
+      const regressionFailures = [];
+      const regression = async (name, run) => { try { await run(); } catch (e) { regressionFailures.push(`${name}: ${e.message}`); } };
+      const notices = async () => JSON.parse(await page.locator('output[aria-label="通知"]').innerText());
+      await regression('in-place options / open notification', async () => {
+        await story('regression'); await input.focus(); await settle();
+        await page.getByRole('button', { name: '候補を追加' }).evaluate(el => el.click()); await settle();
+        assert.equal(await expanded(), 'true'); assert(await panel.getAttribute('data-side'));
+        assert.equal((await notices()).filter(v => v === 'open:true').length, 1);
+        await input.press('Escape'); await settle();
+        assert.equal((await notices()).filter(v => v === 'open:false').length, 1);
+      });
+      const prepareRegression = async () => {
+        await story('regression'); await page.getByRole('button', { name: '候補を追加' }).evaluate(el => el.click()); await input.focus(); await settle();
+      };
+      await regression('empty value', async () => {
+        await prepareRegression(); assert.equal(await selected.count(), 0);
+        await input.press('ArrowDown'); await settle(); await assertSingleSelected('候補0');
+        await input.press('Enter'); await settle(); assert((await notices()).includes('select:'));
+      });
+      await regression('Enter repeat', async () => {
+        await prepareRegression();
+        await input.dispatchEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }); await settle();
+        assert.equal((await notices()).filter(v => /^(select|commit):/.test(v)).length, 0);
+        await input.press('ArrowDown'); await settle();
+        await input.dispatchEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }); await settle();
+        assert.equal((await notices()).filter(v => /^(select|commit):/.test(v)).length, 0);
+      });
+      await regression('caret notification', async () => {
+        await prepareRegression(); await input.press('End'); await input.press('ArrowLeft'); await settle();
+        assert((await notices()).includes('caret:0'));
+        await input.press('End'); await input.press('Home'); await settle();
+        assert.equal((await notices()).at(-1), 'caret:0');
+      });
+      await regression('reopen padding', async () => {
+        await prepareRegression(); await input.press('Escape');
+        await fieldRoot.click({ position: { x: 2, y: 2 } }); await settle(); assert.equal(await expanded(), 'true');
+      });
+      await regression('wheel / resize preserve scroll', async () => {
+        await prepareRegression(); await input.press('ArrowDown'); await settle();
+        const box = await listbox.boundingBox(); await page.mouse.move(box.x + box.width - 5, box.y + 50);
+        await page.mouse.wheel(0, 160); await settle(400);
+        const scroll = await listbox.evaluate(el => el.scrollTop); assert(scroll > 50);
+        await page.evaluate(() => window.dispatchEvent(new Event('resize'))); await settle();
+        assert.equal(await listbox.evaluate(el => el.scrollTop), scroll);
+        await page.mouse.move(750, 600); await page.mouse.wheel(0, 80); await settle(400);
+        const pageScroll = await page.evaluate(() => window.scrollY); assert(pageScroll > 50);
+        await page.evaluate(() => window.dispatchEvent(new Event('resize'))); await settle();
+        assert.equal(await page.evaluate(() => window.scrollY), pageScroll);
+        assert.equal(await listbox.evaluate(el => el.scrollTop), scroll);
+      });
+      await regression('wrapped tags top gap', async () => {
+        await story('many-tags');
+        await page.evaluate(() => { const input = document.querySelector('[role="combobox"]'); const root = input.parentElement.parentElement.parentElement; root.style.marginTop = '450px'; });
+        await input.focus(); await settle(); assert.equal(await panel.getAttribute('data-side'), 'top');
+        const r = await fieldRoot.boundingBox(); const p = await panel.boundingBox();
+        const gap = await panel.evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--menu-resolved-gap')));
+        assert(Math.abs(r.y - p.y - p.height - gap) < 1.5);
+        await input.press('Escape');
+        await fieldRoot.getByText('とても長いラベルの名前 1', { exact: true }).click(); await settle();
+        assert.equal(await expanded(), 'true');
+      });
+      assert.deepEqual(regressionFailures, [], at('review regressions'));
       // ---- default ----
       await story('default');
       assert.equal(await input.getAttribute('role'), 'combobox');
