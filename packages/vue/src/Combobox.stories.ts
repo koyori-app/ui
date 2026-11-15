@@ -141,18 +141,21 @@ export const InDialog: Story = {
   }),
 };
 
-export const Regression: Story = { render: () => ({
-  components: { Combobox },
+export const ManyOptions: Story = { render: () => ({
+  components: { Button, Combobox },
   setup() {
     const options = ref<ComboboxOption[]>([]);
     const events = ref<string[]>([]);
+    const disabled = ref(false);
     const record = (text: string) => events.value.push(text);
-    const add = () => options.value.push(...Array.from({ length: 60 }, (_, i) => ({ value: i ? String(i) : '', label: `候補${i}` })));
-    return { options, events, record, add };
+    const add = () => { if (options.value.length) return; options.value.push(...Array.from({ length: 60 }, (_, i) => ({ value: i ? String(i) : '', label: `候補${i}` }))); };
+    return { options, events, record, add, disabled };
   },
-  template: `<div style="min-height: 1800px">
-    <button @mousedown.prevent @click="add">候補を追加</button>
-    <Combobox aria-label="回帰検証" :options="options" value="1" :on-open-change="v => record('open:' + v)" :on-caret-change="v => record('caret:' + v)" :on-select="v => record('select:' + v)" :on-commit="v => record('commit:' + v)" />
+  template: `<div style="min-height: 360px">
+    <Button :on-click="add" label="候補を追加" />
+    <Button :on-click="() => options = [...options].reverse()" label="並びを反転" />
+    <Button :on-click="() => disabled = !disabled" label="無効を切替" />
+    <Combobox aria-label="多数の候補" :disabled="disabled" :options="options" value="1" :on-open-change="v => record('open:' + v)" :on-caret-change="v => record('caret:' + v)" :on-select="v => record('select:' + v)" :on-commit="v => record('commit:' + v)" />
     <output aria-label="通知">{{ JSON.stringify(events) }}</output>
   </div>`,
 }) };

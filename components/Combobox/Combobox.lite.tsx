@@ -67,6 +67,7 @@ export default function Combobox(props: ComboboxProps) {
   let quietFocusRef = useRef<boolean | null>(null);
   let pointerRef = useRef<string | null>(null);
   let byPointerRef = useRef<boolean | null>(null);
+  let revealedValueRef = useRef<string | null>(null);
   const state = useStore({
     uid: '',
     expanded: props.defaultOpen || false,
@@ -103,11 +104,11 @@ export default function Combobox(props: ComboboxProps) {
       if (anchorRef && rootRef && panelRef) {
         panelRef.style.setProperty('--combobox-top-offset', `${anchorRef.getBoundingClientRect().top - rootRef.getBoundingClientRect().top}px`);
       }
+      state.alignActive();
     },
-    revealActive() {
+    alignActive() {
       const target = listRef?.querySelector<HTMLElement>('[data-active="true"]');
       if (!target) { hideHighlight(listRef); return; }
-      if (!byPointerRef) target.scrollIntoView({ block: 'nearest' });
       highlightItem(listRef, target, !byPointerRef);
     },
     caretPosition() {
@@ -155,6 +156,7 @@ export default function Combobox(props: ComboboxProps) {
       composingRef = false;
     },
     press(event: { target: EventTarget | null; preventDefault(): void }) {
+      if (props.disabled) return;
       const target = event.target as Element;
       if (panelRef?.contains(target)) { event.preventDefault(); return; }
       if (target.closest('button, a, input')) return;
@@ -210,7 +212,14 @@ export default function Combobox(props: ComboboxProps) {
 
   onMount(() => {
     state.uid = `koyori-combobox-${Math.random().toString(36).slice(2)}`;
-    cleanupRef = listenToMenu(rootRef, () => { state.expanded = false; }, state.position);
+    const stopMenu = listenToMenu(rootRef, () => { state.expanded = false; }, state.position);
+    // DOM の並べ替え・見出し・折り返し・幅の変更でも測り直す。属性は帯自身の更新を拾うので監視しない。
+    const resizeObserver = new ResizeObserver(() => state.position());
+    if (rootRef) resizeObserver.observe(rootRef);
+    if (listRef) resizeObserver.observe(listRef);
+    const structureObserver = new MutationObserver(() => state.position());
+    if (listRef) structureObserver.observe(listRef, { childList: true, subtree: true, characterData: true });
+    cleanupRef = () => { stopMenu(); resizeObserver.disconnect(); structureObserver.disconnect(); };
     if (state.expanded) requestAnimationFrame(() => state.position());
   });
   onUpdate(() => {
@@ -224,7 +233,15 @@ export default function Combobox(props: ComboboxProps) {
     props.onOpenChange?.(open);
   }, [state.isOpen(), comboboxSections(props.options).reduce((count, section) => count + section.options.length, 0), state.expanded, props.options, props.disabled]);
   onUpdate(() => {
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => state.revealActive());
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
+      const nextValue = state.isOpen() ? state.activeOption() : null;
+      // Vue の watch は options の変更でも走る。値が同じならスクロールしない。
+      if (nextValue !== revealedValueRef) {
+        revealedValueRef = nextValue;
+        if (nextValue !== null && !byPointerRef) listRef?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
+      }
+      state.alignActive();
+    });
   }, [state.isOpen(), state.activeOption()]);
   onUnMount(() => cleanupRef?.());
 

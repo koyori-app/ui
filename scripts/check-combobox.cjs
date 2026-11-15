@@ -61,7 +61,16 @@ let browser;
         if (!await page.evaluate(() => typeof window.axe !== 'undefined')) {
           await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
         }
-        assert.deepEqual(await page.evaluate(async () => (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => `${v.id}: ${v.nodes.map(n => n.html).join(' | ')}`)), [], at(`axe (${label})`));
+        assert.deepEqual(await page.evaluate(async () => {
+          // Storybook の a11y addon が先に実行中なら完了を待つ。別のエラーはそのまま返す。
+          for (let attempt = 0; ; attempt++) {
+            try { return (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => `${v.id}: ${v.nodes.map(n => n.html).join(' | ')}`); }
+            catch (error) {
+              if (attempt >= 50 || !error.message.includes('Axe is already running')) throw error;
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
+        }), [], at(`axe (${label})`));
       };
       const assertSingleSelected = async expectedText => {
         assert.equal(await selected.count(), 1, at('選択中の候補は 1 件だけ'));
@@ -71,7 +80,7 @@ let browser;
         if (expectedText) assert((await selected.innerText()).includes(expectedText), at(`選択中は ${expectedText}: ${await selected.innerText()}`));
       };
       const assertHighlightOnSelected = async () => {
-        await settle(400);
+        await settle(800);
         const bar = await page.locator('[data-hover-highlight]').evaluate(el => ({ rect: el.getBoundingClientRect().toJSON(), opacity: getComputedStyle(el).opacity }));
         const row = await selected.boundingBox();
         assert(Math.abs(bar.rect.top - row.y) < 1 && Math.abs(bar.rect.height - row.height) < 1, at(`帯が選択中の行と重なる ${JSON.stringify([bar.rect.top, bar.rect.height, row])}`));
@@ -82,15 +91,17 @@ let browser;
       const regression = async (name, run) => { try { await run(); } catch (e) { regressionFailures.push(`${name}: ${e.message}`); } };
       const notices = async () => JSON.parse(await page.locator('output[aria-label="通知"]').innerText());
       await regression('in-place options / open notification', async () => {
-        await story('regression'); await input.focus(); await settle();
+        await story('many-options'); await input.focus(); await settle();
         await page.getByRole('button', { name: '候補を追加' }).evaluate(el => el.click()); await settle();
+        // Vue の同じ配列への変更だけが対象。React は新しい配列を渡して描画する。
+        await settle();
         assert.equal(await expanded(), 'true'); assert(await panel.getAttribute('data-side'));
         assert.equal((await notices()).filter(v => v === 'open:true').length, 1);
         await input.press('Escape'); await settle();
         assert.equal((await notices()).filter(v => v === 'open:false').length, 1);
       });
       const prepareRegression = async () => {
-        await story('regression'); await page.getByRole('button', { name: '候補を追加' }).evaluate(el => el.click()); await input.focus(); await settle();
+        await story('many-options'); await page.evaluate(() => document.body.style.minHeight = '1800px'); await page.getByRole('button', { name: '候補を追加' }).evaluate(el => el.click()); await input.focus(); await settle();
       };
       await regression('empty value', async () => {
         await prepareRegression(); assert.equal(await selected.count(), 0);
@@ -106,7 +117,11 @@ let browser;
         assert.equal((await notices()).filter(v => /^(select|commit):/.test(v)).length, 0);
       });
       await regression('caret notification', async () => {
-        await prepareRegression(); await input.press('End'); await input.press('ArrowLeft'); await settle();
+        await prepareRegression(); await input.press('Home'); await settle();
+        const count = (await notices()).filter(v => v === 'caret:1').length;
+        await input.press('End'); await input.press('End'); await settle();
+        assert.equal((await notices()).filter(v => v === 'caret:1').length, count + 1);
+        await input.press('ArrowLeft'); await settle();
         assert((await notices()).includes('caret:0'));
         await input.press('End'); await input.press('Home'); await settle();
         assert.equal((await notices()).at(-1), 'caret:0');
@@ -127,6 +142,46 @@ let browser;
         await page.evaluate(() => window.dispatchEvent(new Event('resize'))); await settle();
         assert.equal(await page.evaluate(() => window.scrollY), pageScroll);
         assert.equal(await listbox.evaluate(el => el.scrollTop), scroll);
+      });
+
+      await regression('wheel highlight / selection', async () => {
+        await prepareRegression();
+        const box = await listbox.boundingBox();
+        await page.mouse.move(box.x + 40, box.y + 50);
+        await input.press('Home');
+        for (let i = 0; i < 3; i++) await input.press('ArrowDown');
+        await settle();
+        const value = (await selected.innerText()).replace('候補', '');
+        await page.mouse.wheel(0, 160); await settle(400);
+        await assertSingleSelected('候補' + value);
+        await assertHighlightOnSelected();
+        await input.press('Enter'); await settle();
+        assert.equal((await notices()).at(-1), 'select:' + value);
+      });
+      await regression('width highlight', async () => {
+        await prepareRegression(); await input.press('ArrowDown'); await settle();
+        await fieldRoot.evaluate(el => el.style.setProperty('--koyori-combobox-width', '220px'));
+        await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+        await assertHighlightOnSelected();
+        const bar = await page.locator('[data-hover-highlight]').boundingBox();
+        const row = await selected.boundingBox();
+        assert(Math.abs(bar.width - row.width) < 1);
+      });
+      await regression('reorder highlight / selection', async () => {
+        await prepareRegression(); await input.press('ArrowDown'); await input.press('ArrowDown'); await settle();
+        await page.getByRole('button', { name: '並びを反転' }).evaluate(el => el.click()); await settle();
+        await assertSingleSelected('候補1'); await assertHighlightOnSelected();
+        assert.equal(await listbox.evaluate(el => el.scrollTop), 0, at('同じ値の並べ替えではスクロールしない'));
+        await input.press('Enter'); await settle();
+        assert.equal((await notices()).at(-1), 'select:1');
+      });
+      await regression('disabled padding does not defer opening', async () => {
+        await prepareRegression(); await input.press('Escape'); await input.evaluate(el => el.blur());
+        await page.getByRole('button', { name: '無効を切替' }).evaluate(el => el.click()); await settle();
+        await fieldRoot.dispatchEvent('mousedown', { bubbles: true, cancelable: true });
+        await page.getByRole('button', { name: '無効を切替' }).evaluate(el => el.click()); await settle();
+        assert.equal(await expanded(), 'false');
+        assert.equal((await notices()).filter(v => v === 'open:true').length, 1);
       });
       await regression('wrapped tags top gap', async () => {
         await story('many-tags');

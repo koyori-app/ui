@@ -125,15 +125,17 @@ export const InDialog: Story = {
   render: () => <DialogExample />,
 };
 
-function RegressionExample() {
+function ManyOptionsExample() {
   const [options, setOptions] = useState<ComboboxOption[]>([]);
   const [events, setEvents] = useState<string[]>([]);
-  const [tick, setTick] = useState(0);
+  const [disabled, setDisabled] = useState(false);
   const record = (text: string) => setEvents(old => [...old, text]);
-  return <div style={{ minHeight: 1800 }}>
-    <button onMouseDown={e => e.preventDefault()} onClick={() => { options.push(...Array.from({ length: 60 }, (_, i) => ({ value: i ? String(i) : '', label: `候補${i}` }))); setOptions(options); setTick(tick + 1); }}>候補を追加</button>
-    <Combobox ariaLabel="回帰検証" options={options} value={String(tick)} onOpenChange={v => record(`open:${v}`)} onCaretChange={v => record(`caret:${v}`)} onSelect={v => record(`select:${v}`)} onCommit={v => record(`commit:${v}`)} />
+  return <div style={{ minHeight: 360 }}>
+    <Button onClick={() => setOptions(Array.from({ length: 60 }, (_, i) => ({ value: i ? String(i) : '', label: `候補${i}` })))} label="候補を追加" />
+    <Button onClick={() => setOptions(old => [...old].reverse())} label="並びを反転" />
+    <Button onClick={() => setDisabled(old => !old)} label="無効を切替" />
+    <Combobox ariaLabel="多数の候補" options={options} value="1" disabled={disabled} onOpenChange={v => record(`open:${v}`)} onCaretChange={v => record(`caret:${v}`)} onSelect={v => record(`select:${v}`)} onCommit={v => record(`commit:${v}`)} />
     <output aria-label="通知">{JSON.stringify(events)}</output>
   </div>;
 }
-export const Regression: Story = { render: () => <RegressionExample /> };
+export const ManyOptions: Story = { render: () => <ManyOptionsExample /> };
