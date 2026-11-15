@@ -1,0 +1,112 @@
+---
+title: Combobox
+description: 札を並べられる入力欄と、入力中に出る候補の一覧。候補の中身と文字列の解釈は利用側で決める。
+---
+
+import ComboboxPreview from '../../../components/ComboboxPreview.astro';
+
+`Combobox` は入力欄の中に確定した条件を札で並べ、入力中は欄の下に候補を出します。
+検索欄の条件式のように、利用側が文字列を解釈して候補を作る場面を想定しています。
+部品は「札の並び」「入力中の文字」「候補の並び」を受け取り、入力・選択・確定・札の削除を通知するだけです。
+札の追加と削除、候補の絞り込み、文字の書き換えは、利用側が Props を更新して行います。
+
+## プレビュー
+
+空欄で欄を押すとキーの候補が出ます。`label:b` のように打つとラベルの候補が出て、先頭が選ばれた状態になります。
+Enter で札になり、空欄で Backspace を押すと最後の札を外します。日本語入力の変換中の Enter は確定になりません。
+
+<ComboboxPreview />
+
+## Props
+
+`Combobox` と `ComboboxProps`、`ComboboxOption`・`ComboboxSection`・`ComboboxTag` を各パッケージの公開エントリーから import できます。
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `id` | `string` | — | 入力欄の id。Field の中では Field の id を使う |
+| `ariaLabel` | `string` | — | 入力欄の名前。Field の外では必須 |
+| `name` | `string` | — | 入力欄の `name` |
+| `value` | `string` | `''` | 入力中の文字。利用側が持つ |
+| `placeholder` | `string` | — | |
+| `disabled` | `boolean` | `false` | 入力欄と札の × を無効にし、一覧を出さない |
+| `onValueChange` | `(value: string, caret: number) => void` | — | 入力のたびに呼ぶ。`caret` は入力後のキャレット位置 |
+| `onCaretChange` | `(caret: number) => void` | — | 文字を変えずにキャレットが動いたとき。同じ位置なら呼ばない |
+| `tags` | `ComboboxTag[]` | `[]` | 入力欄の前に並べる札 |
+| `onTagRemove` | `(index: number) => void` | — | 札の ×、または欄の先頭での Backspace。`index` は `tags` の位置 |
+| `options` | `ComboboxOption[] \| ComboboxSection[]` | `[]` | 候補。平らな一覧か節の一覧（混ぜない）。空なら一覧を出さない |
+| `listLabel` | `string` | `'候補'` | 一覧の読み上げ名 |
+| `autoHighlight` | `boolean` | `false` | true なら、一覧が出たとき・文字を打ったときに先頭の有効な候補を選んだ状態にする |
+| `onSelect` | `(value: string) => void` | — | 候補を Enter かクリックで選んだとき。`value` は候補の `value` |
+| `onCommit` | `(value: string) => void` | — | 候補を選んでいない状態の Enter。`value` は入力中の文字 |
+| `onOpenChange` | `(open: boolean) => void` | — | 一覧が開いた・閉じたとき |
+| `defaultOpen` | `boolean` | `false` | 初期表示で一覧を開く。フォーカスは移さない |
+| `prefix` / `suffix` | React: 要素 / Vue: 同名スロット | — | 欄の前後。検索アイコンや早見表のボタンなど |
+| `footer` | React: 要素 / Vue: `#footer` スロット | — | 一覧の下端の案内。操作できる要素は置かない |
+
+Vue は `:on-select="handler"`、React は `onSelect={handler}` でコールバックを渡します。
+
+```ts
+interface ComboboxOption {
+  value: string;                   // 一覧の中で一意。onSelect に渡る
+  label: string;                   // 候補の名前
+  description?: string;            // label の右に続ける補足
+  meta?: string;                   // 行の右端の補足（件数など）
+  color?: string;                  // label の前の色の点（CSS の色）。装飾
+  highlight?: [number, number][];  // label の中で強調する範囲。[開始, 終了) の UTF-16 位置
+  disabled?: boolean;
+}
+interface ComboboxSection { heading?: string; options: ComboboxOption[] }
+interface ComboboxTag { label: string; prefix?: string; removeLabel?: string }
+```
+
+- 節と節の間には区切り線が入ります。見出しの無い節も作れます。
+- `highlight` は利用側が決めた範囲をそのまま強調します。前方一致か部分一致か、大文字・全角をどう扱うかは利用側の規則です。重なる範囲はまとめ、`label` の外は切り落とします。
+- 札の `prefix` は `status:` のように弱い色で前に出す字です。× の読み上げ名は `removeLabel`、無ければ `prefix + label + 'を外す'` です。
+- 候補の読み上げ名は `label`・`description`・`meta` をつないだ字です。色の点は読み上げから除きます。
+
+## 操作
+
+入力欄にフォーカスを置いたまま、`aria-activedescendant` で選択中の候補を伝えます。
+
+| キー | 動き |
+| --- | --- |
+| ↓ / ↑ | 閉じていれば開いて先頭（末尾）の候補を選ぶ。開いていれば次（前）へ。端で回り、無効な候補は飛ばす |
+| Alt + ↓ / Alt + ↑ | 開くだけで、選択は動かさない |
+| Enter | 選択中の候補があれば `onSelect`。それ以外は `onCommit` |
+| Esc | 開いていれば閉じる（外側の Dialog は閉じない）。閉じていれば何もしない |
+| Backspace | キャレットが先頭で札があれば、最後の札を `onTagRemove`。押しっぱなしの繰り返しでは外さない |
+| Tab | 候補は選ばず、一覧を閉じて次へ移る |
+
+- 日本語入力の変換中（`compositionstart` から `compositionend`、`isComposing`、`keyCode 229`）は、Enter・Esc・↑↓・Backspace をすべて無視します。
+- ポインターで候補の上を動かすとその候補が選択中になり、一覧から出ると外れます。一覧がポインターの下に現れただけでは変わりません。
+- 候補をクリックしてもフォーカスは入力欄に残ります。札の × を押すと入力欄へフォーカスを戻し、一覧は開きません。
+- 欄の中の余白や札の字を押すと、入力欄にフォーカスが入ります。
+- 一覧は入力欄の左端に揃えて欄の下に出し、下に入らなければ上に出します。画面の右端からはみ出すときは左へ寄せます。
+- `topLayer` は持ちません。`overflow: hidden` や `overflow: auto` の中に置くと一覧が切れます。
+
+## アクセシビリティ
+
+[W3C の Combobox パターン](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/)（List Autocomplete with Manual Selection）に沿っています。
+
+- 入力欄は `role="combobox"`、`aria-autocomplete="list"`、`aria-expanded`、`aria-controls`。開いていて選択中の候補があるときだけ `aria-activedescendant` を付けます。
+- 一覧は `role="listbox"`、候補は `role="option"` と `aria-selected`、無効な候補は `aria-disabled` です。節が 2 つ以上か見出しがあれば `role="group"` で見出しに結びます。節の間の線は CSS で引きます。
+- 札の × は `button type="button"` で、Tab の順は 札の × → 入力欄 → `suffix` です。
+- Field の中ではラベル・説明・エラー（`aria-describedby`・`aria-invalid`）が入力欄に結びます。
+- サーバー描画では閉じた状態で出ます。`aria-controls` と候補の `id` はマウント後に付きます。
+- 強制カラーモードでは選択中の候補を枠線で示し、色の点にも輪郭を付けます。
+
+[デジタル庁のウェブアクセシビリティ導入ガイドブック](https://www.digital.go.jp/resources/introduction-to-web-accessibility-guidebook)も参照しています。
+
+## 検証
+
+```sh
+pnpm typecheck
+node scripts/check-combobox-logic.cjs
+node scripts/check-ssr.cjs
+pnpm build-storybook
+node scripts/check-combobox.cjs
+```
+
+`check-combobox-logic.cjs` はブラウザーなしで、候補の移動・強調の分割・IME のキー判定を確かめます。
+`check-combobox.cjs` は Playwright と Chromium、Python 3 が必要です。既存の Playwright を使う場合は `PLAYWRIGHT_MODULE` を指定します。
+両フレームワークのキー操作・ARIA・IME・ポインター・フォーカス・Field と Dialog の中・axe を確認します。

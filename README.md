@@ -357,6 +357,15 @@ Input/Textarea を差し替える Vue／React の例と API は [InlineEdit の�
 Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレームワークの操作・IME・フォーカス・アクセシビリティを検証します。
 既存 Playwright は `PLAYWRIGHT_MODULE`、検証サーバーのポートは `INLINE_EDIT_TEST_PORT`（既定 16308）で指定できます。
 
+## Combobox
+
+`Combobox` は札を並べられる入力欄と、入力中に出る候補の一覧です（WAI-ARIA の combobox）。
+候補は `options`（平らな一覧か節の一覧。`label`・`description`・`meta`・`color`・`highlight`）で渡し、
+入力・選択・確定・札の削除は `onValueChange`・`onSelect`・`onCommit`・`onTagRemove` で通知します。
+絞り込みや札の解釈は利用側で行います。
+[使い方と Vue／React の例](apps/docs/src/content/docs/components/combobox.mdx)を参照してください。
+`node scripts/check-combobox-logic.cjs` はブラウザーなしで、Storybook のビルド後の `node scripts/check-combobox.cjs` はブラウザーで検証します。
+
 ## Tag・Badge
 
 `Tag`・`Badge` はラベル・ステータス・件数を表示し、`size` と `dotColor` を共有します。
