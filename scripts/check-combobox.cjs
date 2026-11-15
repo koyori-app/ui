@@ -162,6 +162,9 @@ let browser;
         assert.equal(await selected.count(), 0);
         await story('suggesting'); await input.focus(); await settle();
         await listbox.evaluate(el => { el.style.maxHeight = '55px'; el.scrollTop = el.scrollHeight; }); await settle();
+        // 入力の前に選択行が隠れていないと、戻すかどうかを確かめられない
+        const hidden = await selected.boundingBox(); const hiddenBox = await listbox.boundingBox();
+        assert(hidden.y + hidden.height <= hiddenBox.y + 1 || hidden.y >= hiddenBox.y + hiddenBox.height - 1, at('入力の前に選択行が隠れている'));
         await input.dispatchEvent('input', { bubbles: true }); await settle();
         await assertSingleSelected('bug'); await assertSelectedVisible();
       });

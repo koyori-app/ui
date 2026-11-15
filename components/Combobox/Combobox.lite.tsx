@@ -234,6 +234,7 @@ export default function Combobox(props: ComboboxProps) {
     if (props.disabled) {
       state.expanded = false;
       state.activeValue = null;
+      byPointerRef = false;
     }
   }, [props.disabled]);
   onUpdate(() => {
