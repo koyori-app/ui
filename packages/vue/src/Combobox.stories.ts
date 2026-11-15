@@ -154,8 +154,9 @@ export const ManyOptions: Story = { render: () => ({
   template: `<div style="min-height: 360px">
     <Button :on-click="add" label="候補を追加" />
     <Button :on-click="() => options = [...options].reverse()" label="並びを反転" />
+    <Button :on-click="() => options = options.map((item, index) => ({ ...item, disabled: index !== 0 }))" label="有効な候補を1件に" />
     <Button :on-click="() => disabled = !disabled" label="無効を切替" />
-    <Combobox aria-label="多数の候補" :disabled="disabled" :options="options" value="1" :on-open-change="v => record('open:' + v)" :on-caret-change="v => record('caret:' + v)" :on-select="v => record('select:' + v)" :on-commit="v => record('commit:' + v)" />
+    <Combobox default-open aria-label="多数の候補" :disabled="disabled" :options="options" value="1" :on-open-change="v => record('open:' + v)" :on-caret-change="v => record('caret:' + v)" :on-select="v => record('select:' + v)" :on-commit="v => record('commit:' + v)" />
     <output aria-label="通知">{{ JSON.stringify(events) }}</output>
   </div>`,
 }) };

@@ -144,6 +144,51 @@ let browser;
         assert.equal(await listbox.evaluate(el => el.scrollTop), scroll);
       });
 
+      const hideSelected = async () => {
+        await listbox.evaluate(el => { el.style.maxHeight = '100px'; el.scrollTop = el.scrollHeight; });
+        await settle();
+        assert(await listbox.evaluate(el => el.scrollTop > 100));
+      };
+      const assertSelectedVisible = async () => {
+        const row = await selected.boundingBox(); const box = await listbox.boundingBox();
+        assert(row.y >= box.y - 1 && row.y + row.height <= box.y + box.height + 1, at('操作後の選択行が見える'));
+      };
+      await regression('input reveals unchanged active value', async () => {
+        await prepareRegression();
+        await input.press('ArrowDown'); await settle();
+        await hideSelected();
+        await input.dispatchEvent('input', { bubbles: true }); await settle();
+        // autoHighlight がなく、入力で選択を外すケースの対照。
+        assert.equal(await selected.count(), 0);
+        await story('suggesting'); await input.focus(); await settle();
+        await listbox.evaluate(el => { el.style.maxHeight = '55px'; el.scrollTop = el.scrollHeight; }); await settle();
+        await input.dispatchEvent('input', { bubbles: true }); await settle();
+        await assertSingleSelected('bug'); await assertSelectedVisible();
+      });
+      await regression('arrows reveal unchanged active value', async () => {
+        await prepareRegression();
+        await page.getByRole('button', { name: '有効な候補を1件に' }).evaluate(el => el.click());
+        await input.press('ArrowDown'); await settle();
+        for (const key of ['ArrowDown', 'ArrowUp']) {
+          await hideSelected();
+          await input.press(key); await settle();
+          await assertSingleSelected('候補0'); await assertSelectedVisible();
+        }
+      });
+      await regression('disabled resets open and active state', async () => {
+        await story('many-options');
+        await page.getByRole('button', { name: '候補を追加' }).evaluate(el => el.click()); await settle();
+        await page.getByRole('option', { name: '候補1', exact: true }).hover(); await settle();
+        assert.equal(await selected.count(), 1);
+        const toggle = page.getByRole('button', { name: '無効を切替' });
+        await toggle.evaluate(el => el.click()); await settle();
+        assert.equal(await expanded(), 'false');
+        await toggle.evaluate(el => el.click()); await settle();
+        assert.equal(await expanded(), 'false', at('再有効化だけでは開かない'));
+        await input.evaluate(el => { el.blur(); el.focus(); }); await settle();
+        assert.equal(await selected.count(), 0, at('再フォーカス時に古い選択が残らない'));
+      });
+
       await regression('wheel highlight / selection', async () => {
         await prepareRegression();
         const box = await listbox.boundingBox();

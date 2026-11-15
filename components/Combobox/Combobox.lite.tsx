@@ -67,9 +67,11 @@ export default function Combobox(props: ComboboxProps) {
   let quietFocusRef = useRef<boolean | null>(null);
   let pointerRef = useRef<string | null>(null);
   let byPointerRef = useRef<boolean | null>(null);
+  let revealedRequestRef = useRef<number | null>(null);
   let revealedValueRef = useRef<string | null>(null);
   const state = useStore({
     uid: '',
+    revealRequest: 0,
     expanded: props.defaultOpen || false,
     activeValue: comboboxActiveValue([], null, false),
     get context() { return getFieldContext(fieldContext); },
@@ -127,6 +129,7 @@ export default function Combobox(props: ComboboxProps) {
       const at = state.caretPosition();
       caretRef = at;
       byPointerRef = false;
+      state.revealRequest = state.revealRequest + 1;
       state.activeValue = null;
       state.expanded = true;
       props.onValueChange?.(input.value, at);
@@ -184,6 +187,7 @@ export default function Combobox(props: ComboboxProps) {
         if (!values.length) return;
         event.preventDefault();
         byPointerRef = false;
+        state.revealRequest = state.revealRequest + 1;
         const wasOpen = state.isOpen();
         state.expanded = true;
         if (event.altKey) return;
@@ -227,6 +231,12 @@ export default function Combobox(props: ComboboxProps) {
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => state.position());
   }, [state.isOpen(), state.activeOption(), comboboxSections(props.options).reduce((count, section) => count + section.options.length, 0), state.expanded, state.activeValue, props.options, props.tags, props.value, props.disabled, props.autoHighlight]);
   onUpdate(() => {
+    if (props.disabled) {
+      state.expanded = false;
+      state.activeValue = null;
+    }
+  }, [props.disabled]);
+  onUpdate(() => {
     const open = state.isOpen();
     if (!!openedRef === open) return;
     openedRef = open;
@@ -235,14 +245,15 @@ export default function Combobox(props: ComboboxProps) {
   onUpdate(() => {
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
       const nextValue = state.isOpen() ? state.activeOption() : null;
-      // Vue の watch は options の変更でも走る。値が同じならスクロールしない。
-      if (nextValue !== revealedValueRef) {
+      // 入力・矢印は同じ値でも表示し直す。ポインターやレイアウトの変更だけでは送らない。
+      if (nextValue !== revealedValueRef || state.revealRequest !== revealedRequestRef) {
+        revealedRequestRef = state.revealRequest;
         revealedValueRef = nextValue;
         if (nextValue !== null && !byPointerRef) listRef?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
       }
       state.alignActive();
     });
-  }, [state.isOpen(), state.activeOption()]);
+  }, [state.isOpen(), state.activeOption(), state.revealRequest]);
   onUnMount(() => cleanupRef?.());
 
   return (
