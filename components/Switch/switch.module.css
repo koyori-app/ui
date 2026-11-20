@@ -20,12 +20,12 @@
   box-sizing: border-box;
   flex-shrink: 0;
   align-items: center;
-  width: 36px;
-  height: 20px;
-  margin-block: calc((var(--koyori-control-height-sm) - 20px) / 2);
+  width: 32px;
+  height: 18px;
+  margin-block: calc((var(--koyori-control-height-sm) - 18px) / 2);
   padding: 0;
   border: 2px solid var(--koyori-color-border-strong);
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--koyori-color-surface);
   cursor: inherit;
   transition:
@@ -33,14 +33,15 @@
     border-color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
-/* トラックの内側は 32px。16px のサムが端から端まで 16px 動く。 */
+/* トラックの内側は 28px。14px のサムが端から端まで 14px 動く。 */
 .thumb {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--koyori-color-border-strong);
   transition:
-    transform var(--koyori-motion-fast) var(--koyori-ease-out),
+    transform var(--koyori-motion-spring) var(--koyori-ease-spring),
+    width var(--koyori-motion-base) var(--koyori-ease-out),
     background-color var(--koyori-motion-fast) var(--koyori-ease-out);
 }
 
@@ -50,7 +51,7 @@
 }
 
 .track[aria-checked='true'] .thumb {
-  transform: translateX(16px);
+  transform: translateX(14px);
   background: var(--koyori-color-selection);
 }
 
@@ -93,4 +94,10 @@
   .track:focus-visible { outline-color: Highlight; }
   .track:disabled, .track[aria-checked='true']:disabled { border-color: GrayText; background: Canvas; }
   .track:disabled .thumb, .track[aria-checked='true']:disabled .thumb { background: GrayText; }
+}
+
+/* 押している間はつまみが進む向きに伸びる。 */
+@media (prefers-reduced-motion: no-preference) {
+  .root:active .track:not(:disabled) .thumb { width: 19px; }
+  .root:active .track[aria-checked='true']:not(:disabled) .thumb { transform: translateX(9px); }
 }

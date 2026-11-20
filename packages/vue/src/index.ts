@@ -1,7 +1,9 @@
 import './generated/components/shared/utilities.css';
+import './generated/components/Mention/mention.css';
 
 export { default as Button, type ButtonProps } from './generated/components/Button/Button.vue';
 export { default as Tooltip, type TooltipProps } from './generated/components/Tooltip/Tooltip.vue';
+export { default as HoverCard, type HoverCardProps } from './generated/components/HoverCard/HoverCard.vue';
 export { default as Tabs, type TabsProps } from './generated/components/Tabs/Tabs.vue';
 export { type TabItem } from './generated/components/Tabs/tabs.js';
 export { default as TabPanel, type TabPanelProps } from './generated/components/TabPanel/TabPanel.vue';
@@ -48,8 +50,15 @@ export { default as IconPicker, type IconPickerProps } from './generated/compone
 export { default as Spinner, type SpinnerProps } from './generated/components/Spinner/Spinner.vue';
 export { default as Meter, type MeterProps } from './generated/components/Meter/Meter.vue';
 export type { MeterTone } from './generated/components/Meter/meter.js';
+export { default as Mention, type MentionProps } from './generated/components/Mention/Mention.vue';
+export { mentionClassNames, MENTION_CLASS_NAMES, type MentionStatus } from './generated/components/Mention/mention.js';
 export { default as PasswordInput, type PasswordInputProps } from './generated/components/PasswordInput/PasswordInput.vue';
 export { default as Pagination, type PaginationProps } from './generated/components/Pagination/Pagination.vue';
 export { type PaginationRange } from './generated/components/Pagination/pagination.js';
 export { default as Toaster, type ToasterProps } from './generated/components/Toaster/Toaster.vue';
 export { toast, type ToastAction, type ToastClickEvent, type ToastOptions, type ToastVariant } from './generated/components/Toaster/toast.js';
+export { default as ThemePicker, type ThemePickerProps } from './generated/components/ThemePicker/ThemePicker.vue';
+export { default as ThemeSwitch, type ThemeSwitchProps } from './generated/components/ThemeSwitch/ThemeSwitch.vue';
+export { themeScript, setTheme, storedTheme, type Theme } from './generated/components/ThemePicker/theme.js';
+export { default as Combobox, type ComboboxProps } from './generated/components/Combobox/Combobox.vue';
+export { type ComboboxOption, type ComboboxSection, type ComboboxTag } from './generated/components/Combobox/combobox.js';

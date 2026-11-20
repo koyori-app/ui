@@ -23,6 +23,9 @@ export interface PickerItem {
   color?: string;
   /** ラベルの下に出す補足。読み上げは label のまま（aria-describedby にはしない。短い補足なので option の名前に混ぜない） */
   description?: string;
+  /** ラベルの前に出すアイコン。React: 描画済みのノード。Vue: 真値（0・空文字・false 以外）を入れた項目だけ item-icon スロット（{ item }）を出す。
+      スロットを渡していなければ何も出さない。装飾として読み上げから外す。avatars があれば無視し、color と同時には使わない */
+  icon?: any;
 }
 
 export interface PickerProps {
@@ -354,6 +357,12 @@ export default function Picker(props: PickerProps) {
                 </Show>
                 <Show when={!props.avatars && item.color}>
                   <span class={styles.optionDot} style={{ backgroundColor: item.color ?? 'currentColor' }} aria-hidden="true" />
+                </Show>
+                {/* Vue では scripts/patch-vue-picker-item-icon.mjs が {{ item.icon }} を item-icon スロットに置き換え、
+                    表示条件にスロットの有無（$slots['item-icon']）を加える。
+                    Mitosis の Slot は行の項目をスロットへ渡せないため。 */}
+                <Show when={!props.avatars && item.icon}>
+                  <span class={styles.optionIcon} aria-hidden="true">{item.icon}</span>
                 </Show>
                 <span class={menu.itemLabel}>
                   {item.label}

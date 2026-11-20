@@ -61,3 +61,9 @@
   .segment { border: 1px solid CanvasText; }
   .segment[data-filled='true'] { forced-color-adjust: none; background: Highlight; }
 }
+
+/* 段は左から順に灯る。 */
+.segment:nth-child(2) { transition-delay: 60ms; }
+.segment:nth-child(3) { transition-delay: 120ms; }
+.segment:nth-child(4) { transition-delay: 180ms; }
+.segment:nth-child(n + 5) { transition-delay: 240ms; }

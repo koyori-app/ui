@@ -34,10 +34,12 @@ Story は各パッケージの `src/*.stories.*` に追加します。
 
 角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置・スピナーの周期の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
 各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
-Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（14px 相当）の文字と 36px の最小高さ、操作要素の角丸は `md`（8px）を使います。
-配色はくすんだラベンダーとセージを使い、背景に色を持たせながら文字は濃く保ちます。
-主ボタン・ホバー・選択背景はラベンダーの濃淡で揃え、選択時はホバーより少し濃くします。
-補助ボタンはセージ、選択チェックは丸背景のない濃い紫です。
+Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）、ダイアログやカードなど浮いた面の角丸は `lg`（12px）を使います。
+配色は墨です。既定は黒い面（ダーク）で、祖先に `data-theme="light"` を付けると明るい面に切り替わります。
+利用者に切り替えさせるには `ThemePicker`（3 択）か `ThemeSwitch`（太陽と月の 2 値のスイッチ）を置き、`<head>` に `themeScript` を inline で入れます（[ThemePicker](#themepicker)）。
+`html[data-theme]` は `light` か `dark` の 2 値のままで、選択は `localStorage` の `koyori-theme` に保持します。
+主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーと、例外のメンションの札（青と黄の字と薄い地）だけです。
+メニューやダイアログなど浮いた面は `--koyori-color-surface-raised` で塗ります。部品は地の色を塗らないため、ページの背景は利用側が `--koyori-color-surface` で塗ります。
 選択背景とチェックの色は `--koyori-color-selection` と `--koyori-color-selection-indicator` で調整できます。
 カードなど角丸のある要素を入れ子にする場合は、外側の角丸を `内側の角丸 + 外側の padding` にします。
 Dropdown のパネルは `calc(var(--koyori-radius-md) + var(--koyori-space-xs))`（既定値: 8px + 4px = 12px）です。
@@ -88,9 +90,9 @@ SidebarLink の `label`・`href` でページ移動、`current` で現在地、`
 本文に Accordion を置くとグループを開閉できます。幅は `--koyori-sidebar-width`（240px）、高さは親要素で指定します。
 `open`（と `id`）を渡すと開閉でき、閉じると幅（`placement` が `top`・`bottom` なら高さ、既定 `--koyori-sidebar-height`）を 0 まで畳んで隣の領域を広げます。
 開閉ボタンは Button の `ariaExpanded`・`ariaControls` で状態と対象を伝え、閉じるときに中にあったフォーカスはそのボタンへ戻します。
-`rail` を渡すと `--koyori-sidebar-rail-width`（64px）まで縮み、アイコンだけの表示になります。ラベルと badge は見た目だけ隠し、読み上げ名は保ちます。
+`rail` を渡すと `--koyori-sidebar-rail-width`（60px）まで縮み、アイコンだけの表示になります。ラベルと badge は見た目だけ隠し、読み上げ名は保ちます。
 `open` と組み合わせると、展開・アイコンだけ・完全に閉じるの 3 状態になります。レールで使うリンクには `icon` を渡してください。
-`onRailChange` を渡すと端から張り出すつまみが出て、押すと rail を反転します。状態は `aria-pressed`、名前は `railLabel` です。
+`onRailChange` を渡すとヘッダーに切り替えボタンが出て（展開時はヘッダーに乗せたときだけ）、押すと rail を反転します。状態は `aria-pressed`、名前は `railLabel` です。
 項目が多い場合はナビゲーション部分だけがスクロールします。Accordion 本文の余白は `--koyori-accordion-padding` で変更できます。
 
 Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
@@ -101,6 +103,12 @@ Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（�
 AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を超えた分を `+N` にまとめます。
 `label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
 重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
+
+Mention は `@名` を色付きの字と薄い地で出します（アバターは出しません）。`label`（`@` を含めた字）、`status`（`member`・`outside`・`gone`・`unknown`。既定 `member`）、`self`（本人。`member` のときだけ）、`href`（付けると `a` 要素）を受け取ります。
+member は青、本人は黄の字と地で、地はすべて不透明なトークン（`--koyori-color-mention*`）です。外れた者・退会した者・名の引けぬ者は地を敷かず、灰色の字に破線の下線を引き、色だけで分けません。
+説明文のように HTML を差し込む場所では、固定 class（`koyori-mention` と `koyori-mention-member` などの状態 class）を付けた要素を書きます。CSS は `style.css` に入り、部品と同じ見た目になります。
+class は `mentionClassNames(status, self)`、許可リストは `MENTION_CLASS_NAMES` で組めます。
+状態ごとの対比とサーバー描画は `node scripts/check-mention.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行。CI の Check でも走ります）。
 
 Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダルです。`open`・`title`・`description`・`onClose` を受け取り、
 本文は既定スロット、操作ボタンは `actions`（Vue は `#actions` スロット）に置きます。表示状態はアプリ側で持ち、`onClose` で false に戻します。`open` を true のままにすると閉じません（ブラウザーが強制的に閉じても `onClose` を呼んで開き直します）。
@@ -166,9 +174,10 @@ Picker は単一・複数選択用です。`label` と `items: { value, label, d
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
 単一選択は選ぶと閉じ、`selectionMode="multiple"` は選択・解除しても開いたままです。
 `avatars` を付けると、選択肢の先頭に 24px の Avatar を出します。画像は `items` の `src`、なければイニシャルです。
-行の上下の余白を詰めて高さは 36px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
+行の上下の余白を詰めて高さは 32px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
 `items` の `color`（CSS の色）でラベルの前に 8px の色の点、`description` でラベルの下に小さな補足を出します（Storybook の ColorDots・Descriptions）。
 どちらも装飾として読み上げから外し、選択肢の名前とトリガーの表示は `label` だけです。検索も `label` だけを対象にし、`avatars` があれば `color` は無視します。
+`items` の `icon` でラベルの前にアイコンを出せます（React は要素、Vue は `#item-icon="{ item }"` スロット。Storybook の ItemIcons）。
 トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。
 アバターなどを置いても、開閉・キーボード操作・読み上げ名（`label` と選択中のラベル）はそのままです。
 中身は `button` の内容として正しい要素にしてください（AvatarGroup のルートは `span` です）。
@@ -253,6 +262,14 @@ Playwright と Chromium、日本語フォント、および Python 3 が必要�
 ホバーでは 300ms 待ってから表示し、別の Tooltip が開いている間と閉じた直後は待ちません。フォーカスでは常にすぐ表示します。
 `id`・`content`・`placement` を指定します。[使い方・無効トリガーの扱い](apps/docs/src/content/docs/components/tooltip.mdx)を参照してください。
 Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレームワークの操作・配置・アクセシビリティを検証できます（`TOOLTIP_TEST_PORT` でポート変更可能）。
+
+## HoverCard
+
+`HoverCard` は起点にポインターを載せる・フォーカスすると、起点の下（入らなければ上）に操作できる中身（リンクなど）のカードを開きます。中身は利用側が `content`（Vue は `#content` スロット）に入れます。
+ポインターは 400ms 載せると開き、起点からもカードからも離れて 150ms で閉じます（`openDelay`・`closeDelay`）。起点とカードの間を移っても閉じません。タッチの操作では開きません。
+起点は子の要素に加え、`container` と `selector` で外の要素（`v-html` の中の `a` など）も渡せます。Esc で閉じ、カードの中にいたときは起点へフォーカスを戻します。Tab は 起点 → カード → 起点の次、の順に進みます。
+`label`（カードの読み上げ名）が必須です。[使い方と注意点](apps/docs/src/content/docs/components/hover-card.mdx)を参照してください。
+Storybook のビルド後、`node scripts/check-hover-card.cjs` で両フレームワークの開閉の遅れ・間の移動・Esc・フォーカス・タッチ・外の起点・位置を検証できます（`HOVER_CARD_TEST_PORT`・`HOVER_CARD_TEST_FRAMEWORK` で変更可能）。
 
 ## Calendar
 
@@ -340,6 +357,15 @@ Input/Textarea を差し替える Vue／React の例と API は [InlineEdit の�
 Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレームワークの操作・IME・フォーカス・アクセシビリティを検証します。
 既存 Playwright は `PLAYWRIGHT_MODULE`、検証サーバーのポートは `INLINE_EDIT_TEST_PORT`（既定 16308）で指定できます。
 
+## Combobox
+
+`Combobox` は札を並べられる入力欄と、入力中に出る候補の一覧です（WAI-ARIA の combobox）。
+候補は `options`（平らな一覧か節の一覧。`label`・`description`・`meta`・`color`・`highlight`）で渡し、
+入力・選択・確定・札の削除は `onValueChange`・`onSelect`・`onCommit`・`onTagRemove` で通知します。
+絞り込みや札の解釈は利用側で行います。
+[使い方と Vue／React の例](apps/docs/src/content/docs/components/combobox.mdx)を参照してください。
+`node scripts/check-combobox-logic.cjs` はブラウザーなしで、Storybook のビルド後の `node scripts/check-combobox.cjs` はブラウザーで検証します。
+
 ## Tag・Badge
 
 `Tag`・`Badge` はラベル・ステータス・件数を表示し、`size` と `dotColor` を共有します。
@@ -415,6 +441,23 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 動きは「動きを減らす」設定で止まり、強制配色ではシステムの強調色とつまみの位置で入切が伝わります。
 `node scripts/check-switch.cjs` で生成物と配布 CSS を検証します（`pnpm build` のあとに実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/switch.mdx)を参照してください。
+## ThemePicker
+
+`ThemePicker` はライト・ダーク・システムを選ぶ部品で、Picker を合成しています。props は `label`（必須。トリガーは「テーマ: ライト」のように読まれる）だけです。
+選択は `localStorage` の `koyori-theme` に `light` / `dark` で保持し、「システム」は保持を消して OS の配色に合わせます。`html[data-theme]` は常に `light` か `dark` です。
+`<head>` に `themeScript`（inline の `<script>` 用の文字列）を置くと、最初の描画の前に配色が決まり、OS の配色の変化にも追従します。置かないと再読み込みで保持が当たりません。
+別の形で切り替えを出すときは `setTheme(theme)`・`storedTheme()` を使います。
+`node scripts/check-theme-picker.cjs` で生成物・配布物・サーバー描画を検証します（`pnpm generate` と `pnpm --filter './packages/*' build` のあとに実行。storybook-static があればブラウザー検証も行う）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/theme-picker.mdx)を参照してください。
+
+## ThemeSwitch
+
+`ThemeSwitch` は太陽（左・ライト）と月（右・ダーク）の 2 値のスイッチです。ライトは昼空に雲と光の輪をまとった太陽、ダークは星空に浮かぶ月のイラスト調です。props は `label`（必須。入がダークなので「ダークテーマ」のように付ける）だけです。
+表示は `html[data-theme]` の配色で、押すと `setTheme` で反対側に固定します（「システム」へ戻すのは ThemePicker か `setTheme('system')`）。
+動きは transition だけで、星の瞬きだけがキーフレームです。動きを減らす設定で止まります。
+`node scripts/check-theme-switch.cjs` で生成物・配布物・サーバー描画を検証します（storybook-static があればブラウザー検証も行う）。
+[使い方とプレビュー](apps/docs/src/content/docs/components/theme-switch.mdx)を参照してください。
+
 ## Card・Separator
 
 カードと区切り線はコンポーネントではなく、グローバルなクラスで提供します（`components/shared/utilities.css`）。
@@ -455,7 +498,7 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 ## Web ドキュメント
 
 Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Pagination・Sidebar・IconPicker・Switch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
+導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・ThemePicker・ThemeSwitch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
 コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
 複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
 現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。

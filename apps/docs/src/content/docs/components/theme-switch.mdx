@@ -1,0 +1,52 @@
+---
+title: ThemeSwitch
+description: 太陽と月で、ライトとダークを切り替えるスイッチ。
+---
+
+import ThemeSwitchPreview from '../../../components/ThemeSwitchPreview.astro';
+
+ThemeSwitch は、アプリの配色を **太陽（左・ライト）と月（右・ダーク）の 2 値** で切り替えるスイッチです。ヘッダーなど狭い場所に向きます。
+ライトは昼空に雲と光の輪をまとった太陽、ダークは星空に浮かぶ月のイラスト調で、切り替えはつまみの移動と背景の変化で示します。
+「システム」を選ばせるときは [ThemePicker](/components/theme-picker/) か `setTheme('system')` を使います。
+
+## プレビュー
+
+<ThemeSwitchPreview />
+
+このサイトのプレビューで押すと、Starlight も同じ `html[data-theme]` を読むため、サイト全体の配色が変わります。
+Starlight 自身の切り替えを使っても、スイッチは追従します。
+
+## 使い方
+
+```vue
+<ThemeSwitch label="ダークテーマ" />
+```
+
+保持・`koyori-theme-change` イベント・`themeScript` の導入は [ThemePicker](/components/theme-picker/) と同じです。そちらの手順に従ってください。
+
+- 表示は今の配色（`html[data-theme]`）です。「システム」で OS がダークなら月を出します。
+- 押すと反対側に固定します（`setTheme('light')` か `setTheme('dark')`）。「システム」には戻りません。
+- 見た目は `html[data-theme]` を CSS が読んで決めるので、`themeScript` があれば、サーバー描画でも最初から正しい側に描かれます。`aria-checked` だけは、マウントまで `true`（ダーク）です。
+- 見るのは `html` の `data-theme` だけです。入れ子の領域に置いても、表示は `html` の配色です。
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 読み上げ名。入（`aria-checked="true"`）がダークなので、「ダークテーマ」のように付ける |
+
+## アクセシビリティ
+
+- `role="switch"` の `button` で、`aria-checked` は入がダークです。
+- Space / Enter で切り替え、フォーカス中は輪が出ます。
+- トラックには `--koyori-color-border-strong` の 1px の枠があり、置かれた面（ライト・ダークの `surface` と `surface-raised`）との対比は 3:1 以上です。太陽には濃い橙の縁取りがあり、昼空との対比は 3:1 以上です（夜は月に縁取りは付きません）。
+- 動きを減らす設定では、切り替えが即時になり、星の瞬きも止まります。
+- 強制配色では、空と星を消し、つまみの位置とシステムの強調色で伝えます。
+
+## 検証
+
+```sh
+pnpm generate
+pnpm --filter './packages/*' build
+node scripts/check-theme-switch.cjs
+```

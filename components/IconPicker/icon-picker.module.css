@@ -88,3 +88,14 @@
 @media (forced-colors: active) {
   .emoji[aria-pressed='true'] { border-color: Highlight; }
 }
+
+/* 押すと沈み、選ぶと弾む。 */
+@media (prefers-reduced-motion: no-preference) {
+  .emoji { transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring); }
+  .emoji:active:not(:disabled) { transform: scale(0.82); transition-duration: 80ms; }
+  .emoji[aria-pressed='true'] { animation: emoji-pop 360ms var(--koyori-ease-pop); }
+}
+
+@keyframes emoji-pop {
+  from { transform: scale(0.7); }
+}

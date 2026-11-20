@@ -145,6 +145,39 @@ export const Descriptions: Story = {
     ],
   },
 };
+// 項目ごとのアイコンの例。icon に色を入れ、item-icon スロットで旗を描く。旗は依存を増やさないよう、ここで描く。
+export const ItemIcons: Story = {
+  args: {
+    label: '優先度', defaultOpen: true, defaultSelectedValues: ['high'],
+    items: [
+      { value: 'urgent', label: '緊急', icon: '#dc2626' },
+      { value: 'high', label: '高', icon: '#f97316' },
+      { value: 'medium', label: '中', icon: '#eab308' },
+      { value: 'low', label: '低', icon: '#6b7280' },
+      { value: 'none', label: '未設定' },
+    ],
+  },
+  render: (args) => ({
+    components: { Picker },
+    setup: () => ({ args }),
+    template: `<Picker v-bind="args">
+      <template #item-icon="{ item }">
+        <svg data-flag width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round" :style="{ color: item.icon }"><path d="M3 14V2.5h9.5l-2 3 2 3H3" /></svg>
+      </template>
+    </Picker>`,
+  }),
+};
+// icon を入れても #item-icon を渡さない場合。アイコンの span も隙間も出さず、アイコンのない行と同じ並びになる。
+export const ItemIconsWithoutSlot: Story = {
+  args: {
+    label: '優先度', defaultOpen: true,
+    items: [
+      { value: 'urgent', label: '緊急', icon: '#dc2626' },
+      { value: 'none', label: '未設定' },
+    ],
+  },
+};
 export const CustomTrigger: Story = {
   args: { selectionMode: 'multiple', defaultSelectedValues: ['design', 'frontend', 'backend', 'review'] },
   render: (args) => ({

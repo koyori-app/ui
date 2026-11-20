@@ -25,7 +25,7 @@
   padding: var(--koyori-space-xs);
   border: 1px solid var(--koyori-color-border);
   border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-xs));
-  background: var(--koyori-color-surface);
+  background: var(--koyori-color-surface-raised);
   box-shadow: var(--koyori-shadow-panel);
 }
 
@@ -63,7 +63,8 @@
 .heading {
   padding: var(--koyori-space-sm) var(--koyori-space-lg) var(--koyori-space-xs);
   color: var(--koyori-color-text-muted);
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .separator {
@@ -209,4 +210,17 @@
   @media (hover: hover) and (pointer: fine) {
     .item:hover:not([aria-disabled='true']) { outline: 1px solid Highlight; }
   }
+}
+
+/* 開くたびに、引き金の側からばねで広がる。位置は offsetWidth / offsetHeight で測るため transform の影響を受けない。 */
+@media (prefers-reduced-motion: no-preference) {
+  .panel { transform-origin: top left; animation: menu-in var(--koyori-motion-spring) var(--koyori-ease-spring); }
+  .panel[data-side='top'] { transform-origin: bottom left; }
+  .item:active:not([aria-disabled='true']) .itemLabel { transform: scale(0.97); }
+  .itemLabel { transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring); transform-origin: left center; }
+}
+
+@keyframes menu-in {
+  from { opacity: 0; transform: scale(0.88); }
+  40% { opacity: 1; }
 }

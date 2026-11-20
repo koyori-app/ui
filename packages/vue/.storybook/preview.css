@@ -1,0 +1,2 @@
+/* ライブラリは地の色を塗らないため、Storybook の画面だけここで塗る。 */
+body, .docs-story { background: var(--koyori-color-surface) !important; color: var(--koyori-color-text); font-family: var(--koyori-font-family); font-size: var(--koyori-font-size-sm); }

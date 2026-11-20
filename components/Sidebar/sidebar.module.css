@@ -13,8 +13,8 @@
   padding: var(--koyori-space-md);
   /* Drawer など面を持つ親の中では、変数で枠と角丸を外せる。 */
   border: var(--koyori-sidebar-border, 1px solid var(--koyori-color-border));
-  border-radius: var(--koyori-sidebar-radius, calc(var(--koyori-radius-md) + var(--koyori-space-md)));
-  background: var(--koyori-color-surface);
+  border-radius: var(--koyori-sidebar-radius, var(--koyori-radius-lg));
+  background: var(--koyori-color-surface-raised);
   color: var(--koyori-color-text);
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
@@ -25,8 +25,6 @@
 .frame {
   display: contents;
   --sidebar-current-width: var(--koyori-sidebar-width);
-  /* 外枠の clip-path も使うため、カードではなく外枠に置く。 */
-  --sidebar-handle-width: 24px;
 }
 
 /* rail: 中身をアイコンだけにして細くする。ラベルは読み上げに残す。 */
@@ -37,18 +35,24 @@
   transition: width var(--koyori-motion-base) var(--koyori-ease-out);
 }
 
-/* 幅が動く間、中身はカードではなく各領域で切る。つまみはカードの外に出す。 */
+/* 幅が動く間、中身は各領域で切る。 */
 .frame[data-sidebar-rail] .navigation { overflow-x: hidden; }
 
 .frame[data-sidebar-rail] .header, .frame[data-sidebar-rail] .footer { overflow: hidden; }
 
 .frame[data-sidebar-rail='true'] > .root {
   --koyori-accordion-padding: var(--koyori-space-xs) 0;
+  /* rail のリンクの左の余白。auto で中央に置くと幅が縮む途中で中央へ飛ぶため、
+     縮み切った幅から求める。枠は 1px として計算し、枠のない Drawer では右に 1px 余る。 */
+  --sidebar-rail-inset: calc((var(--koyori-sidebar-rail-width) - var(--koyori-control-height-sm)) / 2
+    - var(--koyori-space-md) - var(--koyori-focus-width) - var(--koyori-focus-offset) - 1px);
 }
 
+/* rail の内側は 32px の部品より狭くなるため、左右の余白を外して縮まないようにする。 */
 .frame[data-sidebar-rail='true'] .header, .frame[data-sidebar-rail='true'] .footer {
   display: flex;
   justify-content: center;
+  padding-inline: 0;
 }
 
 /* open を渡したときだけ開閉する。外枠の実寸を畳んで隣の領域を広げ、
@@ -56,18 +60,14 @@
 .frame[data-open] {
   display: flex;
   flex-shrink: 0;
-  /* カードが滑り出す端は切り、つまみのある側だけ枠の外まで見せる。 */
-  clip-path: inset(0 calc(-1 * var(--sidebar-handle-width)) 0 0);
+  /* カードが滑り出す端を切る。 */
+  clip-path: inset(0);
   transition: width var(--koyori-motion-base) var(--koyori-ease-out),
     height var(--koyori-motion-base) var(--koyori-ease-out),
     visibility var(--koyori-motion-base);
 }
 
 .frame[data-open='false'] { visibility: hidden; }
-
-.frame[data-open][data-placement='right'] { clip-path: inset(0 0 0 calc(-1 * var(--sidebar-handle-width))); }
-
-.frame[data-open][data-placement='top'], .frame[data-open][data-placement='bottom'] { clip-path: inset(0); }
 
 .frame[data-open] > .root {
   flex-shrink: 0;
@@ -105,64 +105,74 @@
   height: 0;
 }
 
-/* 端から張り出すつまみ。カードの枠を覆い、地続きに見せる。
-   Drawer など切り落とす親は --koyori-sidebar-handle-display で消せる。 */
-.handle {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 100%;
-  transform: translateY(-50%);
-  display: var(--koyori-sidebar-handle-display, flex);
+/* rail を切り替えるボタン。見た目は Button の ghost と同じ。
+   Drawer など畳む意味のない親は --koyori-sidebar-rail-toggle-display で消せる。 */
+.header > .railToggle {
+  display: var(--koyori-sidebar-rail-toggle-display, inline-flex);
+  margin-inline-start: auto;
+}
+
+/* ボタンがあるときだけ、ヘッダーを中身とボタンの横並びにする。 */
+.header:has(> .railToggle) {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: var(--sidebar-handle-width);
-  height: var(--koyori-control-height-sm);
-  padding: 0;
-  border: 1px solid var(--koyori-color-border);
-  border-left: 0;
-  border-radius: 0 var(--koyori-radius-md) var(--koyori-radius-md) 0;
-  background: var(--koyori-color-surface);
-  color: var(--koyori-color-text-secondary);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  transition: opacity var(--koyori-motion-fast) var(--koyori-ease-out);
+  gap: var(--koyori-space-md);
 }
 
+.header:has(> .railToggle) > :not(.railToggle) { flex: 1; min-width: 0; }
+
+/* 展開時は、ヘッダーに乗せたときかキーボードで来たときだけ右から滑り出す。
+   乗せられない端末では常に見せる。 */
 @media (hover: hover) and (pointer: fine) {
-  .handle:hover { background: var(--koyori-color-surface-hover); }
+  .frame:not([data-sidebar-rail='true']) .railToggle {
+    opacity: 0;
+    transform: translateX(var(--koyori-space-md));
+    transition: opacity var(--koyori-motion-fast) var(--koyori-ease-out),
+      transform var(--koyori-motion-base) var(--koyori-ease-out);
+  }
+
+  .frame:not([data-sidebar-rail='true']) .header:is(:hover, :has(:focus-visible)) .railToggle {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.handle:focus-visible {
-  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
-  outline-offset: calc(-1 * var(--koyori-focus-width));
-}
+/* rail では一番上に常に出し、ヘッダーの中身はその下に並べる。 */
+.frame[data-sidebar-rail='true'] .header:has(> .railToggle) { flex-direction: column; }
+.frame[data-sidebar-rail='true'] .header > :not(.railToggle) { flex: none; }
+.frame[data-sidebar-rail='true'] .header > .railToggle { order: -1; margin-inline-start: 0; }
 
-.frame[data-placement='right'] .handle {
-  left: auto;
-  right: 100%;
-  border-left: 1px solid var(--koyori-color-border);
-  border-right: 0;
-  border-radius: var(--koyori-radius-md) 0 0 var(--koyori-radius-md);
-}
-
-/* 閉じる間はカードだけが滑る。 */
-.frame[data-open='false'] .handle { opacity: 0; }
-
-.handleIcon {
-  display: inline-flex;
+/* 山括弧は畳む向きを指す。 */
+.railToggleIcon {
   transform: rotate(90deg);
-  transition: transform var(--koyori-motion-fast) var(--koyori-ease-out);
+  transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring);
 }
 
-.frame[data-sidebar-rail='true'] .handleIcon, .frame[data-placement='right'] .handleIcon { transform: rotate(-90deg); }
+.frame[data-sidebar-rail='true'] .railToggleIcon, .frame[data-placement='right'] .railToggleIcon { transform: rotate(-90deg); }
 
-.frame[data-placement='right'][data-sidebar-rail='true'] .handleIcon { transform: rotate(90deg); }
+.frame[data-placement='right'][data-sidebar-rail='true'] .railToggleIcon { transform: rotate(90deg); }
 
 @media (prefers-reduced-motion: reduce) {
-  .frame[data-open], .frame[data-sidebar-rail] > .root, .handle, .handleIcon { transition: none; }
+  .frame[data-open], .frame[data-sidebar-rail] > .root, .railToggle, .railToggleIcon { transition: none; }
+}
+
+/* rail に畳むと、幅が縮み切る頃に新しい並びを上から順にばねで出す。
+   遅れの間は隠しておき、中身が先に切り替わって見えないようにする。 */
+@media (prefers-reduced-motion: no-preference) {
+  .frame[data-sidebar-rail='true'][data-sidebar-rail-moved] :is(.header, .items, .footer) > :not(.highlightClip) {
+    animation: sidebar-rail-pop var(--koyori-motion-spring) var(--koyori-ease-spring) backwards;
+    animation-delay: 150ms;
+  }
+
+  .frame[data-sidebar-rail='true'][data-sidebar-rail-moved] .header > .railToggle { animation-delay: 120ms; }
+  .frame[data-sidebar-rail='true'][data-sidebar-rail-moved] .items > :nth-child(2) { animation-delay: 180ms; }
+  .frame[data-sidebar-rail='true'][data-sidebar-rail-moved] .items > :nth-child(3) { animation-delay: 210ms; }
+  .frame[data-sidebar-rail='true'][data-sidebar-rail-moved] .items > :nth-child(4) { animation-delay: 240ms; }
+  .frame[data-sidebar-rail='true'][data-sidebar-rail-moved] :is(.items > :nth-child(n+5), .footer > *) { animation-delay: 270ms; }
+}
+
+@keyframes sidebar-rail-pop {
+  from { opacity: 0; transform: scale(0.6); }
 }
 
 .header, .footer {

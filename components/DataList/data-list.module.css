@@ -33,10 +33,10 @@
 }
 .trigger:active, .sortButton:active { background: var(--koyori-color-surface-active); }
 @media (hover: hover) and (pointer: fine) {
-  .trigger:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+  .trigger:hover { background: var(--koyori-color-surface-hover); }
 }
 .count { flex-shrink: 0; color: var(--koyori-color-text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-.chevron { display: inline-flex; flex-shrink: 0; transform: rotate(-90deg); transition: transform var(--koyori-motion-fast) var(--koyori-ease-out); }
+.chevron { display: inline-flex; flex-shrink: 0; transform: rotate(-90deg); transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring); }
 .trigger[aria-expanded='true'] .chevron { transform: none; }
 .panel[hidden] { display: none; }
 .scroll { overflow-x: auto; }
@@ -79,7 +79,7 @@
   user-select: none;
 }
 @media (hover: hover) and (pointer: fine) {
-  .sortButton:hover { background: color-mix(in srgb, var(--koyori-color-surface-hover) 35%, transparent); }
+  .sortButton:hover { background: var(--koyori-color-surface-hover); }
 }
 .sortButton:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
@@ -99,3 +99,13 @@
 [aria-sort='descending'] .sortIcon { opacity: 1; }
 [aria-sort='ascending'] .sortIcon { opacity: 1; transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .sortIcon { transition: none; } }
+
+/* 開いた一覧は上から降りてくる。 */
+@media (prefers-reduced-motion: no-preference) {
+  .panel:not([hidden]) { animation: list-in var(--koyori-motion-spring) var(--koyori-ease-spring); }
+}
+
+@keyframes list-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  40% { opacity: 1; }
+}

@@ -47,6 +47,19 @@ console.warn = (...args) => { warnings.push(args.join(' ')); };
   assert.match(toaster, /<section[^>]*aria-label="通知"/, 'Toaster はサーバー描画で空の領域を出す');
   assert.match(toaster, /<div[^>]*role="status"[^>]*><span><\/span><\/div>/, 'Toaster はサーバー描画でも空の status 領域を出す');
   assert.match(toaster, /<div[^>]*role="alert"[^>]*><span><\/span><\/div>/, 'Toaster はサーバー描画でも空の alert 領域を出す');
+  // HoverCard は container の型が HTMLElement でも、サーバー描画で HTMLElement を参照しない。
+  const card = await renderToString(createSSRApp(ui.HoverCard, { label: 'プロフィール' }));
+  assert.match(card, /role="dialog"/, 'HoverCard はサーバー描画でカードの器を出す');
+  assert.match(card, /\shidden/, 'HoverCard のカードはサーバー描画では閉じている');
+  // Combobox は札の × で <button を出すが、ここで確かめるのは combobox の属性。
+  const combo = await renderToString(createSSRApp(ui.Combobox, {
+    ariaLabel: '検索', tags: [{ label: 'bug' }], options: [{ value: 'a', label: 'alpha', highlight: [[0, 1]] }],
+  }));
+  assert.match(combo, /role="combobox"/, 'Combobox は入力欄に combobox の役割を付ける');
+  assert.match(combo, /aria-expanded="false"/, 'Combobox はサーバー描画では閉じている');
+  assert.match(combo, /role="listbox"/, 'Combobox は listbox を出す');
+  assert.match(combo, /\shidden/, 'Combobox の一覧はサーバー描画では隠れている');
+  assert.doesNotMatch(combo, /undefined/, 'Combobox の markup に undefined が出ない');
   assert.deepEqual(warnings, [], 'Field の外でも Vue の警告を出さない');
-  console.log('vue: Dropdown・Picker・ContextMenu・DatePicker のサーバー描画と topLayer の印、Field の外で警告が出ないことを確認しました。');
+  console.log('vue: Dropdown・Picker・ContextMenu・DatePicker・HoverCard・Combobox のサーバー描画と topLayer の印、Field の外で警告が出ないことを確認しました。');
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => { console.warn = warn; });

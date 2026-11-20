@@ -2,10 +2,9 @@
 
 /* 背景だけでは暗い背景やカードの中で輪郭が消えるため、内側の線も引く。 */
 .root {
-  --skeleton-background: var(--koyori-color-surface-disabled);
+  --skeleton-background: var(--koyori-color-surface-hover);
   --skeleton-border: var(--koyori-color-border);
   box-sizing: border-box;
-  animation: koyori-skeleton-pulse 1.6s ease-in-out infinite;
 }
 
 .root:not([data-lines]) {
@@ -29,14 +28,21 @@
   width: 60%;
 }
 
-@keyframes koyori-skeleton-pulse {
-  from { opacity: 1; }
-  50% { opacity: 0.55; }
-  to { opacity: 1; }
+/* 光の帯が左から右へ流れる。 */
+.root:not([data-lines]), .line {
+  background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--koyori-color-text) 10%, transparent) 50%, transparent 70%);
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: koyori-skeleton-shimmer 1.4s linear infinite;
+}
+
+@keyframes koyori-skeleton-shimmer {
+  from { background-position: 170% 0; }
+  to { background-position: -70% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .root { animation: none; }
+  .root:not([data-lines]), .line { animation: none; background-image: none; }
 }
 
 @media (forced-colors: active) {

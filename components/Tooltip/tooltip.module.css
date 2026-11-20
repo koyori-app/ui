@@ -20,18 +20,32 @@
   max-width: min(24rem, calc(100vw - 2 * var(--koyori-menu-viewport-margin)));
   max-height: calc(100dvh - 2 * var(--koyori-menu-viewport-margin));
   margin: 0;
-  padding: var(--koyori-space-sm) var(--koyori-space-lg);
+  padding: var(--koyori-space-xs) var(--koyori-space-md);
   overflow: auto;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  border: 1px solid var(--koyori-color-border-strong);
+  border: 1px solid transparent;
   border-radius: var(--koyori-radius-md);
   background: var(--koyori-color-text);
   color: var(--koyori-color-surface);
   box-shadow: var(--koyori-shadow-panel);
   font-family: var(--koyori-font-family);
-  font-size: var(--koyori-font-size-sm);
-  line-height: var(--koyori-line-height-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+}
+
+/* 引き金の側からばねで飛び出す。位置は offsetWidth / offsetHeight で測るため transform の影響を受けない。 */
+@media (prefers-reduced-motion: no-preference) {
+  .panel { transform-origin: bottom center; animation: tooltip-in var(--koyori-motion-spring) var(--koyori-ease-spring); }
+  .panel[data-side='bottom'] { transform-origin: top center; }
+  .panel[data-side='left'] { transform-origin: right center; }
+  .panel[data-side='right'] { transform-origin: left center; }
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: scale(0.7); }
+  40% { opacity: 1; }
 }
 
 .panel[hidden] { display: none; }

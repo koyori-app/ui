@@ -11,7 +11,7 @@ import PickerPreview from '../../../components/PickerPreview.astro';
 
 ## プレビュー
 
-「担当チーム」は単一選択、「共有チーム」は複数選択です。`end` や `ﾃﾞｻﾞｲﾝ` で絞り込めます。
+「担当チーム」は単一選択、「共有チーム」は複数選択です。`end` や `ﾃﾞｻﾞｲﾝ` で絞り込めます。「優先度」は項目ごとにアイコンを出す例です。
 
 <PickerPreview />
 
@@ -68,7 +68,7 @@ API 呼び出し、エラーの判定、再試行中の状態更新は利用側�
 | 名前 | 型 | 既定値・説明 |
 | --- | --- | --- |
 | `label` | `string` | 必須。選ぶ対象の名前と未選択時の表示 |
-| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean, src?: string }[]`。`value` は一意にする |
+| `items` | `PickerItem[]` | 必須。`{ value: string, label: string, disabled?: boolean, src?: string, color?: string, description?: string, icon?: any }[]`。`value` は一意にする |
 | `avatars` | `boolean` | `false`。選択肢の先頭に 24px のアバターを表示する。`src` がなければイニシャル |
 | `selectionMode` | `'single' \| 'multiple'` | `single` |
 | `searchable` | `boolean` | `true`。`false` なら検索欄を表示せず全候補から選ぶ |
@@ -92,6 +92,37 @@ API 呼び出し、エラーの判定、再試行中の状態更新は利用側�
 | `trigger` | React の要素 | トリガーに表示する内容。既定は選択中のラベル。Vue は `#trigger` スロット |
 
 Vue では `:selected-values="values"`・`:on-selection-change="handler"` のように渡します。
+
+## 項目ごとのアイコン
+
+`items` の `icon` を持つ項目は、行の先頭（ラベルの前）にアイコンを出します。`icon` のない項目は見た目も DOM も変わりません。
+
+```tsx
+// React: icon に描画済みの要素を渡す
+<Picker label="優先度" items={[
+  { value: 'urgent', label: '緊急', icon: <Flag size={16} color="#dc2626" /> },
+  { value: 'high', label: '高', icon: <Flag size={16} color="#f97316" /> },
+  { value: 'none', label: '未設定' },
+]} />
+```
+
+```vue
+<!-- Vue: icon に入れた値を、#item-icon スロットの item.icon で読む -->
+<Picker label="優先度" :items="[
+  { value: 'urgent', label: '緊急', icon: '#dc2626' },
+  { value: 'high', label: '高', icon: '#f97316' },
+  { value: 'none', label: '未設定' },
+]">
+  <template #item-icon="{ item }"><Flag :size="16" :color="item.icon" /></template>
+</Picker>
+```
+
+Vue では、`icon` が真値の項目だけスロットを描きます。値は何でもよく、色・アイコンの名前・`true` などを使えます。
+`0`・空文字・`false` は偽なので、その項目にはアイコンが出ません。`#item-icon` スロットを渡していない場合も、何も出さず、`icon` のない項目と同じ並びになります。
+アイコンは装飾として読み上げから外します。選択肢の名前・検索・トリガーの表示は `label` のままです。
+`avatars` があれば `icon` は無視し、`color` とは同時に使わないでください。
+大きさは渡すアイコンで決めます。16px を想定しており、これより大きいと行が伸びます。
+閉じたトリガーにアイコンを出すときは、`trigger` で差し替えます。
 
 ## トリガーの表示を差し替える
 

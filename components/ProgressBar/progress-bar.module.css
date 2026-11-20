@@ -39,7 +39,7 @@
   height: 100%;
   border-radius: inherit;
   background: var(--progress-fill);
-  transition: width var(--koyori-motion-base) var(--koyori-ease-out);
+  transition: width 600ms var(--koyori-ease-spring);
 }
 
 @media (prefers-reduced-motion: reduce) {

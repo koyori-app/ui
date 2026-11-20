@@ -1,0 +1,115 @@
+@import '../tokens.css';
+
+/* 枠・背景・フォーカスの輪は Field の .group が描く。ここは札と入力欄の並べ方と、一覧の中身だけを持つ。 */
+.root {
+  position: relative;
+  align-items: stretch;
+  cursor: text;
+}
+
+/* 札と入力欄を 1 つの折り返す行に並べる。札が無いとき・1 行のときの高さは Input と同じ（--koyori-control-height-sm）。 */
+.body {
+  --combobox-inset: 2px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--combobox-inset) var(--koyori-space-xs);
+  min-width: 0;
+  padding: var(--combobox-inset) var(--koyori-space-sm);
+}
+
+/* 札は色を付けず、薄い灰色の地にする。高さは「欄の高さ − 枠 − 上下の余白」。 */
+.tag {
+  --label-padding: 0px;
+  min-height: calc(var(--koyori-control-height-sm) - 2px - 2 * var(--combobox-inset));
+  background: var(--koyori-color-surface-hover);
+  cursor: default;
+}
+
+.tagPrefix {
+  color: var(--koyori-color-text-secondary);
+  font-weight: 400;
+}
+
+/* 一覧の位置の基準。入力欄の左端に揃える。 */
+.anchor {
+  position: relative;
+  display: flex;
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.root .input {
+  min-height: calc(var(--koyori-control-height-sm) - 2px - 2 * var(--combobox-inset));
+  padding-block: 0;
+  padding-inline: var(--koyori-space-xs);
+}
+
+.panel {
+  width: min(var(--koyori-combobox-width), calc(100vw - 2 * var(--koyori-menu-viewport-margin)));
+  /* 位置の基準は入力欄。欄の枠（枠線 1px と上下の余白）の外から --koyori-menu-gap を空けるため、その分だけ下げる。 */
+  margin-block-start: calc(var(--combobox-inset) + 1px);
+  cursor: default;
+}
+
+.panel[data-side='top'] {
+  margin-block: 0 var(--combobox-top-offset, calc(var(--combobox-inset) + 1px));
+}
+
+/* listbox の子に separator は置けないので、節の間の線は CSS で引く。 */
+.group + .group {
+  margin-block-start: var(--koyori-space-xs);
+  padding-block-start: var(--koyori-space-xs);
+  border-block-start: 1px solid var(--koyori-color-border);
+}
+
+.option { cursor: pointer; }
+
+.dot {
+  position: relative;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.text {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0 var(--koyori-space-md);
+  min-width: 0;
+}
+
+.strong { font-weight: 700; }
+
+.description, .meta { color: var(--koyori-color-text-secondary); }
+
+.meta {
+  position: relative;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+.option[aria-disabled='true'] .description, .option[aria-disabled='true'] .meta { color: inherit; }
+
+/* 下端の案内。パネルの余白を打ち消して端まで敷く。角はパネルの overflow: hidden が丸める。 */
+.footer {
+  flex-shrink: 0;
+  margin: var(--koyori-space-xs) calc(-1 * var(--koyori-space-xs)) calc(-1 * var(--koyori-space-xs));
+  padding: var(--koyori-space-md) var(--koyori-space-lg);
+  border-block-start: 1px solid var(--koyori-color-border);
+  background: var(--koyori-color-surface-hover);
+  color: var(--koyori-color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.footer:empty { display: none; }
+
+@media (forced-colors: active) {
+  .option[data-active='true'] { outline: 2px solid Highlight; outline-offset: -2px; }
+  .option[aria-disabled='true'] { color: GrayText; }
+  .dot { outline: 1px solid CanvasText; }
+}

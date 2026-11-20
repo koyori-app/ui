@@ -14,10 +14,14 @@
   position: relative;
   display: flex;
   gap: var(--koyori-space-xs);
+  width: fit-content;
   max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   padding: var(--koyori-space-xs);
-  border-bottom: 1px solid var(--koyori-color-border);
+  /* 溝の角丸は、中の島の角丸 + 溝の余白。 */
+  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-xs));
+  background: var(--koyori-color-surface-hover);
 }
 
 /* 収まらないタブがある側を薄くする。tabs.ts が属性を付ける。 */
@@ -32,13 +36,15 @@
 .tab {
   position: relative;
   flex-shrink: 0;
-  min-height: var(--koyori-control-height-sm);
-  padding: var(--koyori-space-sm) var(--koyori-space-lg);
+  min-height: calc(var(--koyori-control-height-sm) - var(--koyori-space-xs));
+  padding: var(--koyori-space-xs) var(--koyori-space-lg);
   border: 0;
   border-radius: var(--koyori-radius-md);
   background: transparent;
   color: var(--koyori-color-text-secondary);
   font: inherit;
+  font-weight: 500;
+  transition: color var(--koyori-motion-base) var(--koyori-ease-out);
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -47,14 +53,13 @@
   user-select: none;
 }
 
-.tab:active:not(:disabled) { background: var(--koyori-color-surface-active); }
+.tab:active:not(:disabled, [aria-selected='true']) { background: var(--koyori-color-surface-active); }
 
 .tab[aria-selected='true'] {
-  color: var(--koyori-color-text);
+  color: var(--koyori-color-on-accent);
 }
 
-/* 選択の塗りと下線はタブごとに描かず 1 組だけ置き、選択が変わると次のタブへ一緒に滑らせる。位置は tabs.ts が測る。
-   塗りは transform で stacking context を作るので、ホバー面より上に出す下線は別の要素にする。 */
+/* 選択の島はタブごとに描かず 1 つだけ置き、選択が変わると次のタブへばねで滑らせる。位置は tabs.ts が測る。 */
 .selection, .indicator {
   position: absolute;
   top: 0;
@@ -65,35 +70,30 @@
   opacity: var(--tab-indicator-opacity, 0);
   pointer-events: none;
   transition: var(--tab-indicator-transition,
-    transform var(--koyori-motion-base) var(--koyori-ease-out),
+    transform var(--koyori-motion-spring) var(--koyori-ease-spring),
     width var(--koyori-motion-base) var(--koyori-ease-out),
     height var(--koyori-motion-base) var(--koyori-ease-out));
 }
 
 .selection {
+  z-index: 1;
   border-radius: var(--koyori-radius-md);
-  background: var(--koyori-color-selection);
+  background: var(--koyori-color-accent);
 }
 
-.indicator { z-index: 2; }
-
-.indicator::after {
-  content: '';
-  position: absolute;
-  inset: auto var(--koyori-space-lg) 0;
-  height: 2px;
-  background: var(--koyori-color-selection-indicator);
-}
-
-/* The hover surface can travel over the selected fill without hiding its underline. */
-.list > [data-hover-highlight] { z-index: 1; }
-.label { position: relative; z-index: 2; }
+/* ホバーの面は島の下を通す。 */
+.list > [data-hover-highlight] { z-index: 0; }
+.label { position: relative; z-index: 2; display: inline-block; transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring); }
+.tab:active:not(:disabled) .label { transform: scale(0.94); transition-duration: 80ms; }
 .tab:focus-visible { z-index: 2; }
 
 .tab:focus-visible, .panel:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: calc(-1 * var(--koyori-focus-offset));
 }
+
+/* 島の上では地と同じ色の輪が見えないため、島の文字色で引く。 */
+.tab[aria-selected='true']:focus-visible { outline-color: var(--koyori-color-on-accent); }
 
 .tab:disabled {
   color: var(--koyori-color-text-disabled);
@@ -108,7 +108,8 @@
 .list[hidden], .panel[hidden] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .selection, .indicator { transition: none; }
+  .tab, .label, .selection, .indicator { transition: none; }
+  .tab:active:not(:disabled) .label { transform: none; }
 }
 
 @media (forced-colors: active) {

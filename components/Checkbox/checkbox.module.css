@@ -33,11 +33,12 @@
 .box {
   display: inline-flex;
   box-sizing: border-box;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--koyori-color-border-strong);
-  border-radius: calc(var(--koyori-radius-md) / 2);
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--koyori-color-border-strong);
+  border-radius: calc(var(--koyori-radius-md) - 2px);
   background: var(--koyori-color-surface);
+  transition: background-color var(--koyori-motion-fast) var(--koyori-ease-out), border-color var(--koyori-motion-fast) var(--koyori-ease-out), transform var(--koyori-motion-spring) var(--koyori-ease-spring);
   pointer-events: none;
 }
 .mark { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -52,8 +53,9 @@
 .check { stroke-dasharray: 1; stroke-dashoffset: 1; }
 .input:checked + .box,
 .input:indeterminate + .box {
-  border-color: var(--koyori-color-selection-indicator);
-  background: var(--koyori-color-selection);
+  border-color: var(--koyori-color-accent);
+  background: var(--koyori-color-accent);
+  color: var(--koyori-color-on-accent);
 }
 .input:checked + .box .check {
   stroke-dashoffset: 0;
@@ -77,7 +79,7 @@
 }
 .label { overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
-  .input:checked + .box .check { transition: none; }
+  .box, .input:checked + .box .check { transition: none; }
 }
 @media (forced-colors: active) {
   .box { forced-color-adjust: none; background: Canvas; border-color: ButtonText; color: CanvasText; }
@@ -88,4 +90,9 @@
   }
   .input:focus-visible + .box { outline-color: Highlight; }
   .input:disabled + .box { background: Canvas; border-color: GrayText; color: GrayText; }
+}
+
+/* 押している間は箱が縮み、離すとばねで戻る。 */
+@media (prefers-reduced-motion: no-preference) {
+  .root:active:not([data-disabled='true']) .box { transform: scale(0.8); transition-duration: 80ms; }
 }

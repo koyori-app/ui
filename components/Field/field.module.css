@@ -22,7 +22,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--koyori-space-xs);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .aside:empty { display: none; }
@@ -205,4 +205,13 @@ textarea.control {
 /* iOS Safari は 16px 未満の入力欄にフォーカスすると画面を拡大する。 */
 @media (pointer: coarse) {
   .control { font-size: max(16px, var(--koyori-font-size-sm)); }
+}
+
+/* フォーカスの輪は外から締まって収まる。 */
+@media (prefers-reduced-motion: no-preference) {
+  .control:focus-visible, .group:has(.control:focus-visible) { animation: field-focus-in var(--koyori-motion-base) var(--koyori-ease-pop); }
+}
+
+@keyframes field-focus-in {
+  from { outline-offset: 8px; outline-color: transparent; }
 }

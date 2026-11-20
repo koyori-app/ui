@@ -9,8 +9,10 @@
   align-items: flex-start;
   gap: var(--koyori-space-md);
   box-sizing: border-box;
-  padding: var(--koyori-space-md) var(--koyori-space-lg);
-  border: 1px solid var(--alert-color);
+  padding: var(--koyori-space-xs) var(--koyori-space-lg) var(--koyori-space-xs) calc(var(--koyori-space-lg) + 3px);
+  border: 1px solid var(--koyori-color-border);
+  /* 種類は左の帯と接頭辞で示す。 */
+  box-shadow: inset 3px 0 0 var(--alert-color);
   border-radius: var(--koyori-radius-md);
   background: var(--alert-background);
   color: var(--koyori-color-text);
@@ -55,4 +57,14 @@
   .root { border-color: CanvasText; }
   /* 色が落ちても接頭辞の文字で種類が伝わる。 */
   .prefix { color: inherit; }
+}
+
+/* 出たときに上から落ちて収まる。 */
+@media (prefers-reduced-motion: no-preference) {
+  .root { animation: alert-in var(--koyori-motion-spring) var(--koyori-ease-spring); }
+}
+
+@keyframes alert-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  40% { opacity: 1; }
 }

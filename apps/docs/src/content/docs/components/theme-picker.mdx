@@ -1,0 +1,86 @@
+---
+title: ThemePicker
+description: ライト・ダーク・システムを選び、選択を保持するコンポーネント。
+---
+
+import ThemePickerPreview from '../../../components/ThemePickerPreview.astro';
+
+ThemePicker は、利用者がアプリの配色を **ライト・ダーク・システム** から選ぶための部品です。
+中身は [Picker](/components/picker/) で、選択は `localStorage` に保持し、`html[data-theme]` に反映します。
+2 値のスイッチは [ThemeSwitch](/components/theme-switch/) です。
+
+## プレビュー
+
+<ThemePickerPreview />
+
+このサイトのプレビューで選ぶと、Starlight も同じ `html[data-theme]` を読むため、サイト全体の配色が変わります。
+Starlight 自身の切り替えの表示とはずれます。
+
+## 使い方
+
+`<head>` に `themeScript` を inline で置き、ページ内に `ThemePicker` を置きます。
+
+```vue
+<!-- Vue（Vike の +Head.vue） -->
+<script setup lang="ts">
+import { themeScript } from '@koyori-app/ui-vue';
+</script>
+
+<template>
+  <component :is="'script'" v-html="themeScript" />
+</template>
+```
+
+```tsx
+// React
+import { themeScript } from '@koyori-app/ui-react';
+
+<script dangerouslySetInnerHTML={{ __html: themeScript }} />
+```
+
+```vue
+<ThemePicker label="テーマ" />
+```
+
+React で `<html>` ごと hydrate する構成（Next.js の App Router など）では、`themeScript` が `data-theme` を書き換えるため、`<html>` に `suppressHydrationWarning` を付けます。
+
+- `html[data-theme]` は常に `light` か `dark` の 2 値です。「システム」は OS の配色を調べて、この 2 値のどちらかにします。
+- 選択は `localStorage` の `koyori-theme` に `light` / `dark` で保持します。「システム」は保持を消した状態です。
+- `themeScript` は最初の描画より前に `data-theme` を決め、OS の配色が変わったときも付け直します。
+  置かないと、再読み込みのたびに既定のダークで描いてから切り替わり、保持も OS の変化も当たりません。
+- `setTheme` は選択を `window` の `koyori-theme-change` イベント（`detail` は選択）で知らせます。同じページの ThemePicker と `themeScript` はこれに追従するので、保存できない環境でも選んだ配色は OS の変化で戻りません。
+- CSP で inline script を禁じているアプリは、`<script>` に nonce を付けてください。
+- ページの地は利用側が `--koyori-color-surface` で塗ります。部品は地の色を塗りません。
+- 別のタブでの変更は、そのタブを再読み込みするまで反映されません。
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 読み上げ名。トリガーは「テーマ: ライト」のように読まれる |
+
+項目の文言（ライト / ダーク / システム）は上書きできません。
+
+## 関数
+
+| 名前 | 説明 |
+| --- | --- |
+| `themeScript` | `<head>` に inline で置くスクリプトの文字列 |
+| `setTheme(theme)` | `'light'` / `'dark'` / `'system'` を保持し、`html[data-theme]` に反映する。Dropdown の項目など、別の形で切り替えを出すときに使う |
+| `storedTheme()` | 現在の選択。このページで選んだものが無ければ保持から読む。無い・読めない・知らない値は `'system'` |
+
+サーバー描画では保持した選択を知らないため、マウントされるまでトリガーは「システム」と表示されます。
+配色そのものは `themeScript` が最初から正しく当てます。
+
+## アクセシビリティ
+
+操作とキーボードは [Picker](/components/picker/) と同じです。トリガーの読み上げ名は「テーマ: ライト」のように、`label` と選択中の項目になります。
+選択中の項目をもう一度選んでも、選択なしにはなりません。
+
+## 検証
+
+```sh
+pnpm generate
+pnpm --filter './packages/*' build
+node scripts/check-theme-picker.cjs
+```

@@ -20,6 +20,104 @@ let browser;
       server.once('exit', code => reject(new Error(`Picker test server exited (${code}); check port ${port}`)));
     });
     browser = await chromium.launch({ headless: true });
+    // 項目ごとのアイコンは装飾。名前・検索・引き金の表示は label のまま、アイコンのない行は変えない。
+    // 後ろの長い検査には環境によって落ちるものがあり、その後ろに置くとここまで届かない（Vue は React が落ちると走らない）。
+    // そのため、独立した周回にして先頭で走らせる。
+    for (const framework of frameworks) {
+      const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
+      const errors = [];
+      page.on('pageerror', error => errors.push(error.message));
+      page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+      const settle = () => page.waitForTimeout(80);
+      const axe = readdirSync(`${root}/node_modules/.pnpm`).find(name => name.startsWith('axe-core@'));
+      const runAxe = async () => {
+        // 読み込み直後は Storybook の a11y アドオンが axe を import して window.axe を上書きし、走らせていることがある。
+        // そのとき測ると "already running" になるので、注入し直して自前の axe（既定の設定）で測り直す。
+        for (let attempt = 0; attempt < 50; attempt++) {
+          await page.addScriptTag({ path: `${root}/node_modules/.pnpm/${axe}/node_modules/axe-core/axe.min.js` });
+          const result = await page.evaluate(async () => {
+            try { return { violations: (await axe.run(document.querySelector('#storybook-root'))).violations.map(v => v.id) }; }
+            catch (error) { if (/already running/.test(String(error))) return { busy: true }; throw error; }
+          });
+          if (!result.busy) return assert.deepEqual(result.violations, []);
+          await page.waitForTimeout(100);
+        }
+        throw new Error('axe を 50 回注入し直しても、自前の axe で測れない');
+      };
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-picker--item-icons&viewMode=story`);
+      const priorities = page.getByRole('listbox', { name: '優先度' });
+      await priorities.getByRole('option').first().waitFor();
+      await page.waitForTimeout(350);
+      await runAxe();
+      const flags = priorities.locator('svg[data-flag]');
+      assert.equal(await flags.count(), 4);
+      for (const flag of await flags.all()) assert.equal(await flag.evaluate(el => el.parentElement.getAttribute('aria-hidden')), 'true');
+      assert.equal(await flags.nth(0).evaluate(el => getComputedStyle(el).color), 'rgb(220, 38, 38)');
+      assert.equal(await flags.nth(1).evaluate(el => getComputedStyle(el).color), 'rgb(249, 115, 22)');
+      const urgent = priorities.getByRole('option', { name: '緊急', exact: true });
+      const unset = priorities.getByRole('option', { name: '未設定', exact: true });
+      const high = priorities.getByRole('option', { name: '高', exact: true, selected: true });
+      for (const row of [urgent, unset, high]) assert.equal(await row.count(), 1, 'アイコンを名前に混ぜない');
+      assert((await urgent.locator('svg[data-flag]').boundingBox()).x < (await urgent.getByText('緊急', { exact: true }).boundingBox()).x, 'アイコンは label の前');
+      assert.equal(await unset.locator('svg[data-flag]').count(), 0);
+      assert.equal(await unset.locator(':scope > span').count(), 3, '選択背景・label・チェック印だけ');
+      assert.equal(await urgent.locator(':scope > span').count(), 4);
+      assert.equal((await urgent.boundingBox()).height, (await unset.boundingBox()).height);
+      // 選択背景は絶対配置で pointer-events: none なので、そのままでは当たり判定に出ない。
+      // 当たり判定を足して旗の中心を調べ、アイコンの position: relative で背景より前に出ていることを確かめる。
+      assert(await high.evaluate(row => {
+        const flag = row.querySelector('svg[data-flag]');
+        // 先頭の子が選択背景（絶対配置で当たり判定なし）であることを先に確かめる。並びが変わったら黙って通さない
+        const background = getComputedStyle(row.firstElementChild);
+        if (background.position !== 'absolute' || background.pointerEvents !== 'none') throw new Error('行の先頭の子が選択背景ではない');
+        row.firstElementChild.style.pointerEvents = 'auto';
+        const r = flag.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+        row.firstElementChild.style.pointerEvents = '';
+        return hit === flag || flag.contains(hit) || hit === flag.parentElement;
+      }), '選択中の行でアイコンが選択背景より前に出ている');
+      const prioritySearch = page.getByRole('searchbox', { name: '優先度を検索' });
+      const priorityTrigger = page.getByRole('button', { name: /^優先度/ });
+      assert.equal(await priorityTrigger.innerText(), '高');
+      await prioritySearch.fill('緊');
+      await settle();
+      assert.equal(await priorities.getByRole('option').count(), 1);
+      assert.equal(await priorities.locator('svg[data-flag]').count(), 1);
+      await prioritySearch.fill('');
+      await settle();
+      await prioritySearch.press('ArrowDown');
+      await priorities.press('Home');
+      await priorities.press('Enter');
+      await settle();
+      assert.equal(await priorityTrigger.innerText(), '緊急');
+      assert.equal(await priorityTrigger.getAttribute('aria-expanded'), 'false');
+      await priorityTrigger.click();
+      await priorities.getByRole('option').first().waitFor();
+      await settle();
+      await priorities.getByRole('option', { name: '中', exact: true }).hover();
+      assert.equal(await priorities.evaluate(el => el.style.getPropertyValue('--highlight-opacity')), '1');
+      if (framework === 'vue') {
+        // icon を入れても #item-icon を渡さない Picker は、アイコンの span も隙間も出さない（アイコンのない行と同じ並び）。
+        await page.goto(`${base}/packages/vue/storybook-static/iframe.html?id=components-picker--item-icons-without-slot&viewMode=story`);
+        const bare = page.getByRole('listbox', { name: '優先度' });
+        await bare.getByRole('option').first().waitFor();
+        await page.waitForTimeout(350);
+        const bareUrgent = bare.getByRole('option', { name: '緊急', exact: true });
+        const bareUnset = bare.getByRole('option', { name: '未設定', exact: true });
+        assert.equal(await bareUrgent.locator(':scope > span').count(), 3, '選択背景・label・チェック印だけ');
+        // 開くときの変形（menu-in）の途中で測ると小数以下がずれるので、動きが終わるのを待ち、2 つの label を同じフレームで測る
+        await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+        const [urgentX, unsetX] = await bare.evaluate(list => ['緊急', '未設定'].map(name => {
+          const label = [...list.querySelectorAll('[role="option"] span')].find(span => span.textContent.trim() === name);
+          return label.getBoundingClientRect().x;
+        }));
+        assert.equal(urgentX, unsetX, 'label の位置がアイコンのない行と同じ');
+      }
+      assert.deepEqual(errors, []);
+      await page.close();
+      console.log(`${framework}: Picker item icons passed`);
+    }
+
     for (const framework of frameworks) {
       const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
       const errors = [];

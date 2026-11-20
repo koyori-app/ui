@@ -113,6 +113,25 @@ export const Descriptions: Story = {
     ],
   },
 };
+// 項目ごとのアイコンの例。旗は依存を増やさないよう、ここで描く。
+const Flag = ({ color }: { color: string }) => (
+  <svg data-flag="" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+    strokeLinecap="round" strokeLinejoin="round" style={{ color }}>
+    <path d="M3 14V2.5h9.5l-2 3 2 3H3" />
+  </svg>
+);
+export const ItemIcons: Story = {
+  args: {
+    label: '優先度', defaultOpen: true, defaultSelectedValues: ['high'],
+    items: [
+      { value: 'urgent', label: '緊急', icon: <Flag color="#dc2626" /> },
+      { value: 'high', label: '高', icon: <Flag color="#f97316" /> },
+      { value: 'medium', label: '中', icon: <Flag color="#eab308" /> },
+      { value: 'low', label: '低', icon: <Flag color="#6b7280" /> },
+      { value: 'none', label: '未設定' },
+    ],
+  },
+};
 export const CustomTrigger: Story = {
   args: { selectionMode: 'multiple', defaultSelectedValues: ['design', 'frontend', 'backend', 'review'] },
   render: (args) => (

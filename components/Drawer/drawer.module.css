@@ -9,9 +9,9 @@
   --koyori-sidebar-border: 0;
   --koyori-sidebar-radius: 0;
   --koyori-sidebar-width: 100%;
-  /* 覆っている間は畳む意味がなく、張り出したつまみは切り落とされる。 */
-  --koyori-sidebar-handle-display: none;
-  --drawer-radius: calc(var(--koyori-radius-md) + var(--koyori-space-md));
+  /* 覆っている間は畳む意味がないため、rail の切り替えボタンを出さない。 */
+  --koyori-sidebar-rail-toggle-display: none;
+  --drawer-radius: var(--koyori-radius-lg);
   box-sizing: border-box;
   max-width: 100%;
   max-height: 100%;
@@ -21,7 +21,7 @@
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--koyori-color-border);
-  background: var(--koyori-color-surface);
+  background: var(--koyori-color-surface-raised);
   color: var(--koyori-color-text);
   font-family: var(--koyori-font-family);
   font-size: var(--koyori-font-size-sm);
@@ -89,7 +89,8 @@
 
 /* ::backdrop はトップレイヤーにあり、DOM の祖先からトークンを継承しないブラウザーがある。 */
 .root::backdrop {
-  background: var(--koyori-color-backdrop, #38344080);
+  background: var(--koyori-color-backdrop, #000000b3);
+  backdrop-filter: blur(6px);
   transition: opacity var(--koyori-motion-slow) var(--koyori-ease-out),
     overlay var(--koyori-motion-slow) allow-discrete,
     display var(--koyori-motion-slow) allow-discrete;
