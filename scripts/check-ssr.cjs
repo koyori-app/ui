@@ -43,6 +43,10 @@ console.warn = (...args) => { warnings.push(args.join(' ')); };
     ['PasswordInput', { ariaLabel: 'パスワード' }],
     ['Switch', { label: '通知' }],
   ]) await renderToString(createSSRApp(ui[name], props));
+  const toaster = await renderToString(createSSRApp(ui.Toaster, {}));
+  assert.match(toaster, /<section[^>]*aria-label="通知"/, 'Toaster はサーバー描画で空の領域を出す');
+  assert.match(toaster, /<div[^>]*role="status"[^>]*><span><\/span><\/div>/, 'Toaster はサーバー描画でも空の status 領域を出す');
+  assert.match(toaster, /<div[^>]*role="alert"[^>]*><span><\/span><\/div>/, 'Toaster はサーバー描画でも空の alert 領域を出す');
   // HoverCard は container の型が HTMLElement でも、サーバー描画で HTMLElement を参照しない。
   const card = await renderToString(createSSRApp(ui.HoverCard, { label: 'プロフィール' }));
   assert.match(card, /role="dialog"/, 'HoverCard はサーバー描画でカードの器を出す');

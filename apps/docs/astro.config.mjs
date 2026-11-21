@@ -62,6 +62,7 @@ export default defineConfig({
             { label: 'ThemeSwitch', slug: 'components/theme-switch' },
             { label: 'SplitPane', slug: 'components/split-pane' },
             { label: 'Field・Input・Textarea', slug: 'components/field' },
+            { label: 'Toaster', slug: 'components/toaster' },
             { label: 'Tooltip', slug: 'components/tooltip' },
           ],
         },
