@@ -52,3 +52,6 @@ jobs:
 
       - name: Combobox の候補の移動・強調の分割
         run: node scripts/check-combobox-logic.cjs
+
+      - name: SidebarLink の押したときの縮みと選ばれたアイコンの跳ねが無いこと
+        run: node scripts/check-sidebar-link.cjs
