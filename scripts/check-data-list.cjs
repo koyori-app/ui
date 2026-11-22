@@ -175,6 +175,22 @@ let browser;
       await story('plain');
       assert.equal(await trigger.count(), 0);
       assert.equal(await table.count(), 1);
+      const plainTableTop = (await table.boundingBox()).y;
+      // hideHeading: 見出しは見た目だけ隠し、区画の名前（aria-labelledby の参照先）と見出しの読み上げは残す。
+      await story('hidden-heading');
+      const hiddenHeading = page.locator('#list-default-heading');
+      assert.equal(await hiddenHeading.getAttribute('role'), 'heading');
+      assert.equal(await page.getByRole('heading', { name: /^進行中\s*2\s*件$/ }).count(), 1, 'the heading is still announced');
+      assert.equal(await page.getByRole('region', { name: /^進行中\s*2\s*件$/ }).count(), 1, 'the section keeps its name');
+      const headingBox = await hiddenHeading.boundingBox();
+      assert(headingBox.width <= 1 && headingBox.height <= 1, `the heading takes no space: ${JSON.stringify(headingBox)}`);
+      assert((await table.boundingBox()).y < plainTableTop, 'the table moves up into the heading space');
+      await accessibility();
+      // collapsible では開閉のボタンが見出しにあるので隠さない。
+      await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=components-datalist--default&args=hideHeading:!true&viewMode=story`);
+      await page.locator('#list-default-heading').waitFor();
+      assert(await trigger.isVisible(), 'hideHeading is ignored while collapsible');
+      assert((await page.locator('#list-default-heading').boundingBox()).height > 1);
 
       await story('controlled');
       const draftCheckbox = page.getByRole('checkbox', { name: '下書きを選択' });

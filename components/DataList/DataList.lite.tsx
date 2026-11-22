@@ -24,6 +24,8 @@ export interface DataListProps {
   open?: boolean;
   defaultOpen?: boolean;
   headingLevel?: 2 | 3 | 4 | 5 | 6;
+  /** Hides the heading visually and keeps it as the accessible name. Ignored when collapsible, since the heading holds the toggle. */
+  hideHeading?: boolean;
   status?: 'ready' | 'empty' | 'loading' | 'error';
   /** Override the empty, loading or error message. */
   message?: string;
@@ -82,7 +84,8 @@ export default function DataList(props: DataListProps) {
 
   return (
     <section class={styles.root} aria-labelledby={`${props.id}-heading`}>
-      <div class={styles.heading}
+      {/* 見た目だけ隠しても、aria-labelledby の参照先として残す。開閉のボタンは隠すと見えない所で Tab が止まるので、collapsible では隠さない。 */}
+      <div class={props.hideHeading && !props.collapsible ? `${styles.heading} ${styles.srOnly}` : styles.heading}
         role="heading" aria-level={props.headingLevel ?? 3} id={`${props.id}-heading`}
       >
         <Show when={props.collapsible} else={
