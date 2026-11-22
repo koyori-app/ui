@@ -23,6 +23,7 @@ function remove(label: string) {
   <div style="display: grid; gap: 12px; justify-items: start">
     <p>ステータス: <Badge label="進行中" dot-color="var(--koyori-color-accent)" /> <Badge label="完了" dot-color="#23704b" size="md" /></p>
     <p>ラベル件数: <Badge :label="labels.length" /></p>
+    <p>重大度: <Badge label="High" tone="danger" appearance="outline" /> <Badge label="Low" appearance="outline" /> 解決: <Badge label="2 / 3" tone="danger" /> <Badge label="2 / 2" tone="success" /></p>
     <div ref="list" style="display: flex; flex-wrap: wrap; gap: 8px">
       <Tag v-for="label in labels" :key="label" :label="label" dot-color="var(--koyori-color-accent)" :on-remove="() => remove(label)" />
     </div>

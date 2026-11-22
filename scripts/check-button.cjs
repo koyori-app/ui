@@ -75,9 +75,91 @@ assert.match(readFileSync(resolve(root, 'packages/vue/src/generated/components/B
         assert.deepEqual([topLeft, bottomLeft, topRight, bottomRight], [index === 0, index === 0, index === 2, index === 2], `${framework}: 外側の角だけが丸い`);
       });
 
+      // tone="danger": ghost と tertiary の文字（tertiary は枠も）を危険の色に、hover の地を danger-subtle にする。
+      const token = name => page.evaluate(name => {
+        const probe = document.createElement('span');
+        probe.style.color = `var(${name})`;
+        document.body.append(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      }, name);
+      const open = async (id, selector) => {
+        await page.goto(`${base}/packages/${framework}/storybook-static/iframe.html?id=${id}&viewMode=story`);
+        await page.locator(`#storybook-root ${selector}`).first().waitFor();
+        await page.mouse.move(0, 0);
+        return page.locator(`#storybook-root ${selector}`).first();
+      };
+      const look = control => control.evaluate(el => {
+        const surface = getComputedStyle(el.firstElementChild);
+        return { color: getComputedStyle(el).color, background: surface.backgroundColor, border: surface.borderTopColor };
+      });
+      const settled = async control => { await page.waitForTimeout(250); return look(control); };
+      const transparent = 'rgba(0, 0, 0, 0)';
+
+      let control = await open('components-button--ghost-danger', 'button');
+      assert.equal(await control.getAttribute('data-tone'), 'danger');
+      assert.deepEqual(await look(control), { color: await token('--koyori-color-danger'), background: transparent, border: transparent }, `${framework}: ghost danger`);
+      await control.hover();
+      assert.equal((await settled(control)).background, await token('--koyori-color-danger-subtle'), `${framework}: ghost danger hover`);
+      await page.mouse.move(0, 0);
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(300); // フォーカスの輪は透明から締まって現れる。
+      assert.equal(await control.evaluate(el => getComputedStyle(el).outlineColor), await token('--koyori-focus-color'), `${framework}: focus ring is unchanged`);
+
+      control = await open('components-button--tertiary-danger', 'button');
+      assert.deepEqual(await look(control), { color: await token('--koyori-color-danger'), background: transparent, border: await token('--koyori-color-danger') }, `${framework}: tertiary danger`);
+      await control.hover();
+      assert.equal((await settled(control)).background, await token('--koyori-color-danger-subtle'), `${framework}: tertiary danger hover`);
+
+      // 無効では赤を残さない。
+      control = await open('components-button--ghost-danger-disabled', 'button');
+      assert.deepEqual(await look(control), { color: await token('--koyori-color-text-disabled'), background: await token('--koyori-color-surface-disabled'), border: transparent }, `${framework}: disabled danger keeps no red`);
+
+      // primary・secondary・danger では tone は効かない。
+      control = await open('components-button--primary-with-danger-tone', 'button');
+      assert.deepEqual(await look(control), { color: await token('--koyori-color-on-accent'), background: await token('--koyori-color-accent'), border: transparent }, `${framework}: tone is ignored on primary`);
+
+      // tone を省くと data-tone を出さず、今の見た目のまま。
+      control = await open('components-button--ghost', 'button');
+      assert.equal(await control.getAttribute('data-tone'), null);
+      assert.equal(await control.evaluate(el => getComputedStyle(el).color), await token('--koyori-color-text-secondary'));
+      const tertiary = await look(await open('components-button--tertiary', 'button'));
+
+      // href: 同じクラスと data-* の <a>。type と disabled は出さない。_blank では rel を補う。
+      control = await open('components-button--link', 'a');
+      assert.equal(await page.locator('#storybook-root button').count(), 0, `${framework}: href renders no <button>`);
+      assert.equal(await control.getAttribute('href'), 'https://github.com/koyori-app/ui');
+      assert.equal(await control.getAttribute('target'), '_blank');
+      assert.equal(await control.getAttribute('rel'), 'noopener noreferrer');
+      assert.equal(await control.getAttribute('data-variant'), 'tertiary');
+      for (const name of ['type', 'disabled', 'aria-disabled', 'role', 'tabindex']) assert.equal(await control.getAttribute(name), null, `${framework}: link has no ${name}`);
+      assert.deepEqual(await look(control), tertiary, `${framework}: a link looks like the button`);
+      assert.equal(await control.evaluate(el => getComputedStyle(el).textDecorationLine), 'none');
+      await control.hover();
+      assert.equal((await settled(control)).background, await token('--koyori-color-accent-subtle'), `${framework}: link hover`);
+      await page.mouse.move(0, 0);
+      await page.keyboard.press('Tab');
+      assert(await control.evaluate(el => el === document.activeElement && el.matches(':focus-visible')), `${framework}: link takes focus`);
+      assert.equal(await control.evaluate(el => getComputedStyle(el).outlineWidth), '2px');
+
+      // 無効のリンク: href を外し、aria-disabled と role="link" を付け、Tab で止まらない。見た目は無効のボタンと同じ。
+      control = await open('components-button--link-disabled', 'a');
+      assert.equal(await control.getAttribute('href'), null);
+      assert.equal(await control.getAttribute('aria-disabled'), 'true');
+      assert.equal(await control.getAttribute('role'), 'link');
+      assert.equal(await control.getAttribute('tabindex'), '-1');
+      const disabledLook = { color: await token('--koyori-color-text-disabled'), background: await token('--koyori-color-surface-disabled'), border: transparent };
+      assert.deepEqual(await look(control), disabledLook, `${framework}: disabled link`);
+      await control.hover();
+      assert.deepEqual(await settled(control), disabledLook, `${framework}: disabled link has no hover`);
+      await page.mouse.move(0, 0);
+      await page.keyboard.press('Tab');
+      assert.equal(await control.evaluate(el => el === document.activeElement), false, `${framework}: disabled link is skipped by Tab`);
+
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: Button narrow row, full width and ButtonGroup layout passed`);
+      console.log(`${framework}: Button narrow row, full width, ButtonGroup layout, danger tone and links passed`);
     }
   } finally {
     await browser?.close();

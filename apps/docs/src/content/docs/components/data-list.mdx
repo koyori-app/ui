@@ -28,6 +28,7 @@ import DataListPreview from '../../../components/DataListPreview.astro';
 | `open` | `boolean` | 未指定 | 外側で管理する開閉状態 |
 | `onOpenChange` | `(open: boolean) => void` | — | 開閉操作の通知 |
 | `headingLevel` | `2` 〜 `6` | `3` | 見出しの階層 |
+| `hideHeading` | `boolean` | `false` | 見出しを見た目だけ隠す。`collapsible` のときは効かない |
 | `status` | `'ready'` / `'empty'` / `'loading'` / `'error'` | `'ready'` | 一覧の状態 |
 | `message` | `string` | 状態ごとの文言 | 空・読み込み中・エラーの説明を上書き |
 | `onRetry` | `() => void` | — | エラー表示に再試行ボタンを追加 |
@@ -41,6 +42,8 @@ import DataListPreview from '../../../components/DataListPreview.astro';
 | 子要素 | `DataListRow` | — | 表示する行。Vue は既定スロット |
 
 `collapsible` が無効なら常に開きます。折り畳みは DOM を保持するため、セル内の入力や Picker の選択は残ります。
+表の上に見出しを出さない画面では `hideHeading` を使います。見出しは見た目だけ隠れ、区画とテーブルの読み上げ名、見出しの移動には残ります。
+`collapsible` のときは見出しに開閉のボタンがあり、隠すと見えない場所で Tab が止まるので、`hideHeading` は効きません。
 `open` を指定した場合は `onOpenChange` でアプリ側の値も更新してください。
 Vue では `:on-open-change="handler"`、React では `onOpenChange={handler}` で渡します。
 

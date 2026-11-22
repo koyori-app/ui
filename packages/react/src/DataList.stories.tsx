@@ -36,6 +36,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Collapsed: Story = { args: { defaultOpen: false } };
 export const Plain: Story = { args: { collapsible: false } };
+// 見出しを見た目だけ隠す。表の名前と読み上げは見出しから取る。collapsible では効かない。
+export const HiddenHeading: Story = { args: { collapsible: false, hideHeading: true } };
 export const Empty: Story = { args: { status: 'empty', count: 0 } };
 export const Loading: Story = { args: { status: 'loading', count: 0 }, render: args => <DataList {...args} /> };
 export const LoadingMore: Story = { args: { status: 'loading', count: 20 } };

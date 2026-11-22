@@ -1,0 +1,106 @@
+@import '../tokens.css';
+
+.root {
+  /* 1 段の字下げ = 開閉の矢印の幅 + 間。葉のアイコンが親のラベルの頭に揃う。 */
+  --tree-indent: calc(14px + var(--koyori-space-sm));
+  min-width: 0;
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+}
+
+.heading {
+  padding: var(--koyori-space-sm) var(--koyori-space-lg) var(--koyori-space-xs);
+  color: var(--koyori-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.list {
+  --highlight-opacity: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.item {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--koyori-space-sm);
+  min-height: var(--koyori-control-height-sm);
+  padding: var(--koyori-space-xs) var(--koyori-space-md);
+  /* 字下げは深さから部品が style で書く（padding-inline-start）。 */
+  border-radius: var(--koyori-radius-md);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 子を持つ節は場所の見出しなので、葉より控えめにする。 */
+.item[data-branch='true'] { color: var(--koyori-color-text-secondary); }
+
+.item[aria-selected='true'] {
+  background: var(--koyori-color-surface-hover);
+  color: var(--koyori-color-text);
+  font-weight: 500;
+}
+
+.item:active:not([aria-disabled='true']) { background: var(--koyori-color-surface-active); }
+
+/* フォーカスは入れ物にあり、いまの節に輪郭を出す。行が無いときだけ入れ物に既定の輪郭が出る。 */
+.list[aria-activedescendant]:focus-visible { outline: none; }
+
+.list:focus-visible .item[data-active='true'] {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(var(--koyori-focus-width) * -1);
+}
+
+.item[aria-disabled='true'] {
+  color: var(--koyori-color-text-disabled);
+  cursor: not-allowed;
+}
+
+.chevron,
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.chevron {
+  transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring);
+}
+
+.item[aria-expanded='false'] .chevron { transform: rotate(-90deg); }
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron { transition: none; }
+}
+
+/* 面の色は強制カラーで消えるので、選択・ホバー・フォーカスを輪郭で分ける。フォーカスは太さと色で、選択とホバーより後に書いて勝たせる。 */
+@media (forced-colors: active) {
+  @media (hover: hover) and (pointer: fine) {
+    .item:hover:not([aria-disabled='true']) { outline: 1px solid Highlight; outline-offset: -1px; }
+  }
+  .item[aria-selected='true'] { outline: 1px solid Highlight; outline-offset: -1px; color: Highlight; }
+  .item[aria-disabled='true'] { color: GrayText; }
+  .list:focus-visible .item.item[data-active='true'] { outline: var(--koyori-focus-width) solid CanvasText; outline-offset: calc(var(--koyori-focus-width) * -1); }
+}

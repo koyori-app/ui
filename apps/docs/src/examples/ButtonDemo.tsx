@@ -20,6 +20,11 @@ export default function ButtonDemo() {
           />
         ))}
       </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
+        <Button label="取り下げる…" variant="ghost" tone="danger" disabled={disabled} onClick={() => setClicks((count) => count + 1)} />
+        <Button label="取り下げる…" variant="tertiary" tone="danger" disabled={disabled} onClick={() => setClicks((count) => count + 1)} />
+        <Button label="GitHub で開く" variant="tertiary" href="https://github.com/koyori-app/ui" target="_blank" disabled={disabled} />
+      </div>
       <p>
         <label>
           <input type="checkbox" checked={disabled}

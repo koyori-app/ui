@@ -32,6 +32,16 @@
   font-weight: 400;
 }
 
+/* asterisk の印のとき、読み上げの名前に使う requiredText を見た目だけ隠す。 */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .description, .error {
   margin: 0;
   overflow-wrap: anywhere;

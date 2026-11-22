@@ -23,6 +23,9 @@ import ButtonPreview from '../../../components/ButtonPreview.astro';
 | `tertiary` | 枠線で区別したい操作。例: キャンセル |
 | `ghost` | ツールバーなどで控えめに置く操作。例: 詳細を表示 |
 
+`tone="danger"` は `ghost` と `tertiary` の文字（`tertiary` は枠も）を危険の色にします。「取り下げる」「外す」のように、塗りの `danger` ほど強調しない取り消し系の操作に使います。
+`primary`・`secondary`・`danger` では効きません。色だけに頼らず、ラベルにも結果が分かる語を入れてください。
+
 ## Props・コールバック
 
 | 名前 | 型 | 既定値 | 説明 |
@@ -33,6 +36,10 @@ import ButtonPreview from '../../../components/ButtonPreview.astro';
 | `variant` | `'primary' \| 'secondary' \| 'tertiary' \| 'ghost'` | `'primary'` | ボタンの種類 |
 | `disabled` | `boolean` | `false` | 操作を無効にする |
 | `type` | `'button' \| 'submit' \| 'reset'` | `'button'` | ネイティブ button の種類 |
+| `tone` | `'default' \| 'danger'` | `'default'` | 文字を危険の色にする。`ghost` と `tertiary` で効く |
+| `href` | `string` | — | 指定するとリンク（`a`）を出す。`type` は出さない |
+| `target` | `'_blank' \| '_self'` | — | リンクの開き先 |
+| `rel` | `string` | — | リンクの `rel`。`target="_blank"` で省くと `noopener noreferrer` を補う |
 | `onClick` | `() => void` | — | ボタンを実行したときに呼ぶ関数 |
 
 Vue では `:on-click="handler"`、React では `onClick={handler}` でコールバックを渡します。
@@ -66,4 +73,13 @@ React・Vue ともに、型でも `label` または `ariaLabel` の指定を必�
 - コンテナより長いラベルだけを折り返します。短いラベルは狭い行でも 1 字ずつ折れません。
 - OS の「動きを減らす」設定（`prefers-reduced-motion`）が有効なときは、縮小と色のアニメーションを停止します。
 
-ネイティブの `button` を使っています。ページ移動にはリンクを使い、`label` と `ariaLabel` の両方を空にしないでください。
+ネイティブの `button` を使っています。ページ移動には `href` を指定してリンクとして出し、`label` と `ariaLabel` の両方を空にしないでください。
+
+## リンク
+
+`href` を指定すると、同じ見た目の `a` を出します。別のサイトを開く操作など、ページを移動する操作に使います。
+
+- 通常・hover・押下・フォーカスの見た目はボタンと同じです。`Enter` で開きます（リンクなので `Space` では開きません）。
+- `disabled` のときは `href` を外して `aria-disabled="true"` と `role="link"` を付け、Tab 移動の対象から外します。見た目は無効のボタンと同じです。
+- `target="_blank"` で `rel` を省くと、`rel="noopener noreferrer"` を補います。別のタブで開くことはラベルかアイコンで伝えてください。
+- `ariaExpanded`・`ariaControls`・`ariaHasPopup`・`ariaPressed` はボタンのための属性なので、リンクには出しません。

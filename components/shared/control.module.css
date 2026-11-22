@@ -93,13 +93,31 @@
   --button-color: var(--koyori-color-text-secondary);
 }
 
+/* 赤い文字の操作（取り下げる・外すなど）。塗りの danger ほど強くしない。primary・secondary・danger では効かない。 */
+.button[data-tone='danger']:is([data-variant='ghost'], [data-variant='tertiary']) {
+  --button-hover-background: var(--koyori-color-danger-subtle);
+  --button-color: var(--koyori-color-danger);
+}
+
+.button[data-tone='danger'][data-variant='tertiary'] {
+  --button-border: var(--koyori-color-danger);
+}
+
+/* Button の href で出すリンク。下線は付けず、ボタンと同じ見た目にする。 */
+a.button {
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+/* 無効のリンクは disabled 属性を持てないので aria-disabled で見分ける。
+   aria-disabled の button（Calendar の月送りなど）は各部品が見た目を決めるため、a に限る。 */
 @media (hover: hover) and (pointer: fine) {
-  .button:hover:not(:disabled) .surface {
+  .button:hover:not(:disabled, a[aria-disabled='true']) .surface {
     background: var(--button-hover-background);
   }
 }
 
-.button:active:not(:disabled) .surface {
+.button:active:not(:disabled, a[aria-disabled='true']) .surface {
   background: var(--button-hover-background);
 }
 
@@ -108,18 +126,20 @@
   outline-offset: var(--koyori-focus-offset);
 }
 
-.button:disabled {
+.button:disabled,
+a.button[aria-disabled='true'] {
   color: var(--koyori-color-text-disabled);
   cursor: not-allowed;
 }
 
-.button:disabled .surface {
+.button:disabled .surface,
+a.button[aria-disabled='true'] .surface {
   border-color: transparent;
   background: var(--koyori-color-surface-disabled);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .button:active:not(:disabled) .surface {
+  .button:active:not(:disabled, a[aria-disabled='true']) .surface {
     transform: scale(var(--button-press-scale, 0.94));
     /* 押し込みは速く、戻りはばねに任せる。 */
     transition-duration: 80ms;

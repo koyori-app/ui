@@ -30,9 +30,11 @@ Field の中に Input・Textarea・Picker のいずれかを1つだけ置きま�
 | --- | --- | --- | --- |
 | `id` | `string` | 必須 | 中の入力欄に付ける id |
 | `label` | `string` | 必須 | 入力欄のラベル |
-| `description` | `string` | — | ラベルの下に表示する補足 |
+| `description` | `string` | — | 入力欄に関連付ける補足。既定ではラベルの下に表示する |
+| `descriptionPosition` | `'top' \| 'bottom'` | `'top'` | 補足の位置。`'top'` はラベルの下、`'bottom'` は入力欄の下（エラーの上）。どちらでも `aria-describedby` で関連付ける |
 | `error` | `string` | — | 入力欄の下に表示するエラー。指定すると入力欄を無効な値として伝える |
-| `requiredText` | `string` | `必須` | 必須表示の文言 |
+| `requiredText` | `string` | `必須` | 必須表示の文言。`requiredMark` が `'asterisk'` のときは読み上げだけに使う |
+| `requiredMark` | `'text' \| 'asterisk'` | `'text'` | 必須の印。`'text'` は `requiredText` を表示し、`'asterisk'` は `*` を表示する。`*` は読み上げず、Picker などの名前には `requiredText` を含める |
 | `required` | `boolean` | `false` | 入力を必須にし、ラベルに「必須」を表示する |
 
 ## Input・Textarea の Props

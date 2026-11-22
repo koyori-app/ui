@@ -25,6 +25,13 @@ import TagBadgePreview from '../../../components/TagBadgePreview.astro';
 | `size` | `'sm' \| 'md'` | `'sm'` | 文字と余白のサイズ |
 | `dotColor` | `string` | — | 装飾ドットの CSS 色。`var(--koyori-color-accent)` など。未指定・空文字で非表示 |
 
+Badge にだけ、次の色の Props があります。型 `BadgeTone` も公開エントリーから import できます。
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `tone` | `'neutral' \| 'danger' \| 'warning' \| 'success' \| 'info'` | `'neutral'` | 意味の色。`neutral` の `soft` は従来の見た目 |
+| `appearance` | `'soft' \| 'outline'` | `'soft'` | `soft` は淡い塗りと色の文字、`outline` は面の色の地に色の枠と文字 |
+
 Tag にだけ、次の Props があります。
 
 | 名前 | 型 | 既定値 | 説明 |
@@ -40,6 +47,9 @@ Tag 自身は削除・保存を行いません。通知を受けてアプリが�
 件数の単位・桁区切り・上限表示（例: `99+`）もアプリ側で整形します。Badge に自動の読み上げ通知はありません。
 件数だけの場合はプレビューの「ラベル件数」のように対象を添え、変更を通知する必要があれば利用側に `role="status"` を置きます。
 
+Badge の `tone` は色の意味を揃えるためのもので、何を `danger` にするかはアプリ側で決めます。色だけで伝えず、`High` や `2 / 3` のようにラベルにも書いてください。
+文字と地の対比は明るい表示と暗い表示の両方で 4.5:1 以上です。`outline` の `neutral` は枠が境界線の色、文字が補助の文字色です。
+
 ## 操作と見た目
 
 Tag 全体と Badge は通常のテキスト表示です。削除可能な Tag をリンクや別のボタンの中には入れないでください。
@@ -50,7 +60,7 @@ Tag 全体と Badge は通常のテキスト表示です。削除可能な Tag �
 
 長いラベルは省略せず親の幅で折り返します。文字・配色・角丸は共通トークンを使い、削除ボタンは既存 Button と同じ
 フォーカス枠・hover・押下の動きを使います。削除ボタンの操作領域は既定で 24 × 24px です。
-`prefers-reduced-motion: reduce` ではアニメーションを止め、強制カラーモードではドットの輪郭も表示します。
+`prefers-reduced-motion: reduce` ではアニメーションを止め、強制カラーモードではドットの輪郭と、`tone`・`appearance` を指定した Badge の枠も表示します。
 両フレームワークで SSR でき、Astro のデモは `client:load` で削除操作を有効にします。
 
 ## 検証
@@ -63,5 +73,5 @@ TAG_BADGE_TEST_PORT=16308 node scripts/check-tag-badge.cjs
 ```
 
 Playwright と Chromium、日本語フォント、Python 3 が必要です。既存の Playwright を使う場合は `PLAYWRIGHT_MODULE` を指定します。
-検証スクリプトは両フレームワークのサイズ・ドット・長いラベル・件数 0・削除通知・キーボード・フォーカス・axe と、
+検証スクリプトは両フレームワークのサイズ・ドット・色の種類と対比・長いラベル・件数 0・削除通知・キーボード・フォーカス・axe と、
 ビルド済み docs の初回 HTML・hydration 後の削除とフォーカス移動を確認します。

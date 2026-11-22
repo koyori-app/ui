@@ -8,6 +8,16 @@ const root = resolve(__dirname, '..');
 const storyPort = process.env.TAG_BADGE_TEST_PORT || '16308';
 const docsPort = process.env.TAG_BADGE_DOCS_PORT || '16318';
 const servers = [];
+// WCAG の相対輝度と対比。getComputedStyle の rgb() / rgba() を受ける。
+const channels = value => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+const luminance = value => {
+  const [r, g, b] = channels(value).map(c => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a, b) => {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+};
 let browser;
 
 async function serve(directory, port) {
@@ -45,7 +55,10 @@ async function serve(directory, port) {
       page.on('console', message => { if (['error', 'warning'].includes(message.type())) errors.push(message.text()); });
       const story = async (component, name) => {
         await page.goto(`${storyBase}/packages/${framework}/storybook-static/iframe.html?id=components-${component}--${name}&viewMode=story`);
-        await page.locator('#storybook-root [data-size]').waitFor();
+        await page.locator('#storybook-root [data-size]').first().waitFor();
+        // ライブラリは地を塗らない。React の Storybook には Vue の preview.css に当たるものが無く、
+        // 白い地に暗い配色の文字が載って axe の対比で落ちるため、利用側と同じく面の色を敷く。
+        await page.addStyleTag({ content: 'body { background: var(--koyori-color-surface); color: var(--koyori-color-text); }' });
       };
       const a11y = async selector => {
         // Keep our instance separate from the addon, which may replace window.axe.
@@ -53,6 +66,19 @@ async function serve(directory, port) {
         const violations = await page.evaluate(async selector => (await window.tagBadgeAxe.run(document.querySelector(selector))).violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })), selector);
         assert.deepEqual(violations, []);
       };
+      // CSS 変数を実際の色に解いて比べる。
+      const token = name => page.evaluate(name => {
+        const probe = document.createElement('span');
+        probe.style.color = `var(${name})`;
+        document.body.append(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      }, name);
+      const colorsOf = locator => locator.evaluate(el => {
+        const style = getComputedStyle(el);
+        return { color: style.color, background: style.backgroundColor, border: style.borderTopColor };
+      });
       const item = page.locator('#storybook-root [data-size]');
       const dot = item.locator(':scope > span > span[aria-hidden="true"]');
       for (const component of ['tag', 'badge']) {
@@ -62,7 +88,13 @@ async function serve(directory, port) {
         assert.equal(await page.getByRole('button').count(), 0, 'display-only labels have no button');
         assert.equal(await item.locator('[tabindex], [role]').count(), 0);
         const small = await item.boundingBox();
-        assert.equal(await item.evaluate(el => getComputedStyle(el).fontSize), '14px');
+        assert.equal(await item.evaluate(el => getComputedStyle(el).fontSize), '13px', 'sm follows --koyori-font-size-sm (0.8125rem)');
+        // tone と appearance を省くと、属性を出さず、今の見た目（境界線・accent-subtle の地・text の文字）のまま。
+        assert.equal(await item.getAttribute('data-tone'), null);
+        assert.equal(await item.getAttribute('data-appearance'), null);
+        assert.deepEqual(await colorsOf(item), {
+          color: await token('--koyori-color-text'), background: component === 'tag' ? 'rgba(0, 0, 0, 0)' : await token('--koyori-color-accent-subtle'), border: await token('--koyori-color-border'),
+        }, `${component}: the default look is unchanged`);
         await a11y('#storybook-root');
 
         await story(component, 'with-dot');
@@ -99,6 +131,39 @@ async function serve(directory, port) {
         assert.equal(await page.getByRole('button').count(), 0);
         await a11y('#storybook-root');
       }
+
+      // tone 5 種 × appearance 2 種。明るい表示と暗い表示の両方で、文字と地の対比が 4.5:1 以上。
+      await story('badge', 'tones');
+      const badges = page.locator('#storybook-root [data-size]');
+      assert.equal(await badges.count(), 10);
+      for (const theme of ['dark', 'light']) {
+        await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme);
+        const transparent = 'rgba(0, 0, 0, 0)';
+        const surface = await token('--koyori-color-surface');
+        for (const badge of await badges.all()) {
+          const tone = await badge.getAttribute('data-tone');
+          const appearance = await badge.getAttribute('data-appearance');
+          assert.equal(await badge.innerText(), tone, 'the label names the tone');
+          const actual = await colorsOf(badge);
+          const ratio = contrast(actual.color, actual.background);
+          assert(ratio >= 4.5, `${framework} ${theme} ${tone}/${appearance}: text contrast ${ratio.toFixed(2)} >= 4.5`);
+          const expected = tone === 'neutral'
+            ? (appearance === 'soft'
+              ? { color: await token('--koyori-color-text'), background: await token('--koyori-color-accent-subtle'), border: await token('--koyori-color-border') }
+              : { color: await token('--koyori-color-text-secondary'), background: surface, border: await token('--koyori-color-border') })
+            : (appearance === 'soft'
+              ? { color: await token(`--koyori-color-${tone}`), background: await token(`--koyori-color-${tone}-subtle`), border: transparent }
+              : { color: await token(`--koyori-color-${tone}`), background: surface, border: await token(`--koyori-color-${tone}`) });
+          assert.deepEqual(actual, expected, `${framework} ${theme} ${tone}/${appearance}: colors`);
+        }
+        await a11y('#storybook-root');
+      }
+      await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
+      await page.emulateMedia({ forcedColors: 'active' });
+      for (const badge of await badges.all()) {
+        assert.notEqual(await badge.evaluate(el => getComputedStyle(el).borderTopColor), 'rgba(0, 0, 0, 0)', 'forced colors draw the border of every tone');
+      }
+      await page.emulateMedia({ forcedColors: 'none' });
 
       await story('tag', 'removable');
       const remove = page.getByRole('button', { name: 'デザインを削除', exact: true });
@@ -164,7 +229,7 @@ async function serve(directory, port) {
     const islands = ssr.locator('.component-preview astro-island');
     assert.equal(await islands.count(), 2);
     for (const island of await islands.all()) {
-      assert.equal(await island.locator('[data-size]').count(), 7, 'both frameworks render the whole demo in initial HTML');
+      assert.equal(await island.locator('[data-size]').count(), 11, 'both frameworks render the whole demo in initial HTML');
       assert.equal(await island.locator('button[aria-label$="を削除"]').count(), 2);
       assert.equal(await island.getByText('2', { exact: true }).textContent(), '2');
     }
