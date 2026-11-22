@@ -16,6 +16,8 @@ const files: TreeNode[] = [
     { id: 'page', label: '+Page.vue', badge: { label: '0 / 1', tone: 'danger' } },
   ] },
 ];
+// 葉だけが消え、親の節は残る。
+const withoutPage = files.map(node => (node.id === 'pages' ? { ...node, children: [] } : node));
 
 function Selectable(args: TreeProps) {
   const [selected, setSelected] = useState<string | null>('state');
@@ -71,6 +73,7 @@ function LateNodesDemo(args: TreeProps) {
     <div style={{ width: 240 }}>
       <button type="button" onClick={() => setNodes(files)}>残りを読み込む</button>
       <button type="button" onClick={() => setNodes(files.slice(0, 1))}>最初の節だけにする</button>
+      <button type="button" onClick={() => setNodes(withoutPage)}>+Page.vue を消す</button>
       <Tree {...args} nodes={nodes} />
     </div>
   );

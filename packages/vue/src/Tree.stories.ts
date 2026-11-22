@@ -16,6 +16,8 @@ const files: TreeNode[] = [
     { id: 'page', label: '+Page.vue', badge: { label: '0 / 1', tone: 'danger' } },
   ] },
 ];
+// 葉だけが消え、親の節は残る。
+const withoutPage = files.map(node => (node.id === 'pages' ? { ...node, children: [] } : node));
 
 const meta = {
   title: 'Components/Tree', component: Tree,
@@ -64,10 +66,11 @@ export const ControlledExpansion: Story = {
 export const LateNodes: Story = {
   render: args => ({
     components: { Tree },
-    setup: () => ({ args, files, nodes: ref<TreeNode[]>(files.slice(0, 1)) }),
+    setup: () => ({ args, files, withoutPage, nodes: ref<TreeNode[]>(files.slice(0, 1)) }),
     template: `<div style="width: 240px">
       <button type="button" @click="nodes = files">残りを読み込む</button>
       <button type="button" @click="nodes = files.slice(0, 1)">最初の節だけにする</button>
+      <button type="button" @click="nodes = withoutPage">+Page.vue を消す</button>
       <Tree v-bind="args" :nodes="nodes" />
     </div>`,
   }),

@@ -75,19 +75,40 @@ export function treeTabStop(visible: VisibleTreeNode[], focusedId: string | null
   return visible[0]?.id ?? null;
 }
 
-/* フォーカスしていた節が外から隠れた・消えたときの移り先。見えている最も近い祖先、無ければ Tab の止まる先。 */
-export function treeFocusFallback(nodes: TreeNode[] | undefined, visible: VisibleTreeNode[], lostId: string, selectedId: string | null | undefined): string | null {
-  const path = (list: TreeNode[], ancestors: string[]): string[] | null => {
-    for (const node of list) {
-      if (node.id === lostId) return ancestors;
-      const found = path(node.children || [], [...ancestors, node.id]);
-      if (found) return found;
-    }
-    return null;
-  };
-  const ancestors = path(nodes || [], []) || [];
-  for (let index = ancestors.length - 1; index >= 0; index--) {
-    if (visible.some((row) => row.id === ancestors[index])) return ancestors[index];
+/* 描画する 1 行。tabStop と ariaSelected は木全体で 1 回だけ求め、行ごとに数え直さない。 */
+export interface TreeRow extends VisibleTreeNode {
+  tabStop: boolean;
+  /* 選択中の節は種類を問わず 'true'（無効にされた・節を指したときも選択の表示を消さない）。
+     ほかは選べる葉だけ 'false'、開閉だけの節と無効の葉は属性なし（APG）。 */
+  ariaSelected: 'true' | 'false' | undefined;
+}
+
+export function treeRows(visible: VisibleTreeNode[], focusedId: string | null | undefined, selectedId: string | null | undefined): TreeRow[] {
+  const tabStop = treeTabStop(visible, focusedId, selectedId);
+  return visible.map((row) => ({
+    ...row,
+    tabStop: row.id === tabStop,
+    ariaSelected: row.id === selectedId ? 'true' : row.expandable || row.node.disabled ? undefined : 'false',
+  }));
+}
+
+/* 見えている節の祖先の id。近い順。フォーカスした時点で覚えておき、節が消えた後の移り先に使う。 */
+export function treeAncestorIds(visible: VisibleTreeNode[], id: string): string[] {
+  const ancestors: string[] = [];
+  let parentId = visible.find((row) => row.id === id)?.parentId ?? null;
+  while (parentId !== null && !ancestors.includes(parentId)) {
+    ancestors.push(parentId);
+    const current: string = parentId;
+    parentId = visible.find((row) => row.id === current)?.parentId ?? null;
+  }
+  return ancestors;
+}
+
+/* フォーカスしていた節が外から隠れた・消えたときの移り先。ancestorIds（近い順）のうち見えている最も近いもの、無ければ Tab の止まる先。
+   祖先はフォーカスした時点のものを使う。更新後の nodes からは、消えた節の祖先を辿れないため。 */
+export function treeFocusFallback(visible: VisibleTreeNode[], ancestorIds: string[], selectedId: string | null | undefined): string | null {
+  for (const id of ancestorIds) {
+    if (visible.some((row) => row.id === id)) return id;
   }
   return treeTabStop(visible, null, selectedId);
 }

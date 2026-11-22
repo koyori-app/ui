@@ -210,6 +210,13 @@ async function serve(directory, port) {
       await page.locator('#storybook-root').getByRole('button', { name: '残りを読み込む' }).click();
       assert.deepEqual(await ids(), ['lib', 'composables', 'use-url', 'pages', 'page'], 'late branches open; the closed one stays closed');
       assert.equal(await node('lib').getAttribute('aria-expanded'), 'false');
+      // フォーカス中の葉だけが nodes から消え、親は残るなら、親へフォーカスを移す（Tab の止まる先の lib ではなく）。
+      await node('page').click();
+      await page.locator('#storybook-root').getByRole('button', { name: '+Page.vue を消す' }).evaluate(el => el.click());
+      await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 4);
+      assert.equal(await focused(), 'pages', `${framework}: focus moves to the remaining parent of a removed leaf`);
+      await page.locator('#storybook-root').getByRole('button', { name: '残りを読み込む' }).evaluate(el => el.click());
+      await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 5);
       // フォーカス中の節が外から消えたら、残った節へフォーカスを移す（祖先も消えたら Tab の止まる先）。
       await node('page').click();
       await page.locator('#storybook-root').getByRole('button', { name: '最初の節だけにする' }).evaluate(el => el.click());
@@ -235,6 +242,13 @@ async function serve(directory, port) {
       await collapseAll.click();
       await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 3);
       assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'すべて閉じる', 'focus outside the tree is left alone');
+      // 閉じるのと同じ処理の中でフォーカスが外へ移る（blur の後始末より先に描画が終わる）ときも奪わない。
+      await node('lib').click();
+      await node('state').click();
+      await collapseAll.evaluate(el => { el.click(); el.focus(); });
+      await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 3);
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'すべて閉じる', `${framework}: focus moved outside in the same task is left alone`);
       assert.deepEqual(errors, []);
       console.log(`${framework}: roles and aria, keyboard, click to toggle and select, badges, indentation, highlight, disabled, controlled expansion and axe passed.`);
 

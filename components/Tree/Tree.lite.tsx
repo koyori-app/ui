@@ -3,8 +3,8 @@ import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlig
 import highlights from '../shared/highlight.module.css';
 import Badge from '../Badge/Badge.lite';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
-import { defaultTreeExpanded, nextTreeFocus, treeFocusFallback, noTreeId, noTreeIds, toggleTreeExpanded, treeActivation, treeTabStop, visibleTreeNodes } from './tree';
-import type { TreeNode, VisibleTreeNode } from './tree';
+import { defaultTreeExpanded, nextTreeFocus, treeAncestorIds, treeFocusFallback, noTreeId, noTreeIds, toggleTreeExpanded, treeActivation, treeRows, visibleTreeNodes } from './tree';
+import type { TreeNode, TreeRow, VisibleTreeNode } from './tree';
 import styles from './tree.module.css';
 
 export interface TreeProps {
@@ -13,7 +13,7 @@ export interface TreeProps {
   /** 木の上に出す見出し（例「ファイル · 6」）。無ければ出さない。 */
   heading?: string;
   nodes: TreeNode[];
-  /** 選択中の節。省くと部品の中で持つ。 */
+  /** 選択中の節。省くと部品の中で持つ。子を持つ節や無効の節を指しても、選択の表示は出す。 */
   selectedId?: string | null;
   /** 開いている節（制御する場合）。 */
   expandedIds?: string[];
@@ -35,6 +35,8 @@ export default function Tree(props: TreeProps) {
     storedClosed: noTreeIds(),
     storedSelected: noTreeId(),
     focusedId: noTreeId(),
+    /* フォーカスした時点の祖先（近い順）。節が nodes から消えると、更新後のデータからは祖先を辿れない。 */
+    focusedAncestors: noTreeIds(),
     expanded(): string[] {
       return props.expandedIds ?? state.storedExpanded ?? defaultTreeExpanded(props.nodes, state.storedClosed);
     },
@@ -44,11 +46,15 @@ export default function Tree(props: TreeProps) {
     rows(): VisibleTreeNode[] {
       return visibleTreeNodes(props.nodes, state.expanded());
     },
-    tabStop(): string | null {
-      return treeTabStop(state.rows(), state.focusedId, state.selected());
+    items(): TreeRow[] {
+      return treeRows(state.rows(), state.focusedId, state.selected());
+    },
+    track(id: string) {
+      state.focusedId = id;
+      state.focusedAncestors = treeAncestorIds(state.rows(), id);
     },
     focusNode(id: string) {
-      state.focusedId = id;
+      state.track(id);
       const items = listRef?.querySelectorAll<HTMLElement>('[role="treeitem"]') || [];
       for (const item of Array.from(items)) if (item.getAttribute('data-tree-id') === id) item.focus();
     },
@@ -64,13 +70,16 @@ export default function Tree(props: TreeProps) {
     /* フォーカスしていた節が外から隠れた・消えたら、残った節へ移す。フォーカスが木の外にあれば奪わない。 */
     recoverFocus() {
       const lost = state.focusedId;
-      if (lost === null || state.rows().some((row) => row.id === lost)) return;
+      const visible = state.rows();
+      if (lost === null || visible.some((row) => row.id === lost)) return;
+      /* 普段は木の外へ出た blur が先に focusedId を消す。節が外されるのと同じ処理の中でフォーカスが外へ移ると、
+         blur の後始末より先にここへ来るので、外にあるフォーカスを奪わない。 */
       const active = document.activeElement;
       if (active && active !== document.body && !listRef?.contains(active)) {
         state.focusedId = null;
         return;
       }
-      const next = treeFocusFallback(props.nodes, state.rows(), lost, state.selected());
+      const next = treeFocusFallback(visible, state.focusedAncestors, state.selected());
       if (next === null) state.focusedId = null;
       else state.focusNode(next);
     },
@@ -118,21 +127,20 @@ export default function Tree(props: TreeProps) {
         onMouseEnter={(event) => enterHighlight(listRef, event)} onMouseLeave={() => leaveHighlight(listRef)}
       >
         <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
-        <For each={state.rows()}>
+        <For each={state.items()}>
           {(row) => (
             <div key={row.id} class={styles.item} role="treeitem" data-tree-id={row.id}
               data-branch={row.expandable ? 'true' : undefined}
               aria-level={row.level} aria-setsize={row.setSize} aria-posinset={row.posInSet}
               /* Vue は未指定の boolean を false にするため、文字列で出し、葉には属性ごと出さない。 */
               aria-expanded={row.expandable ? (row.expanded ? 'true' : 'false') : undefined}
-              /* 選べる葉は true / false。開閉だけの節と無効の葉は選べないので出さない（APG）。 */
-              aria-selected={row.expandable || row.node.disabled ? undefined : row.id === state.selected() ? 'true' : 'false'}
+              aria-selected={row.ariaSelected}
               aria-disabled={row.node.disabled ? 'true' : undefined}
-              tabIndex={row.id === state.tabStop() ? 0 : -1}
+              tabIndex={row.tabStop ? 0 : -1}
               title={row.node.title}
               style={{ paddingInlineStart: `calc(var(--koyori-space-md) + ${row.level - 1} * var(--tree-indent))` }}
               onMouseEnter={(event) => highlightItem(listRef, event.currentTarget)}
-              onFocus={(event) => { state.focusedId = row.id; highlightItem(listRef, event.currentTarget); }}
+              onFocus={(event) => { state.track(row.id); highlightItem(listRef, event.currentTarget); }}
               /* Tab で木の外へ出たら、フォーカスに付いてきた面を消す。木の中の移動では次の onFocus が動かす。 */
               onBlur={(event) => state.blur(event.currentTarget, event.relatedTarget)}
               onClick={() => { state.focusNode(row.id); state.activate(row.id); }}

@@ -14,7 +14,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { treeBranchIds, visibleTreeNodes, treeTabStop, treeFocusFallback, nextTreeFocus, toggleTreeExpanded, treeActivation, defaultTreeExpanded } = tree;
+const { treeBranchIds, visibleTreeNodes, treeTabStop, treeRows, treeAncestorIds, treeFocusFallback, nextTreeFocus, toggleTreeExpanded, treeActivation, defaultTreeExpanded } = tree;
 
 // src/          (branch)
 //   lib/        (branch)
@@ -65,13 +65,37 @@ assert.equal(treeTabStop(closedLib, 'a', 'c'), 'c', 'hidden focus falls back to 
 assert.equal(treeTabStop(closedLib, null, 'a'), 'src', 'hidden selection falls back to the first node');
 assert.equal(treeTabStop([], null, null), null);
 
-// treeFocusFallback: 隠れた・消えた節のフォーカスは、見えている最も近い祖先へ。祖先も無ければ Tab の止まる先。
+// treeRows: Tab の止まる先は 1 行だけ。aria-selected は選べる葉に true / false、節と無効の葉は無し。
+const rowsOf = (focusedId, selectedId) => treeRows(all, focusedId, selectedId).map(row => [row.id, row.tabStop, row.ariaSelected]);
+assert.deepEqual(rowsOf(null, 'a'), [
+  ['src', false, undefined], ['lib', false, undefined], ['a', true, 'true'], ['b', false, undefined], ['c', false, 'false'],
+  ['empty', false, undefined], ['d', false, 'false'], ['locked', false, undefined], ['e', false, 'false'],
+]);
+assert.deepEqual(treeRows(all, 'c', 'a').filter(row => row.tabStop).map(row => row.id), ['c'], 'the focused node is the only tab stop');
+// 選択中の節は、無効にされても・子を持つ節でも選択の表示を残す。
+assert.equal(treeRows(all, null, 'b').find(row => row.id === 'b').ariaSelected, 'true', 'a selected leaf keeps its selection after being disabled');
+assert.equal(treeRows(all, null, 'lib').find(row => row.id === 'lib').ariaSelected, 'true', 'a selected branch shows the selection');
+assert.deepEqual(treeRows([], null, null), []);
+
+// treeAncestorIds: 見えている行の親を近い順に。
+assert.deepEqual(treeAncestorIds(all, 'a'), ['lib', 'src']);
+assert.deepEqual(treeAncestorIds(all, 'src'), []);
+assert.deepEqual(treeAncestorIds(all, 'missing'), []);
+
+// treeFocusFallback: 隠れた・消えた節のフォーカスは、フォーカスした時点の祖先のうち見えている最も近いものへ。祖先も無ければ Tab の止まる先。
 const closedSrc = visibleTreeNodes(nodes, []);
-assert.equal(treeFocusFallback(nodes, closedLib, 'a', 'd'), 'lib', 'nearest visible ancestor');
-assert.equal(treeFocusFallback(nodes, closedSrc, 'a', 'd'), 'src', 'skips hidden ancestors');
-assert.equal(treeFocusFallback(nodes.slice(1), visibleTreeNodes(nodes.slice(1), []), 'a', 'd'), 'd', 'removed node: the selection');
-assert.equal(treeFocusFallback(nodes.slice(1), visibleTreeNodes(nodes.slice(1), []), 'a', null), 'empty', 'removed node: the first node');
-assert.equal(treeFocusFallback([], [], 'a', null), null);
+const aAncestors = treeAncestorIds(all, 'a');
+assert.equal(treeFocusFallback(closedLib, aAncestors, 'd'), 'lib', 'nearest visible ancestor');
+assert.equal(treeFocusFallback(closedSrc, aAncestors, 'd'), 'src', 'skips hidden ancestors');
+// 葉だけが nodes から消え、親は残る。更新後のデータに葉が無くても親へ戻す。
+const withoutA = [{ ...nodes[0], children: [{ ...nodes[0].children[0], children: [nodes[0].children[0].children[1]] }, nodes[0].children[1]] }, ...nodes.slice(1)];
+assert.equal(treeFocusFallback(visibleTreeNodes(withoutA, treeBranchIds(withoutA)), aAncestors, 'd'), 'lib', 'removed leaf: its remaining parent');
+// 間の親まで消え、その上の祖先は残る。
+const withoutLib = [{ ...nodes[0], children: [nodes[0].children[1]] }, ...nodes.slice(1)];
+assert.equal(treeFocusFallback(visibleTreeNodes(withoutLib, treeBranchIds(withoutLib)), aAncestors, 'd'), 'src', 'removed parent: the remaining ancestor');
+assert.equal(treeFocusFallback(visibleTreeNodes(nodes.slice(1), []), aAncestors, 'd'), 'd', 'removed node and ancestors: the selection');
+assert.equal(treeFocusFallback(visibleTreeNodes(nodes.slice(1), []), aAncestors, null), 'empty', 'removed node and ancestors: the first node');
+assert.equal(treeFocusFallback([], aAncestors, null), null);
 
 const move = (rows, current, key) => nextTreeFocus(rows, current, key);
 // ↑ ↓: 見えている節を順に。端で回らない。閉じた節の子は飛ばす。無効の節にもフォーカスは置ける。
