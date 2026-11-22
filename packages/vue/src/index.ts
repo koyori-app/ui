@@ -40,6 +40,7 @@ export { default as InlineEdit, type InlineEditProps } from './generated/compone
 export type { InlineEditCommitReason } from './generated/components/InlineEdit/inline-edit.js';
 export { default as Tag, type TagProps } from './generated/components/Tag/Tag.vue';
 export { default as Badge, type BadgeProps } from './generated/components/Badge/Badge.vue';
+export { type BadgeTone, type BadgeAppearance } from './generated/components/Badge/badge.js';
 export { default as SplitPane, type SplitPaneProps } from './generated/components/SplitPane/SplitPane.vue';
 export { default as Skeleton, type SkeletonProps } from './generated/components/Skeleton/Skeleton.vue';
 export { default as Alert, type AlertProps } from './generated/components/Alert/Alert.vue';
@@ -62,3 +63,5 @@ export { default as ThemeSwitch, type ThemeSwitchProps } from './generated/compo
 export { themeScript, setTheme, storedTheme, type Theme } from './generated/components/ThemePicker/theme.js';
 export { default as Combobox, type ComboboxProps } from './generated/components/Combobox/Combobox.vue';
 export { type ComboboxOption, type ComboboxSection, type ComboboxTag } from './generated/components/Combobox/combobox.js';
+export { default as Tree, type TreeProps } from './generated/components/Tree/Tree.vue';
+export { type TreeNode } from './generated/components/Tree/tree.js';

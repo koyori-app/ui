@@ -32,6 +32,30 @@
   background: transparent;
 }
 
+/* Badge の色。tone を省くか neutral の soft は上の既定の見た目のまま。 */
+.root[data-tone='danger'] { --label-tone: var(--koyori-color-danger); --label-tone-subtle: var(--koyori-color-danger-subtle); }
+.root[data-tone='warning'] { --label-tone: var(--koyori-color-warning); --label-tone-subtle: var(--koyori-color-warning-subtle); }
+.root[data-tone='success'] { --label-tone: var(--koyori-color-success); --label-tone-subtle: var(--koyori-color-success-subtle); }
+.root[data-tone='info'] { --label-tone: var(--koyori-color-info); --label-tone-subtle: var(--koyori-color-info-subtle); }
+
+.root[data-tone]:not([data-tone='neutral']) {
+  border-color: transparent;
+  background: var(--label-tone-subtle);
+  color: var(--label-tone);
+}
+
+.root[data-appearance='outline'] {
+  border-color: var(--koyori-color-border);
+  background: var(--koyori-color-surface);
+  color: var(--koyori-color-text-secondary);
+}
+
+.root[data-appearance='outline'][data-tone]:not([data-tone='neutral']) {
+  border-color: var(--label-tone);
+  background: var(--koyori-color-surface);
+  color: var(--label-tone);
+}
+
 .content {
   display: inline-flex;
   align-items: center;
@@ -47,4 +71,6 @@
 
 @media (forced-colors: active) {
   .dot { outline: 1px solid CanvasText; }
+  /* 透明にした枠も描き、塗りが消えても形が分かるようにする。 */
+  .root[data-tone], .root[data-appearance] { border-color: CanvasText; }
 }

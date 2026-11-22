@@ -1,0 +1,87 @@
+---
+title: Tree
+description: ファイルの一覧などの階層を開閉し、1 つの節を選ぶ木。
+---
+
+import TreePreview from '../../../components/TreePreview.astro';
+
+`Tree` は、ディレクトリとファイルのような階層を表示し、葉を 1 つ選ぶ部品です。
+子を持つ節は押すと開閉し、葉は押すと選択します。行の右に件数などの `Badge` を出せます。
+
+## プレビュー
+
+ファイルを選ぶと、アプリ側で選択中の節を更新します。ディレクトリを押すと開閉します。
+
+<TreePreview />
+
+## 基本の使い方
+
+```tsx
+// React
+<Tree label="ファイル" heading="ファイル · 2" leafIcon="file" selectedId={selected} onSelect={setSelected}
+  nodes={[{ id: 'src', label: 'src', children: [{ id: 'src/a', label: 'a.ts', badge: { label: '2 / 3', tone: 'danger' } }] }]} />
+```
+
+```vue
+<!-- Vue -->
+<Tree label="ファイル" heading="ファイル · 2" leaf-icon="file" :selected-id="selected" :on-select="id => selected = id" :nodes="nodes" />
+```
+
+## Props
+
+`Tree` と `TreeProps`・`TreeNode` を各パッケージの公開エントリーから import できます。
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | 木の読み上げ名（`aria-label`） |
+| `heading` | `string` | — | 木の上に出す見出し。例「ファイル · 6」。無ければ出さない |
+| `nodes` | `TreeNode[]` | 必須 | 節の一覧 |
+| `selectedId` | `string \| null` | — | 選択中の節。省くと部品の中で持つ |
+| `expandedIds` | `string[]` | — | 開いている節。指定すると開閉を外から持つ |
+| `defaultExpandedIds` | `string[]` | 子を持つ節すべて | 最初に開いておく節。省くと、後から届いた節も含めて子を持つ節を開き、閉じた節だけを覚える |
+| `leafIcon` | `'file' \| 'none'` | `'none'` | 葉の前に出すアイコン |
+| `onSelect` | `(id: string) => void` | — | 葉を選んだときに呼ぶ |
+| `onExpandedChange` | `(ids: string[]) => void` | — | 開閉したときに、開いている節の一覧で呼ぶ |
+
+`TreeNode` は次の形です。
+
+| 名前 | 型 | 説明 |
+| --- | --- | --- |
+| `id` | `string` | 必須。木の中で一意 |
+| `label` | `string` | 必須。行に出す名前。長いと末尾を省略する |
+| `title` | `string` | 省略したラベルの全体など。`title` 属性に出す |
+| `children` | `TreeNode[]` | あれば開閉できる節（空の配列でも）。無ければ葉 |
+| `badge` | `{ label: string \| number; tone?: BadgeTone }` | 行の右に出す `Badge`（`soft`・`sm`） |
+| `disabled` | `boolean` | 選択と開閉をしない。フォーカスは置ける |
+
+Vue は `:on-select="handler"`、React は `onSelect={handler}` でコールバックを渡します。
+`badge` の色の意味（何を `danger` にするか）はアプリ側で決め、色だけでなくラベルでも伝えてください。
+
+## 操作と見た目
+
+[W3C の Tree View パターン](https://www.w3.org/WAI/ARIA/apg/patterns/treeview/)に合わせています。
+
+- 見えている節を `role="tree"` の下に `role="treeitem"` で 1 段に並べ、深さを `aria-level`、兄弟の中の位置を `aria-setsize` と `aria-posinset` で伝えます。字下げは深さから計算します。
+- `aria-expanded` は子を持つ節だけに付けます。選択中の節には `aria-selected="true"` を付けます。
+- Tab で木に入ると、フォーカスは 1 つの節だけに置かれます（選択中の節、無ければ先頭）。
+- `↓` `↑` で見えている節を移動し、端では止まります。閉じた節の子は飛ばします。
+- `→` は閉じた節を開き、開いた節では最初の子へ移ります。`←` は開いた節を閉じ、それ以外では親へ移ります。
+- `Home` `End` で先頭と末尾へ移ります。`Enter` と `Space` は押したときと同じで、節は開閉、葉は選択です。
+- ホバーの背景は Dropdown と同じく、マウスが入った位置から広がって項目の間を移動します。選択中の節は面の色を変えます。
+- `prefers-reduced-motion: reduce` では矢印の回転とホバーの動きを止めます。強制カラーモードでは選択中の節に輪郭を付けます。
+- 両フレームワークで SSR でき、Astro のデモは `client:load` で操作を有効にします。
+
+## 検証
+
+```sh
+pnpm typecheck
+pnpm build-storybook
+pnpm build:docs
+node scripts/check-tree-logic.cjs
+TREE_TEST_PORT=16340 node scripts/check-tree.cjs
+```
+
+`check-tree-logic.cjs` はブラウザーなしで、見えている節の並びとキーごとの移動先を確かめます（CI でも回します）。
+`check-tree.cjs` は Playwright と Chromium、Python 3 が必要です。既存の Playwright を使う場合は `PLAYWRIGHT_MODULE` を指定します。
+両フレームワークの role と aria の属性、キーボード操作、クリックでの開閉と選択、`badge` の表示、axe と、
+ビルド済み docs の初回 HTML を確かめます。

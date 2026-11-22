@@ -64,6 +64,7 @@ export default defineConfig({
             { label: 'Field・Input・Textarea', slug: 'components/field' },
             { label: 'Toaster', slug: 'components/toaster' },
             { label: 'Tooltip', slug: 'components/tooltip' },
+            { label: 'Tree', slug: 'components/tree' },
           ],
         },
         {

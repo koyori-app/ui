@@ -20,6 +20,11 @@ const variants = ['primary', 'secondary', 'tertiary', 'ghost'] as const;
         :on-click="() => clicks++"
       />
     </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px">
+      <Button label="取り下げる…" variant="ghost" tone="danger" :disabled="disabled" :on-click="() => clicks++" />
+      <Button label="取り下げる…" variant="tertiary" tone="danger" :disabled="disabled" :on-click="() => clicks++" />
+      <Button label="GitHub で開く" variant="tertiary" href="https://github.com/koyori-app/ui" target="_blank" :disabled="disabled" />
+    </div>
     <p><label><input v-model="disabled" type="checkbox" /> 無効にする</label></p>
     <p role="status">クリック回数: {{ clicks }}</p>
   </div>

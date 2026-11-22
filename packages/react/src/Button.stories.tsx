@@ -10,6 +10,7 @@ const meta = {
       control: 'radio',
       options: ['primary', 'secondary', 'tertiary', 'ghost', 'danger'],
     },
+    tone: { control: 'radio', options: ['default', 'danger'] },
   },
 } satisfies Meta<typeof Button>;
 
@@ -62,3 +63,14 @@ export const LongLabelNarrow: Story = {
   args: { label: 'このタスクと関連するサブタスクをすべて削除する', variant: 'danger' },
   render: (args) => <div style={{ width: 200 }}><Button {...args} /></div>,
 };
+
+// 赤い文字の操作（取り下げる・外すなど）。ghost と tertiary で効き、塗りの danger より控えめ。
+export const GhostDanger: Story = { args: { label: '取り下げる…', variant: 'ghost', tone: 'danger' } };
+export const TertiaryDanger: Story = { args: { label: '取り下げる…', variant: 'tertiary', tone: 'danger' } };
+export const GhostDangerDisabled: Story = { args: { label: '取り下げる…', variant: 'ghost', tone: 'danger', disabled: true } };
+// primary・secondary・danger では tone は効かない。
+export const PrimaryWithDangerTone: Story = { args: { label: '保存', variant: 'primary', tone: 'danger' } };
+
+// href があるとリンク（<a>）を出す。見た目はボタンと同じ。
+export const Link: Story = { args: { label: 'GitHub で開く', variant: 'tertiary', href: 'https://github.com/koyori-app/ui', target: '_blank' } };
+export const LinkDisabled: Story = { args: { label: 'GitHub で開く', variant: 'tertiary', href: 'https://github.com/koyori-app/ui', disabled: true } };

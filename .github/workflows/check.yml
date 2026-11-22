@@ -55,3 +55,6 @@ jobs:
 
       - name: SidebarLink の押したときの縮みと選ばれたアイコンの跳ねが無いこと
         run: node scripts/check-sidebar-link.cjs
+
+      - name: Tree の見えている節の並び・キーの移動先
+        run: node scripts/check-tree-logic.cjs
