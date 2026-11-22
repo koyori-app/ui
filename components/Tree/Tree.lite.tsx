@@ -33,6 +33,8 @@ export default function Tree(props: TreeProps) {
   /* いまの節が最後に見えていたときの祖先（近い順）。節が nodes から消えると、今の nodes からは親を辿れないため。
      描画の後に毎回作り直す。Vue の生成物は初期値を落として ref(null) にするので、null は空として読む。 */
   let trailRef = useRef<string[] | null>(null);
+  /* 直前の描画でのいまの節と、その並びの中の位置（rows の添字）。木の外では null。 */
+  let placeRef = useRef<{ id: string; index: number } | null>(null);
   const state = useStore({
     /* defaultExpandedIds があればそこから開閉を持つ。無ければ閉じた節だけを持ち、後から届いた節も開いて出す。 */
     storedExpanded: props.defaultExpandedIds ?? null,
@@ -68,6 +70,8 @@ export default function Tree(props: TreeProps) {
        行は :focus-visible にならないので、面は動かさずに置く（キー操作で帯だけが遅れて見えないように）。 */
     reveal() {
       requestAnimationFrame(() => {
+        /* 待つ間に木を出ていたら動かさない（leave() で消した面を出し直さない）。 */
+        if (document.activeElement !== listRef) return;
         const row = state.activeRow();
         row?.scrollIntoView({ block: 'nearest' });
         if (row) highlightItem(listRef, row, true);
@@ -82,20 +86,28 @@ export default function Tree(props: TreeProps) {
       /* ウィンドウを切り替えたときは、フォーカスは入れ物のまま。戻ったときに続けられるよう覚えておく。 */
       if (document.activeElement === listRef) return;
       state.cursorId = null;
+      placeRef = null;
       leaveHighlight(listRef);
     },
     leaveHover() {
       leaveHighlight(listRef, document.activeElement === listRef && listRef?.matches(':focus-visible') ? state.activeRow() : null);
     },
     /* 描画の後に、求め直したいまの節を cursorId に書き戻し、控えを作り直す。
-       書くのは中身が変わったときだけなので、描画し直しは 1 回で止まる。 */
+       書くのは中身が変わったときだけなので、描画し直しは 1 回で止まる。
+       空になると cursorId は null になるが、フォーカスが入れ物に残っていれば、節が戻った描画でいまの節を取り直す。 */
     settle() {
-      if (state.cursorId === null) return;
+      const focused = document.activeElement === listRef;
+      if (state.cursorId === null && !focused) return;
       const current = state.activeId();
-      if (current !== state.cursorId) {
-        state.cursorId = current;
-        if (current !== null && document.activeElement === listRef) state.reveal();
-      }
+      /* id が同じでも、並べ替えや上への追加で行の位置が変わったら寄せ直す（面とスクロールを付いていかせる）。 */
+      const index = current === null ? -1 : state.rows().findIndex((row) => row.id === current);
+      const shifted = placeRef !== null && placeRef.id === current && placeRef.index !== index;
+      const changed = current !== state.cursorId;
+      if (changed) state.cursorId = current;
+      if ((changed || shifted) && current !== null && focused) state.reveal();
+      if (current === null) {
+        if (placeRef !== null) placeRef = null;
+      } else if (placeRef === null || placeRef.id !== current || placeRef.index !== index) placeRef = { id: current, index };
       const trail = current === null ? noTreeIds() : treeAncestorIds(state.rows(), current);
       if (!sameTreeIds(trailRef ?? noTreeIds(), trail)) trailRef = trail;
     },

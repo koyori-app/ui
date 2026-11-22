@@ -79,6 +79,14 @@ async function serve(directory, port) {
       };
       // スクロールは整数 px に丸まるので、行の端が 1px 未満はみ出すのは見えているとみなす。
       const inView = id => node(id).evaluate(el => { const r = el.getBoundingClientRect(); return r.top > -1 && r.bottom < innerHeight + 1; });
+      // ホバーの面が出ていて、その行の位置にあるか。
+      const highlightOn = id => page.waitForFunction(id => {
+        const list = document.querySelector('#storybook-root [role="tree"]');
+        const row = list.querySelector(`[data-tree-id="${id}"]`);
+        const style = getComputedStyle(list);
+        return style.getPropertyValue('--highlight-opacity').trim() === '1'
+          && Math.abs(parseFloat(style.getPropertyValue('--highlight-y')) - (row.getBoundingClientRect().top - list.getBoundingClientRect().top)) < 1;
+      }, id, { timeout: 2000 });
       // 外からの更新の検査は 1 件ずつ結果を集め、最後にまとめて落とす（どの更新で落ちるかを全部見るため）。
       const failures = [];
       const scenario = async (name, run) => {
@@ -92,11 +100,14 @@ async function serve(directory, port) {
         await page.keyboard.press('Tab');
         for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
         assert.equal(await active(), 'b');
+        await highlightOn('b');
         await push('並びを回す');
         assert.deepEqual(await ids(), ['b', 'c', 'src', 'lib', 'a']);
         assert.equal(await active(), 'b', 'the active node stays');
         assert.equal(await inTree(), true, 'focus stays in the tree');
         assert.equal(await tabStops(), 1, 'T10: one tab stop');
+        // id が同じで位置だけ変わっても、面はいまの行へ付いていく。
+        await highlightOn('b');
         await press('ArrowDown', 'c');
       });
       await scenario('T2 reorder moves other rows', async () => {
@@ -132,6 +143,11 @@ async function serve(directory, port) {
         assert.equal(await tabStops(), 0, 'T10: no tab stop without rows');
         await push('元に戻す');
         assert.equal(await tabStops(), 1, 'T10: one tab stop again');
+        assert.equal(await active(), 'src');
+        // キーを挟まずに並べ替えても、戻ったときのいまの節（src）のまま。先頭（b）へ動かない。
+        await push('並びを回す');
+        assert.equal(await active(), 'src', 'the active node is taken back after refilling');
+        await highlightOn('src');
         await press('ArrowDown', 'lib');
       });
       await scenario('T5 focus outside is left alone', async () => {
@@ -181,6 +197,22 @@ async function serve(directory, port) {
         await node('url').click();
         await press('ArrowDown', 'url-test');
         assert.notEqual(await node('url-test').evaluate(el => getComputedStyle(el).outlineStyle), 'none');
+      });
+      await scenario('T11 a pending reveal does not bring the highlight back after leaving', async () => {
+        await story('default');
+        await page.keyboard.press('Tab');
+        await frame();
+        // キーで寄せる処理を積んだ同じタスクの中で木を出る（素早い Tab と同じ順）。
+        await page.evaluate(() => {
+          const list = document.querySelector('#storybook-root [role="tree"]');
+          const outside = document.createElement('button');
+          outside.textContent = '木の外';
+          document.body.append(outside);
+          list.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+          outside.focus();
+        });
+        await frame();
+        assert.equal(await tree.evaluate(el => getComputedStyle(el).getPropertyValue('--highlight-opacity').trim()), '0');
       });
       if (failures.length) console.error(failures.join('\n'));
 
