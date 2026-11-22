@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Field, Input, Textarea } from './index';
+import { Field, Input, Picker, Textarea } from './index';
 
 const meta = {
   title: 'Components/Field',
@@ -20,7 +20,17 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Required: Story = { args: { required: true } };
 export const Invalid: Story = { args: { required: true, error: 'タイトルを入力してください。' } };
-export const Disabled: Story = {
+// 必須の印を * にする。読み上げでは requiredText（既定「必須」）を使う。
+export const RequiredAsterisk: Story = { args: { required: true, requiredMark: 'asterisk' } };
+// Picker は aria-labelledby で requiredText を名前に含める。* は混ざらない。
+export const RequiredAsteriskPicker: Story = {
+  args: { id: 'team', label: '担当チーム', description: undefined, required: true, requiredMark: 'asterisk' },
+  render: (args) => (
+    <Field {...args}>
+      <Picker label="選んでください" items={[{ value: 'design', label: 'デザイン' }, { value: 'frontend', label: 'フロントエンド' }]} />
+    </Field>
+  ),
+};export const Disabled: Story = {
   render: (args) => <Field {...args}><Input value="請求書を送る" disabled /></Field>,
 };
 export const WithTextarea: Story = {

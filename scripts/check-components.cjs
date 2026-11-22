@@ -100,11 +100,26 @@ let browser;
         const id = await input.getAttribute('id');
         assert.equal(await page.locator('label').getAttribute('for'), id);
         assert.equal(await input.getAttribute('aria-describedby'), `${id}-description`);
-        if (name === 'required') assert(await input.evaluate(el => el.required));
+        if (name === 'required') {
+          assert(await input.evaluate(el => el.required));
+          assert(await page.locator('#title-required').isVisible(), 'the text mark is the default');
+        }
         await page.locator('label').click();
         assert(await input.evaluate(el => el === document.activeElement));
       }
-      await story('field', 'invalid');
+      // requiredMark="asterisk": 見えるのは * だけ。${id}-required は見た目だけ隠した requiredText で、* は読み上げから外す。
+      await story('field', 'required-asterisk');
+      const asterisk = page.locator('label').getByText('*', { exact: true });
+      assert(await asterisk.isVisible());
+      assert.equal(await asterisk.getAttribute('aria-hidden'), 'true');
+      assert.equal(await page.locator('#title-required').textContent(), '必須');
+      assert.equal(await page.locator('#title-required').getAttribute('aria-hidden'), 'true');
+      const requiredBox = await page.locator('#title-required').boundingBox();
+      assert(requiredBox.width <= 1 && requiredBox.height <= 1, 'requiredText is visually hidden');
+      assert.equal(await page.getByRole('textbox', { name: 'タイトル', exact: true }).count(), 1, 'no * in the input name');
+      assert(await page.getByRole('textbox').evaluate(el => el.required));
+      await story('field', 'required-asterisk-picker');
+      assert(await page.getByRole('button', { name: '担当チーム 選んでください 必須', exact: true }).isVisible(), 'Picker reads requiredText, not *');      await story('field', 'invalid');
       const errorBorder = await shellStyle(page.getByRole('textbox'), 'borderTopColor');
       await story('dropdown', 'localized');
       assert.equal(await page.getByRole('menuitem').innerText(), 'No actions available');
