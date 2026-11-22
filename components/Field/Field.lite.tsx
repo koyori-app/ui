@@ -12,6 +12,8 @@ export interface FieldProps {
   requiredText?: string;
   /** How the required mark looks. 'asterisk' shows "*" and keeps requiredText for screen readers. Default 'text'. */
   requiredMark?: 'text' | 'asterisk';
+  /** Where the description goes: above the control (default) or below it. */
+  descriptionPosition?: 'top' | 'bottom';
   /** React: rendered element. Vue: use the aside slot. Shown at the end of the label row, e.g. a link. */
   aside?: any;
   children?: any;
@@ -58,10 +60,14 @@ export default function Field(props: FieldProps) {
         </label>
         <span class={styles.aside}><Slot name="aside" /></span>
       </div>
-      <Show when={props.description}>
+      {/* 位置を変えても id は同じなので、中の入力欄の aria-describedby はそのまま。 */}
+      <Show when={props.description && props.descriptionPosition !== 'bottom'}>
         <p id={`${props.id}-description`} class={styles.description}>{props.description}</p>
       </Show>
       {props.children}
+      <Show when={props.description && props.descriptionPosition === 'bottom'}>
+        <p id={`${props.id}-description`} class={styles.description}>{props.description}</p>
+      </Show>
       <p id={`${props.id}-error`} class={styles.error} aria-live="polite" aria-atomic="true">{props.error}</p>
     </div>
   );

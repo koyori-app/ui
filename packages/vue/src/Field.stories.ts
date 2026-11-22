@@ -30,7 +30,9 @@ export const RequiredAsteriskPicker: Story = {
     setup: () => ({ args, items: [{ value: 'design', label: 'デザイン' }, { value: 'frontend', label: 'フロントエンド' }] }),
     template: '<Field v-bind="args"><Picker label="選んでください" :items="items" /></Field>',
   }),
-};export const Disabled: Story = {
+};
+// 説明文を入力欄の下に出す。
+export const DescriptionBottom: Story = { args: { descriptionPosition: 'bottom', error: 'タイトルを入力してください。' } };export const Disabled: Story = {
   render: (args) => ({
     components: { Field, Input },
     setup: () => ({ args }),

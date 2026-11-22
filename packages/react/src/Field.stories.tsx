@@ -30,7 +30,9 @@ export const RequiredAsteriskPicker: Story = {
       <Picker label="選んでください" items={[{ value: 'design', label: 'デザイン' }, { value: 'frontend', label: 'フロントエンド' }]} />
     </Field>
   ),
-};export const Disabled: Story = {
+};
+// 説明文を入力欄の下に出す。
+export const DescriptionBottom: Story = { args: { descriptionPosition: 'bottom', error: 'タイトルを入力してください。' } };export const Disabled: Story = {
   render: (args) => <Field {...args}><Input value="請求書を送る" disabled /></Field>,
 };
 export const WithTextarea: Story = {

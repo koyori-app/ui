@@ -119,7 +119,17 @@ let browser;
       assert.equal(await page.getByRole('textbox', { name: 'タイトル', exact: true }).count(), 1, 'no * in the input name');
       assert(await page.getByRole('textbox').evaluate(el => el.required));
       await story('field', 'required-asterisk-picker');
-      assert(await page.getByRole('button', { name: '担当チーム 選んでください 必須', exact: true }).isVisible(), 'Picker reads requiredText, not *');      await story('field', 'invalid');
+      assert(await page.getByRole('button', { name: '担当チーム 選んでください 必須', exact: true }).isVisible(), 'Picker reads requiredText, not *');
+      // descriptionPosition="bottom": 説明文は入力欄の下。aria-describedby は同じ。
+      await story('field', 'description-bottom');
+      const bottomInput = page.getByRole('textbox');
+      const description = page.locator('#title-description');
+      assert.equal(await bottomInput.getAttribute('aria-describedby'), 'title-description title-error');
+      assert((await description.boundingBox()).y > (await bottomInput.boundingBox()).y, 'description below the control');
+      assert(await bottomInput.evaluate((el, d) => !!(el.compareDocumentPosition(d) & Node.DOCUMENT_POSITION_FOLLOWING), await description.elementHandle()), 'description follows the control in DOM order');
+      assert(await description.evaluate(el => !!(el.compareDocumentPosition(document.querySelector('#title-error')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'the error stays last');
+      await story('field', 'default');
+      assert(await page.locator('#title-description').evaluate(el => !!(el.compareDocumentPosition(document.querySelector('#storybook-root input')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'description above the control by default');      await story('field', 'invalid');
       const errorBorder = await shellStyle(page.getByRole('textbox'), 'borderTopColor');
       await story('dropdown', 'localized');
       assert.equal(await page.getByRole('menuitem').innerText(), 'No actions available');
