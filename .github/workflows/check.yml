@@ -58,3 +58,6 @@ jobs:
 
       - name: Tree の見えている節の並び・キーの移動先
         run: node scripts/check-tree-logic.cjs
+
+      - name: Field の requiredMark・descriptionPosition と DataList の hideHeading のサーバー描画
+        run: node scripts/check-field-data-list.cjs

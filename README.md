@@ -248,6 +248,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 Storybook をビルド済みなら、続けて中央寄せとブラウザーが閉じたときの同期をブラウザーで検証します（`DIALOG_TEST_FRAMEWORK` で片方に絞り、`DIALOG_TEST_PORT` でポート変更可能）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
+`node scripts/check-field-data-list.cjs` は、Field の `requiredMark`・`descriptionPosition` と DataList の `hideHeading` の DOM をブラウザーなしのサーバー描画で（`pnpm build` のあと。CI でも回します）、Storybook をビルド済みなら見た目・読み上げ・axe をブラウザーで検証します（`FIELD_DATA_LIST_TEST_PORT` でポート変更可能）。
 `node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
 `node scripts/check-button.cjs` は、Button が狭い行で縮まず折れないこと、広げると面も広がること、ButtonGroup のつながり、`tone="danger"` の色、`href` のリンクと無効のリンクを両フレームワークで検証します（`BUTTON_TEST_PORT` でポート変更可能）。
 Input の数値入力の契約と Vue / React の例は [Field・Input のドキュメント](apps/docs/src/content/docs/components/field.mdx#数値入力)を参照してください。

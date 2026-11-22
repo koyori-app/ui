@@ -32,7 +32,8 @@ export const RequiredAsteriskPicker: Story = {
   ),
 };
 // 説明文を入力欄の下に出す。
-export const DescriptionBottom: Story = { args: { descriptionPosition: 'bottom', error: 'タイトルを入力してください。' } };export const Disabled: Story = {
+export const DescriptionBottom: Story = { args: { descriptionPosition: 'bottom', error: 'タイトルを入力してください。' } };
+export const Disabled: Story = {
   render: (args) => <Field {...args}><Input value="請求書を送る" disabled /></Field>,
 };
 export const WithTextarea: Story = {
