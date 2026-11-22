@@ -54,6 +54,7 @@ export const ControlledExpansion: Story = {
     components: { Tree },
     setup: () => ({ args, expanded: ref<string[]>(['composables']) }),
     template: `<div style="width: 240px">
+      <button type="button" @click="expanded = []">すべて閉じる</button>
       <Tree v-bind="args" :expanded-ids="expanded" :on-expanded-change="ids => expanded = ids" />
       <output aria-label="開いている節">{{ expanded.join(',') }}</output>
     </div>`,
@@ -66,6 +67,7 @@ export const LateNodes: Story = {
     setup: () => ({ args, files, nodes: ref<TreeNode[]>(files.slice(0, 1)) }),
     template: `<div style="width: 240px">
       <button type="button" @click="nodes = files">残りを読み込む</button>
+      <button type="button" @click="nodes = files.slice(0, 1)">最初の節だけにする</button>
       <Tree v-bind="args" :nodes="nodes" />
     </div>`,
   }),

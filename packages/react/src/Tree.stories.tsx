@@ -31,6 +31,7 @@ function Controlled(args: TreeProps) {
   const [expanded, setExpanded] = useState<string[]>(['composables']);
   return (
     <div style={{ width: 240 }}>
+      <button type="button" onClick={() => setExpanded([])}>すべて閉じる</button>
       <Tree {...args} expandedIds={expanded} onExpandedChange={setExpanded} />
       <output aria-label="開いている節">{expanded.join(',')}</output>
     </div>
@@ -69,6 +70,7 @@ function LateNodesDemo(args: TreeProps) {
   return (
     <div style={{ width: 240 }}>
       <button type="button" onClick={() => setNodes(files)}>残りを読み込む</button>
+      <button type="button" onClick={() => setNodes(files.slice(0, 1))}>最初の節だけにする</button>
       <Tree {...args} nodes={nodes} />
     </div>
   );

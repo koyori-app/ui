@@ -67,11 +67,29 @@ export function visibleTreeNodes(nodes: TreeNode[] | undefined, expandedIds: str
   return rows;
 }
 
-/* Tab で入る 1 つの節。フォーカスしていた節が見えていればそれ、なければ選択中の節、なければ先頭。 */
+/* Tab で入る 1 つの節。木の中でフォーカスしている節が見えていればそれ、なければ選択中の節、なければ先頭。
+   部品は木の外へ出たときに focusedId を null に戻すので、入り直すと選択中の節に入る（APG）。 */
 export function treeTabStop(visible: VisibleTreeNode[], focusedId: string | null | undefined, selectedId: string | null | undefined): string | null {
   if (focusedId != null && visible.some((row) => row.id === focusedId)) return focusedId;
   if (selectedId != null && visible.some((row) => row.id === selectedId)) return selectedId;
   return visible[0]?.id ?? null;
+}
+
+/* フォーカスしていた節が外から隠れた・消えたときの移り先。見えている最も近い祖先、無ければ Tab の止まる先。 */
+export function treeFocusFallback(nodes: TreeNode[] | undefined, visible: VisibleTreeNode[], lostId: string, selectedId: string | null | undefined): string | null {
+  const path = (list: TreeNode[], ancestors: string[]): string[] | null => {
+    for (const node of list) {
+      if (node.id === lostId) return ancestors;
+      const found = path(node.children || [], [...ancestors, node.id]);
+      if (found) return found;
+    }
+    return null;
+  };
+  const ancestors = path(nodes || [], []) || [];
+  for (let index = ancestors.length - 1; index >= 0; index--) {
+    if (visible.some((row) => row.id === ancestors[index])) return ancestors[index];
+  }
+  return treeTabStop(visible, null, selectedId);
 }
 
 /* APG の Tree View のキー操作。端では回らない。無効の節もフォーカスは置けるが、開閉と選択はしない。

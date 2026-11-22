@@ -92,7 +92,12 @@
   .chevron { transition: none; }
 }
 
+/* 面の色は強制カラーで消えるので、選択・ホバー・フォーカスを輪郭で分ける。フォーカスは太さと色で、選択とホバーより後に書いて勝たせる。 */
 @media (forced-colors: active) {
-  .item[aria-selected='true'] { outline: 1px solid Highlight; color: Highlight; }
+  @media (hover: hover) and (pointer: fine) {
+    .item:hover:not([aria-disabled='true']) { outline: 1px solid Highlight; outline-offset: -1px; }
+  }
+  .item[aria-selected='true'] { outline: 1px solid Highlight; outline-offset: -1px; color: Highlight; }
   .item[aria-disabled='true'] { color: GrayText; }
+  .item.item:focus-visible { outline: var(--koyori-focus-width) solid CanvasText; outline-offset: calc(var(--koyori-focus-width) * -1); }
 }

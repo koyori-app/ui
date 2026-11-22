@@ -73,7 +73,7 @@ async function serve(directory, port) {
         .map(name => el.getAttribute(name)));
       assert.deepEqual(await attrs('lib'), ['1', '3', '1', 'true', null, '-1']);
       assert.deepEqual(await attrs('state'), ['2', '3', '1', null, 'true', '0'], 'leaves have no aria-expanded; the selection is the tab stop');
-      assert.deepEqual(await attrs('url-test'), ['2', '3', '3', null, null, '-1']);
+      assert.deepEqual(await attrs('url-test'), ['2', '3', '3', null, 'false', '-1'], 'a selectable leaf that is not selected has aria-selected="false" (APG)');
       assert.deepEqual(await attrs('pages'), ['1', '3', '3', 'true', null, '-1']);
       assert.equal(await items.evaluateAll(els => els.filter(el => el.getAttribute('tabindex') === '0').length), 1, 'one tab stop');
       assert.equal(await node('pages').getAttribute('title'), 'apps/frontend/src/pages/projects/@projectKey/tasks');
@@ -117,7 +117,7 @@ async function serve(directory, port) {
       await page.keyboard.press('Enter');
       assert.equal(await output.innerText(), 'page', 'Enter selects a leaf');
       assert.equal(await node('page').getAttribute('aria-selected'), 'true');
-      assert.equal(await node('state').getAttribute('aria-selected'), null);
+      assert.equal(await node('state').getAttribute('aria-selected'), 'false');
       await press('ArrowUp', 'pages');
       await page.keyboard.press(' ');
       assert.equal(await node('pages').getAttribute('aria-expanded'), 'false', 'Space on a branch toggles it');
@@ -126,6 +126,17 @@ async function serve(directory, port) {
       await page.keyboard.press('Tab');
       assert.equal(await focused(), null, 'Tab leaves the tree');
       assert.equal(await tree.evaluate(el => getComputedStyle(el).getPropertyValue('--highlight-opacity').trim()), '0', 'the focus highlight leaves with the focus');
+      // 木に入り直すと、最後にフォーカスした節ではなく選択中の節へ入る（APG）。選択が隠れていれば先頭。
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await focused(), 'lib', 'Shift+Tab re-enters at the first node when the selection is hidden');
+      await press('ArrowDown', 'state');
+      await page.keyboard.press('Enter');
+      await press('ArrowDown', 'url');
+      await page.keyboard.press('Tab');
+      assert.equal(await focused(), null);
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await focused(), 'state', 'Shift+Tab re-enters at the selection, not at the last focused node');
+      await page.keyboard.press('Tab');
 
       // クリック: 子を持つ節は開閉、葉は選択。
       await node('composables').click();
@@ -143,6 +154,28 @@ async function serve(directory, port) {
       assert.equal(await node('lib').locator('span').first().evaluate(el => getComputedStyle(el).transitionDuration), '0s', 'reduced motion stops the chevron');
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await a11y('#storybook-root');
+      // 明るい表示でも対比が足りる。
+      await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+      await a11y('#storybook-root');
+      await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
+
+      // 強制カラーモード: 選択中の節にフォーカスがあると、選択だけの節と輪郭が違う。ホバーにも輪郭を出す。
+      await story('default');
+      await page.emulateMedia({ forcedColors: 'active' });
+      const outline = id => node(id).evaluate(el => { const s = getComputedStyle(el); return `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`; });
+      await page.keyboard.press('Tab');
+      assert.equal(await focused(), 'state');
+      const selectedFocused = await outline('state');
+      await press('ArrowDown', 'url');
+      const selectedOnly = await outline('state');
+      assert.notEqual(selectedFocused, selectedOnly, `${framework}: forced colors show focus on the selected node (${selectedFocused} vs ${selectedOnly})`);
+      assert.equal(selectedFocused, await outline('url'), 'focus looks the same on selected and unselected nodes');
+      await node('url-test').hover();
+      assert(!(await outline('url-test')).startsWith('none'), `${framework}: forced colors outline the hovered node`);
+      assert.equal(await outline('url'), selectedFocused, 'focus wins over hover elsewhere');
+      await node('url').hover();
+      assert.equal(await outline('url'), selectedFocused, 'focus wins over hover on the same node');
+      await page.emulateMedia({ forcedColors: 'none' });
 
       await story('partly-collapsed');
       assert.deepEqual(await ids(), ['lib', 'state', 'url', 'url-test', 'composables', 'pages']);
@@ -177,6 +210,11 @@ async function serve(directory, port) {
       await page.locator('#storybook-root').getByRole('button', { name: '残りを読み込む' }).click();
       assert.deepEqual(await ids(), ['lib', 'composables', 'use-url', 'pages', 'page'], 'late branches open; the closed one stays closed');
       assert.equal(await node('lib').getAttribute('aria-expanded'), 'false');
+      // フォーカス中の節が外から消えたら、残った節へフォーカスを移す（祖先も消えたら Tab の止まる先）。
+      await node('page').click();
+      await page.locator('#storybook-root').getByRole('button', { name: '最初の節だけにする' }).evaluate(el => el.click());
+      await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 1);
+      assert.equal(await focused(), 'lib', `${framework}: focus falls back to the tab stop when the node and its ancestors are gone`);
 
       // 開閉を外から持つ。
       await story('controlled-expansion');
@@ -184,6 +222,19 @@ async function serve(directory, port) {
       await node('lib').click();
       assert.equal(await output.innerText(), 'composables,lib');
       assert.equal(await node('lib').getAttribute('aria-expanded'), 'true');
+      // 外から閉じてフォーカス中の節が隠れたら、見えている最も近い祖先へフォーカスを移し、キー操作を続けられる。
+      await node('use-url').click();
+      const collapseAll = page.locator('#storybook-root').getByRole('button', { name: 'すべて閉じる' });
+      await collapseAll.evaluate(el => el.click());
+      await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 3);
+      assert.equal(await focused(), 'composables', `${framework}: focus moves to the nearest visible ancestor`);
+      await press('ArrowDown', 'pages');
+      // フォーカスが木の外にあれば奪わない。
+      await node('lib').click();
+      await node('state').click();
+      await collapseAll.click();
+      await page.waitForFunction(() => document.querySelectorAll('#storybook-root [role="treeitem"]').length === 3);
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'すべて閉じる', 'focus outside the tree is left alone');
       assert.deepEqual(errors, []);
       console.log(`${framework}: roles and aria, keyboard, click to toggle and select, badges, indentation, highlight, disabled, controlled expansion and axe passed.`);
 

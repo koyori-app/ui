@@ -1,9 +1,9 @@
-import { For, Show, useRef, useStore } from '@builder.io/mitosis';
+import { For, Show, onUpdate, useRef, useStore } from '@builder.io/mitosis';
 import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlight';
 import highlights from '../shared/highlight.module.css';
 import Badge from '../Badge/Badge.lite';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
-import { defaultTreeExpanded, nextTreeFocus, noTreeId, noTreeIds, toggleTreeExpanded, treeActivation, treeTabStop, visibleTreeNodes } from './tree';
+import { defaultTreeExpanded, nextTreeFocus, treeFocusFallback, noTreeId, noTreeIds, toggleTreeExpanded, treeActivation, treeTabStop, visibleTreeNodes } from './tree';
 import type { TreeNode, VisibleTreeNode } from './tree';
 import styles from './tree.module.css';
 
@@ -52,8 +52,27 @@ export default function Tree(props: TreeProps) {
       const items = listRef?.querySelectorAll<HTMLElement>('[role="treeitem"]') || [];
       for (const item of Array.from(items)) if (item.getAttribute('data-tree-id') === id) item.focus();
     },
-    blur(next: EventTarget | null) {
-      if (!(next instanceof Node && listRef?.contains(next))) leaveHighlight(listRef);
+    blur(row: EventTarget | null, next: EventTarget | null) {
+      if (next instanceof Node && listRef?.contains(next)) return;
+      leaveHighlight(listRef);
+      /* 木の外へ出たら、入り直すときは選択中の節に入る。節が DOM から外されたための blur では覚えておき、onUpdate で移し先を決める。
+         Vue は節を外す直前に blur を送り、そのときはまだ DOM にあるので、描画が終わってから確かめる。 */
+      queueMicrotask(() => {
+        if (row instanceof Node && row.isConnected && !listRef?.contains(document.activeElement)) state.focusedId = null;
+      });
+    },
+    /* フォーカスしていた節が外から隠れた・消えたら、残った節へ移す。フォーカスが木の外にあれば奪わない。 */
+    recoverFocus() {
+      const lost = state.focusedId;
+      if (lost === null || state.rows().some((row) => row.id === lost)) return;
+      const active = document.activeElement;
+      if (active && active !== document.body && !listRef?.contains(active)) {
+        state.focusedId = null;
+        return;
+      }
+      const next = treeFocusFallback(props.nodes, state.rows(), lost, state.selected());
+      if (next === null) state.focusedId = null;
+      else state.focusNode(next);
     },
     setExpanded(id: string, open: boolean) {
       const next = toggleTreeExpanded(state.expanded(), id, open);
@@ -85,6 +104,11 @@ export default function Tree(props: TreeProps) {
     },
   });
 
+  /* 描画の後に動かす（deps 付きの onUpdate は Vue で DOM の更新より前に動く）。 */
+  onUpdate(() => {
+    state.recoverFocus();
+  });
+
   return (
     <div class={styles.root}>
       <Show when={props.heading}>
@@ -101,7 +125,8 @@ export default function Tree(props: TreeProps) {
               aria-level={row.level} aria-setsize={row.setSize} aria-posinset={row.posInSet}
               /* Vue は未指定の boolean を false にするため、文字列で出し、葉には属性ごと出さない。 */
               aria-expanded={row.expandable ? (row.expanded ? 'true' : 'false') : undefined}
-              aria-selected={row.id === state.selected() ? 'true' : undefined}
+              /* 選べる葉は true / false。開閉だけの節と無効の葉は選べないので出さない（APG）。 */
+              aria-selected={row.expandable || row.node.disabled ? undefined : row.id === state.selected() ? 'true' : 'false'}
               aria-disabled={row.node.disabled ? 'true' : undefined}
               tabIndex={row.id === state.tabStop() ? 0 : -1}
               title={row.node.title}
@@ -109,7 +134,7 @@ export default function Tree(props: TreeProps) {
               onMouseEnter={(event) => highlightItem(listRef, event.currentTarget)}
               onFocus={(event) => { state.focusedId = row.id; highlightItem(listRef, event.currentTarget); }}
               /* Tab で木の外へ出たら、フォーカスに付いてきた面を消す。木の中の移動では次の onFocus が動かす。 */
-              onBlur={(event) => state.blur(event.relatedTarget)}
+              onBlur={(event) => state.blur(event.currentTarget, event.relatedTarget)}
               onClick={() => { state.focusNode(row.id); state.activate(row.id); }}
               onKeyDown={(event) => state.keydown(event, row.id)}
             >

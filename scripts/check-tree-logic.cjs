@@ -14,7 +14,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { treeBranchIds, visibleTreeNodes, treeTabStop, nextTreeFocus, toggleTreeExpanded, treeActivation, defaultTreeExpanded } = tree;
+const { treeBranchIds, visibleTreeNodes, treeTabStop, treeFocusFallback, nextTreeFocus, toggleTreeExpanded, treeActivation, defaultTreeExpanded } = tree;
 
 // src/          (branch)
 //   lib/        (branch)
@@ -64,6 +64,14 @@ assert.equal(treeTabStop(all, 'c', 'a'), 'c');
 assert.equal(treeTabStop(closedLib, 'a', 'c'), 'c', 'hidden focus falls back to the selection');
 assert.equal(treeTabStop(closedLib, null, 'a'), 'src', 'hidden selection falls back to the first node');
 assert.equal(treeTabStop([], null, null), null);
+
+// treeFocusFallback: 隠れた・消えた節のフォーカスは、見えている最も近い祖先へ。祖先も無ければ Tab の止まる先。
+const closedSrc = visibleTreeNodes(nodes, []);
+assert.equal(treeFocusFallback(nodes, closedLib, 'a', 'd'), 'lib', 'nearest visible ancestor');
+assert.equal(treeFocusFallback(nodes, closedSrc, 'a', 'd'), 'src', 'skips hidden ancestors');
+assert.equal(treeFocusFallback(nodes.slice(1), visibleTreeNodes(nodes.slice(1), []), 'a', 'd'), 'd', 'removed node: the selection');
+assert.equal(treeFocusFallback(nodes.slice(1), visibleTreeNodes(nodes.slice(1), []), 'a', null), 'empty', 'removed node: the first node');
+assert.equal(treeFocusFallback([], [], 'a', null), null);
 
 const move = (rows, current, key) => nextTreeFocus(rows, current, key);
 // ↑ ↓: 見えている節を順に。端で回らない。閉じた節の子は飛ばす。無効の節にもフォーカスは置ける。
