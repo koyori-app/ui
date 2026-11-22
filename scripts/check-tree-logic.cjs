@@ -14,7 +14,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { treeBranchIds, visibleTreeNodes, treeTabStop, treeRows, treeAncestorIds, treeFocusFallback, nextTreeFocus, toggleTreeExpanded, treeActivation, defaultTreeExpanded } = tree;
+const { treeBranchIds, visibleTreeNodes, treeActiveId, treeNodePath, treeItemId, sameTreeIds, treeRows, treeAncestorIds, nextTreeFocus, toggleTreeExpanded, treeActivation, defaultTreeExpanded } = tree;
 
 // src/          (branch)
 //   lib/        (branch)
@@ -59,43 +59,67 @@ assert.equal(closedLib[1].expanded, false);
 assert.deepEqual(ids(visibleTreeNodes(nodes, ['lib'])), ['src', 'empty', 'd', 'locked'], 'a closed ancestor hides open descendants');
 assert.deepEqual(visibleTreeNodes(undefined, []), []);
 
-// treeTabStop: フォーカスしていた節 → 選択中 → 先頭。見えない節には置かない。
-assert.equal(treeTabStop(all, 'c', 'a'), 'c');
-assert.equal(treeTabStop(closedLib, 'a', 'c'), 'c', 'hidden focus falls back to the selection');
-assert.equal(treeTabStop(closedLib, null, 'a'), 'src', 'hidden selection falls back to the first node');
-assert.equal(treeTabStop([], null, null), null);
+// treeNodePath: 閉じた節の中も辿る。最上段は []、無い id は null。
+assert.deepEqual(treeNodePath(nodes, 'a'), ['lib', 'src']);
+assert.deepEqual(treeNodePath(nodes, 'e'), ['locked'], 'inside a closed branch');
+assert.deepEqual(treeNodePath(nodes, 'src'), []);
+assert.equal(treeNodePath(nodes, 'missing'), null);
+assert.equal(treeNodePath(undefined, 'a'), null);
 
-// treeRows: Tab の止まる先は 1 行だけ。aria-selected は選べる葉に true / false、節と無効の葉は無し。
-const rowsOf = (focusedId, selectedId) => treeRows(all, focusedId, selectedId).map(row => [row.id, row.tabStop, row.ariaSelected]);
-assert.deepEqual(rowsOf(null, 'a'), [
+// treeActiveId: 見えている cursorId はそのまま。null は選択中 → 先頭 → 行が無ければ null。
+const activeOf = (list, visible, cursorId, trail, selectedId) => treeActiveId(list, visible, cursorId, trail, selectedId);
+assert.equal(activeOf(nodes, all, 'c', [], 'a'), 'c');
+assert.equal(activeOf(nodes, all, null, [], 'a'), 'a', 'entering goes to the selection');
+assert.equal(activeOf(nodes, closedLib, null, [], 'a'), 'src', 'hidden selection falls back to the first node');
+assert.equal(activeOf(nodes, closedLib, null, [], null), 'src');
+assert.equal(activeOf([], [], null, [], null), null);
+assert.equal(activeOf([], [], 'a', ['lib', 'src'], null), null, 'no rows, no active node');
+// 隠れた（nodes にある）: 今の親子関係で最も近い見えている祖先。控えより今の親子関係が勝つ。
+assert.equal(activeOf(nodes, closedLib, 'a', ['src'], 'd'), 'lib', 'nearest visible ancestor');
+assert.equal(activeOf(nodes, visibleTreeNodes(nodes, []), 'a', ['lib', 'src'], 'd'), 'src', 'skips hidden ancestors');
+// a を lib の下へ移して lib を閉じる。控えは移す前の ['src'] のまま。
+const moved = [{ id: 'src', label: 'src', children: [{ id: 'lib', label: 'lib', children: [{ id: 'a', label: 'a.ts' }] }] }, { id: 'b', label: 'b.ts' }];
+assert.equal(activeOf(moved, visibleTreeNodes(moved, ['src']), 'a', ['src'], null), 'lib', 'a stale trail loses to the current parent');
+// 消えた: 控え（最後に見えていたときの祖先）のうち見えている最も近いもの。
+const aTrail = treeAncestorIds(all, 'a');
+const withoutA = [{ ...nodes[0], children: [{ ...nodes[0].children[0], children: [nodes[0].children[0].children[1]] }, nodes[0].children[1]] }, ...nodes.slice(1)];
+assert.equal(activeOf(withoutA, visibleTreeNodes(withoutA, treeBranchIds(withoutA)), 'a', aTrail, 'd'), 'lib', 'removed leaf: its remaining parent');
+assert.equal(activeOf(withoutA, visibleTreeNodes(withoutA, ['src']), 'a', aTrail, 'd'), 'lib', 'removed leaf under a closed parent: the parent');
+const withoutLib = [{ ...nodes[0], children: [nodes[0].children[1]] }, ...nodes.slice(1)];
+assert.equal(activeOf(withoutLib, visibleTreeNodes(withoutLib, treeBranchIds(withoutLib)), 'a', aTrail, 'd'), 'src', 'removed parent: the remaining ancestor');
+assert.equal(activeOf(withoutLib, visibleTreeNodes(withoutLib, []), 'a', aTrail, 'd'), 'src', 'removed parent under a closed ancestor');
+// 消えて控えも全部無い: 選択中 → 先頭。
+assert.equal(activeOf(nodes.slice(1), visibleTreeNodes(nodes.slice(1), []), 'a', aTrail, 'd'), 'd', 'removed node and ancestors: the selection');
+assert.equal(activeOf(nodes.slice(1), visibleTreeNodes(nodes.slice(1), []), 'a', aTrail, null), 'empty', 'removed node and ancestors: the first node');
+
+// treeItemId: 空白や / を含む id でも 1 つの DOM の id。違う id は違う結果。
+assert(!/\s/.test(treeItemId('t1', 'src/lib a.ts')), 'no whitespace');
+assert.notEqual(treeItemId('t1', 'a b'), treeItemId('t1', 'a_b'));
+assert.notEqual(treeItemId('t1', 'a'), treeItemId('t2', 'a'), 'the prefix keeps trees apart');
+
+// sameTreeIds
+assert.equal(sameTreeIds(['lib', 'src'], ['lib', 'src']), true);
+assert.equal(sameTreeIds(['lib', 'src'], ['src', 'lib']), false);
+assert.equal(sameTreeIds(['lib'], ['lib', 'src']), false);
+assert.equal(sameTreeIds([], []), true);
+
+// treeRows: いまの節は 1 行だけ。aria-selected は選べる葉に true / false、節と無効の葉は無し。
+const rowsOf = (activeId, selectedId) => treeRows(all, activeId, selectedId).map(row => [row.id, row.active, row.ariaSelected]);
+assert.deepEqual(rowsOf('a', 'a'), [
   ['src', false, undefined], ['lib', false, undefined], ['a', true, 'true'], ['b', false, undefined], ['c', false, 'false'],
   ['empty', false, undefined], ['d', false, 'false'], ['locked', false, undefined], ['e', false, 'false'],
 ]);
-assert.deepEqual(treeRows(all, 'c', 'a').filter(row => row.tabStop).map(row => row.id), ['c'], 'the focused node is the only tab stop');
+assert.deepEqual(treeRows(all, 'c', 'a').filter(row => row.active).map(row => row.id), ['c'], 'the active node is the only active row');
+assert.deepEqual(treeRows(all, null, 'a').filter(row => row.active), [], 'no active row without an active node');
 // 選択中の節は、無効にされても・子を持つ節でも選択の表示を残す。
 assert.equal(treeRows(all, null, 'b').find(row => row.id === 'b').ariaSelected, 'true', 'a selected leaf keeps its selection after being disabled');
 assert.equal(treeRows(all, null, 'lib').find(row => row.id === 'lib').ariaSelected, 'true', 'a selected branch shows the selection');
 assert.deepEqual(treeRows([], null, null), []);
 
-// treeAncestorIds: 見えている行の親を近い順に。
+// treeAncestorIds: 見えている行の親を近い順に。いまの節の控えを作るのに使う。
 assert.deepEqual(treeAncestorIds(all, 'a'), ['lib', 'src']);
 assert.deepEqual(treeAncestorIds(all, 'src'), []);
 assert.deepEqual(treeAncestorIds(all, 'missing'), []);
-
-// treeFocusFallback: 隠れた・消えた節のフォーカスは、フォーカスした時点の祖先のうち見えている最も近いものへ。祖先も無ければ Tab の止まる先。
-const closedSrc = visibleTreeNodes(nodes, []);
-const aAncestors = treeAncestorIds(all, 'a');
-assert.equal(treeFocusFallback(closedLib, aAncestors, 'd'), 'lib', 'nearest visible ancestor');
-assert.equal(treeFocusFallback(closedSrc, aAncestors, 'd'), 'src', 'skips hidden ancestors');
-// 葉だけが nodes から消え、親は残る。更新後のデータに葉が無くても親へ戻す。
-const withoutA = [{ ...nodes[0], children: [{ ...nodes[0].children[0], children: [nodes[0].children[0].children[1]] }, nodes[0].children[1]] }, ...nodes.slice(1)];
-assert.equal(treeFocusFallback(visibleTreeNodes(withoutA, treeBranchIds(withoutA)), aAncestors, 'd'), 'lib', 'removed leaf: its remaining parent');
-// 間の親まで消え、その上の祖先は残る。
-const withoutLib = [{ ...nodes[0], children: [nodes[0].children[1]] }, ...nodes.slice(1)];
-assert.equal(treeFocusFallback(visibleTreeNodes(withoutLib, treeBranchIds(withoutLib)), aAncestors, 'd'), 'src', 'removed parent: the remaining ancestor');
-assert.equal(treeFocusFallback(visibleTreeNodes(nodes.slice(1), []), aAncestors, 'd'), 'd', 'removed node and ancestors: the selection');
-assert.equal(treeFocusFallback(visibleTreeNodes(nodes.slice(1), []), aAncestors, null), 'empty', 'removed node and ancestors: the first node');
-assert.equal(treeFocusFallback([], aAncestors, null), null);
 
 const move = (rows, current, key) => nextTreeFocus(rows, current, key);
 // ↑ ↓: 見えている節を順に。端で回らない。閉じた節の子は飛ばす。無効の節にもフォーカスは置ける。
@@ -146,4 +170,4 @@ assert.deepEqual(toggleTreeExpanded(['src', 'lib'], 'lib', false), ['src']);
 assert.deepEqual(toggleTreeExpanded(['src'], 'lib', true), ['src', 'lib']);
 assert.deepEqual(toggleTreeExpanded(['src', 'lib'], 'src', true), ['lib', 'src'], 'no duplicates');
 
-console.log('Tree logic: visible rows, levels, tab stop, arrow/Home/End moves, closed children, disabled nodes and toggling passed.');
+console.log('Tree logic: visible rows, levels, active node and its fallbacks, item ids, arrow/Home/End moves, closed children, disabled nodes and toggling passed.');

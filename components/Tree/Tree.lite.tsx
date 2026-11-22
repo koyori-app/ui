@@ -1,9 +1,9 @@
-import { For, Show, onUpdate, useRef, useStore } from '@builder.io/mitosis';
+import { For, Show, onMount, onUpdate, useRef, useStore } from '@builder.io/mitosis';
 import { enterHighlight, highlightItem, leaveHighlight } from '../shared/highlight';
 import highlights from '../shared/highlight.module.css';
 import Badge from '../Badge/Badge.lite';
 import ChevronDownIcon from '../ChevronDownIcon/ChevronDownIcon.lite';
-import { defaultTreeExpanded, nextTreeFocus, treeAncestorIds, treeFocusFallback, noTreeId, noTreeIds, toggleTreeExpanded, treeActivation, treeRows, visibleTreeNodes } from './tree';
+import { defaultTreeExpanded, nextTreeFocus, noTreeId, noTreeIds, sameTreeIds, toggleTreeExpanded, treeActivation, treeActiveId, treeAncestorIds, treeItemId, treeRows, visibleTreeNodes } from './tree';
 import type { TreeNode, TreeRow, VisibleTreeNode } from './tree';
 import styles from './tree.module.css';
 
@@ -26,17 +26,22 @@ export interface TreeProps {
 }
 
 /* APG の Tree View。見えている節を role="treeitem" で 1 段に並べ、深さは aria-level で伝える。
-   フォーカスは 1 つの節だけに置き（roving tabindex）、矢印キーで移す。 */
+   DOM のフォーカスは入れ物（role="tree"）に置き、いまの節を aria-activedescendant で指す（Picker と同じ）。
+   入れ物は nodes が変わっても外されず動かされないので、並べ替え・削除・空にしてもフォーカスは木に残る。 */
 export default function Tree(props: TreeProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
+  /* いまの節が最後に見えていたときの祖先（近い順）。節が nodes から消えると、今の nodes からは親を辿れないため。
+     描画の後に毎回作り直す。Vue の生成物は初期値を落として ref(null) にするので、null は空として読む。 */
+  let trailRef = useRef<string[] | null>(null);
   const state = useStore({
     /* defaultExpandedIds があればそこから開閉を持つ。無ければ閉じた節だけを持ち、後から届いた節も開いて出す。 */
     storedExpanded: props.defaultExpandedIds ?? null,
     storedClosed: noTreeIds(),
     storedSelected: noTreeId(),
-    focusedId: noTreeId(),
-    /* フォーカスした時点の祖先（近い順）。節が nodes から消えると、更新後のデータからは祖先を辿れない。 */
-    focusedAncestors: noTreeIds(),
+    /* いまの節の id。木の外にフォーカスがあるときは null。 */
+    cursorId: noTreeId(),
+    /* 行の DOM の id の前置き。SSR と食い違わないよう、マウント後に作る。 */
+    uid: '',
     expanded(): string[] {
       return props.expandedIds ?? state.storedExpanded ?? defaultTreeExpanded(props.nodes, state.storedClosed);
     },
@@ -46,42 +51,57 @@ export default function Tree(props: TreeProps) {
     rows(): VisibleTreeNode[] {
       return visibleTreeNodes(props.nodes, state.expanded());
     },
+    activeId(): string | null {
+      return treeActiveId(props.nodes, state.rows(), state.cursorId, trailRef ?? noTreeIds(), state.selected());
+    },
     items(): TreeRow[] {
-      return treeRows(state.rows(), state.focusedId, state.selected());
+      return treeRows(state.rows(), state.activeId(), state.selected());
     },
-    track(id: string) {
-      state.focusedId = id;
-      state.focusedAncestors = treeAncestorIds(state.rows(), id);
+    activeDomId(): string | undefined {
+      const current = state.activeId();
+      return state.uid && current !== null ? treeItemId(state.uid, current) : undefined;
     },
-    focusNode(id: string) {
-      state.track(id);
-      const items = listRef?.querySelectorAll<HTMLElement>('[role="treeitem"]') || [];
-      for (const item of Array.from(items)) if (item.getAttribute('data-tree-id') === id) item.focus();
+    activeRow(): HTMLElement | null {
+      return listRef?.querySelector<HTMLElement>('[data-active="true"]') ?? null;
     },
-    blur(row: EventTarget | null, next: EventTarget | null) {
-      if (next instanceof Node && listRef?.contains(next)) return;
-      leaveHighlight(listRef);
-      /* 木の外へ出たら、入り直すときは選択中の節に入る。節が DOM から外されたための blur では覚えておき、onUpdate で移し先を決める。
-         Vue は節を外す直前に blur を送り、そのときはまだ DOM にあるので、描画が終わってから確かめる。 */
-      queueMicrotask(() => {
-        if (row instanceof Node && row.isConnected && !listRef?.contains(document.activeElement)) state.focusedId = null;
+    /* いまの節を見える位置へ寄せ、ホバーの面を付ける。描画を待ってから動かす。
+       行は :focus-visible にならないので、面は動かさずに置く（キー操作で帯だけが遅れて見えないように）。 */
+    reveal() {
+      requestAnimationFrame(() => {
+        const row = state.activeRow();
+        row?.scrollIntoView({ block: 'nearest' });
+        if (row) highlightItem(listRef, row, true);
       });
     },
-    /* フォーカスしていた節が外から隠れた・消えたら、残った節へ移す。フォーカスが木の外にあれば奪わない。 */
-    recoverFocus() {
-      const lost = state.focusedId;
-      const visible = state.rows();
-      if (lost === null || visible.some((row) => row.id === lost)) return;
-      /* 普段は木の外へ出た blur が先に focusedId を消す。節が外されるのと同じ処理の中でフォーカスが外へ移ると、
-         blur の後始末より先にここへ来るので、外にあるフォーカスを奪わない。 */
-      const active = document.activeElement;
-      if (active && active !== document.body && !listRef?.contains(active)) {
-        state.focusedId = null;
-        return;
+    /* 木に入ると、選択中の節（無ければ先頭）がいまの節になる。マウスで入ったときは位置を動かさない。 */
+    enter() {
+      if (state.cursorId === null) state.cursorId = state.activeId();
+      if (listRef?.matches(':focus-visible')) state.reveal();
+    },
+    leave() {
+      /* ウィンドウを切り替えたときは、フォーカスは入れ物のまま。戻ったときに続けられるよう覚えておく。 */
+      if (document.activeElement === listRef) return;
+      state.cursorId = null;
+      leaveHighlight(listRef);
+    },
+    leaveHover() {
+      leaveHighlight(listRef, document.activeElement === listRef && listRef?.matches(':focus-visible') ? state.activeRow() : null);
+    },
+    /* 描画の後に、求め直したいまの節を cursorId に書き戻し、控えを作り直す。
+       書くのは中身が変わったときだけなので、描画し直しは 1 回で止まる。 */
+    settle() {
+      if (state.cursorId === null) return;
+      const current = state.activeId();
+      if (current !== state.cursorId) {
+        state.cursorId = current;
+        if (current !== null && document.activeElement === listRef) state.reveal();
       }
-      const next = treeFocusFallback(visible, state.focusedAncestors, state.selected());
-      if (next === null) state.focusedId = null;
-      else state.focusNode(next);
+      const trail = current === null ? noTreeIds() : treeAncestorIds(state.rows(), current);
+      if (!sameTreeIds(trailRef ?? noTreeIds(), trail)) trailRef = trail;
+    },
+    click(id: string) {
+      if (document.activeElement === listRef) state.cursorId = id;
+      state.activate(id);
     },
     setExpanded(id: string, open: boolean) {
       const next = toggleTreeExpanded(state.expanded(), id, open);
@@ -100,22 +120,28 @@ export default function Tree(props: TreeProps) {
         props.onSelect?.(action.id);
       }
     },
-    keydown(event: { key: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; preventDefault(): void }, id: string) {
+    keydown(event: { key: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; preventDefault(): void }) {
       if (event.altKey || event.ctrlKey || event.metaKey) return;
-      const move = nextTreeFocus(state.rows(), id, event.key);
+      const move = nextTreeFocus(state.rows(), state.activeId(), event.key);
       /* 扱うキーは、端で動かなくてもページのスクロールを止める。 */
       if (['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) event.preventDefault();
       if (!move) return;
-      if (move.type === 'focus') state.focusNode(move.id);
-      else if (move.type === 'expand') state.setExpanded(move.id, true);
+      if (move.type === 'focus') {
+        state.cursorId = move.id;
+        state.reveal();
+      } else if (move.type === 'expand') state.setExpanded(move.id, true);
       else if (move.type === 'collapse') state.setExpanded(move.id, false);
       else state.activate(move.id);
     },
   });
 
+  onMount(() => {
+    state.uid = `koyori-tree-${Math.random().toString(36).slice(2)}`;
+  });
+
   /* 描画の後に動かす（deps 付きの onUpdate は Vue で DOM の更新より前に動く）。 */
   onUpdate(() => {
-    state.recoverFocus();
+    state.settle();
   });
 
   return (
@@ -123,28 +149,28 @@ export default function Tree(props: TreeProps) {
       <Show when={props.heading}>
         <div class={styles.heading}>{props.heading}</div>
       </Show>
+      {/* 行が無くなっても tabindex="-1" でフォーカスを受けられるので、空にしてもフォーカスは木に残る。 */}
       <div ref={listRef!} class={styles.list} role="tree" aria-label={props.label}
-        onMouseEnter={(event) => enterHighlight(listRef, event)} onMouseLeave={() => leaveHighlight(listRef)}
+        tabIndex={state.items().length ? 0 : -1} aria-activedescendant={state.activeDomId()}
+        onFocus={() => state.enter()} onBlur={() => state.leave()} onKeyDown={(event) => state.keydown(event)}
+        onMouseEnter={(event) => enterHighlight(listRef, event)} onMouseLeave={() => state.leaveHover()}
       >
         <span class={highlights.highlight} data-hover-highlight="" aria-hidden="true" />
         <For each={state.items()}>
           {(row) => (
-            <div key={row.id} class={styles.item} role="treeitem" data-tree-id={row.id}
+            <div key={row.id} id={state.uid ? treeItemId(state.uid, row.id) : undefined}
+              class={styles.item} role="treeitem" data-tree-id={row.id}
+              data-active={row.active ? 'true' : undefined}
               data-branch={row.expandable ? 'true' : undefined}
               aria-level={row.level} aria-setsize={row.setSize} aria-posinset={row.posInSet}
               /* Vue は未指定の boolean を false にするため、文字列で出し、葉には属性ごと出さない。 */
               aria-expanded={row.expandable ? (row.expanded ? 'true' : 'false') : undefined}
               aria-selected={row.ariaSelected}
               aria-disabled={row.node.disabled ? 'true' : undefined}
-              tabIndex={row.tabStop ? 0 : -1}
               title={row.node.title}
               style={{ paddingInlineStart: `calc(var(--koyori-space-md) + ${row.level - 1} * var(--tree-indent))` }}
               onMouseEnter={(event) => highlightItem(listRef, event.currentTarget)}
-              onFocus={(event) => { state.track(row.id); highlightItem(listRef, event.currentTarget); }}
-              /* Tab で木の外へ出たら、フォーカスに付いてきた面を消す。木の中の移動では次の onFocus が動かす。 */
-              onBlur={(event) => state.blur(event.currentTarget, event.relatedTarget)}
-              onClick={() => { state.focusNode(row.id); state.activate(row.id); }}
-              onKeyDown={(event) => state.keydown(event, row.id)}
+              onClick={() => state.click(row.id)}
             >
               <Show when={row.expandable}>
                 <span class={styles.chevron} aria-hidden="true"><ChevronDownIcon size={14} /></span>

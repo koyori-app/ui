@@ -18,6 +18,18 @@ const files: TreeNode[] = [
 ];
 // 葉だけが消え、親の節は残る。
 const withoutPage = files.map(node => (node.id === 'pages' ? { ...node, children: [] } : node));
+// 外からの更新（並べ替え・親子の入れ替え・空にする）。見える順は src, lib, a, b, c。
+const updatable: TreeNode[] = [
+  { id: 'src', label: 'src', children: [{ id: 'lib', label: 'lib', children: [] }, { id: 'a', label: 'a.ts' }] },
+  { id: 'b', label: 'b.ts' },
+  { id: 'c', label: 'c.ts' },
+];
+// a を lib の下へ移す。見える順は変わらない。
+const moveAIntoLib = (list: TreeNode[]) => list.map(node => (node.id === 'src'
+  ? { ...node, children: [{ id: 'lib', label: 'lib', children: [{ id: 'a', label: 'a.ts' }] }] }
+  : node));
+// 最上段の先頭を末尾へ回す。
+const rotate = (list: TreeNode[]) => [...list.slice(1), ...list.slice(0, 1)];
 
 const meta = {
   title: 'Components/Tree', component: Tree,
@@ -72,6 +84,33 @@ export const LateNodes: Story = {
       <button type="button" @click="nodes = files.slice(0, 1)">最初の節だけにする</button>
       <button type="button" @click="nodes = withoutPage">+Page.vue を消す</button>
       <Tree v-bind="args" :nodes="nodes" />
+    </div>`,
+  }),
+};
+// nodes と開閉を外から持ち、フォーカスが木にある間に更新する。ボタンは木の後ろに置き、最初の Tab で木に入る。
+export const ExternalUpdates: Story = {
+  args: { heading: undefined },
+  render: args => ({
+    components: { Tree },
+    setup: () => {
+      const nodes = ref<TreeNode[]>(updatable);
+      const expanded = ref<string[]>(['src', 'lib']);
+      return {
+        args, nodes, expanded,
+        moveA: () => { nodes.value = moveAIntoLib(nodes.value); },
+        closeLib: () => { expanded.value = expanded.value.filter(id => id !== 'lib'); },
+        rotateTop: () => { nodes.value = rotate(nodes.value); },
+        clear: () => { nodes.value = []; },
+        reset: () => { nodes.value = updatable; expanded.value = ['src', 'lib']; },
+      };
+    },
+    template: `<div style="width: 240px">
+      <Tree v-bind="args" :nodes="nodes" :expanded-ids="expanded" :on-expanded-change="ids => expanded = ids" />
+      <button type="button" @click="moveA">a を lib の下へ移す</button>
+      <button type="button" @click="closeLib">lib を閉じる</button>
+      <button type="button" @click="rotateTop">並びを回す</button>
+      <button type="button" @click="clear">空にする</button>
+      <button type="button" @click="reset">元に戻す</button>
     </div>`,
   }),
 };

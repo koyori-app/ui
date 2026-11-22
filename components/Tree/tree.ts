@@ -67,32 +67,65 @@ export function visibleTreeNodes(nodes: TreeNode[] | undefined, expandedIds: str
   return rows;
 }
 
-/* Tab で入る 1 つの節。木の中でフォーカスしている節が見えていればそれ、なければ選択中の節、なければ先頭。
-   部品は木の外へ出たときに focusedId を null に戻すので、入り直すと選択中の節に入る（APG）。 */
-export function treeTabStop(visible: VisibleTreeNode[], focusedId: string | null | undefined, selectedId: string | null | undefined): string | null {
-  if (focusedId != null && visible.some((row) => row.id === focusedId)) return focusedId;
-  if (selectedId != null && visible.some((row) => row.id === selectedId)) return selectedId;
+/* nodes 全体（閉じた節の中も）から id の祖先を近い順に。id が無ければ null。 */
+export function treeNodePath(nodes: TreeNode[] | undefined, id: string): string[] | null {
+  const walk = (list: TreeNode[], ancestors: string[]): string[] | null => {
+    for (const node of list) {
+      if (node.id === id) return ancestors;
+      const found = walk(node.children || [], [node.id, ...ancestors]);
+      if (found) return found;
+    }
+    return null;
+  };
+  return walk(nodes || [], []);
+}
+
+/* いまの節（aria-activedescendant が指す節）。上から順に当てはまったものを返す。
+   1. cursorId が見えていれば、それ
+   2. cursorId が nodes にあって隠れていれば、今の親子関係で最も近い見えている祖先
+   3. cursorId が nodes から消えていれば、trail（最後に見えていたときの祖先。近い順）のうち見えている最も近いもの
+   4. どれも無い・cursorId が null なら、選択中の節（見えていれば）、無ければ先頭、行が無ければ null
+   部品は木の外へ出たときに cursorId を null に戻すので、入り直すと選択中の節に入る（APG）。 */
+export function treeActiveId(nodes: TreeNode[] | undefined, visible: VisibleTreeNode[], cursorId: string | null, trail: string[], selectedId: string | null | undefined): string | null {
+  const shown = (id: string) => visible.some((row) => row.id === id);
+  if (cursorId !== null) {
+    if (shown(cursorId)) return cursorId;
+    const ancestors = treeNodePath(nodes, cursorId) ?? trail;
+    for (const id of ancestors) if (shown(id)) return id;
+  }
+  if (selectedId != null && shown(selectedId)) return selectedId;
   return visible[0]?.id ?? null;
 }
 
-/* 描画する 1 行。tabStop と ariaSelected は木全体で 1 回だけ求め、行ごとに数え直さない。 */
+/* 行の DOM の id。aria-activedescendant が指す。node の id に空白や記号があっても 1 つの id になる。 */
+export function treeItemId(uid: string, id: string): string {
+  return `${uid}-item-${encodeURIComponent(id)}`;
+}
+
+/* 中身が同じ id の列か。控えを書き換えるかどうかに使う。 */
+export function sameTreeIds(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
+/* 描画する 1 行。active と ariaSelected は木全体で 1 回だけ求め、行ごとに数え直さない。 */
 export interface TreeRow extends VisibleTreeNode {
-  tabStop: boolean;
+  /* いまの節。キー操作の起点で、入れ物にフォーカスがあるときは輪郭を出す。 */
+  active: boolean;
   /* 選択中の節は種類を問わず 'true'（無効にされた・節を指したときも選択の表示を消さない）。
      ほかは選べる葉だけ 'false'、開閉だけの節と無効の葉は属性なし（APG）。 */
   ariaSelected: 'true' | 'false' | undefined;
 }
 
-export function treeRows(visible: VisibleTreeNode[], focusedId: string | null | undefined, selectedId: string | null | undefined): TreeRow[] {
-  const tabStop = treeTabStop(visible, focusedId, selectedId);
+/* activeId は treeActiveId で求め終えたいまの節。 */
+export function treeRows(visible: VisibleTreeNode[], activeId: string | null, selectedId: string | null | undefined): TreeRow[] {
   return visible.map((row) => ({
     ...row,
-    tabStop: row.id === tabStop,
+    active: row.id === activeId,
     ariaSelected: row.id === selectedId ? 'true' : row.expandable || row.node.disabled ? undefined : 'false',
   }));
 }
 
-/* 見えている節の祖先の id。近い順。フォーカスした時点で覚えておき、節が消えた後の移り先に使う。 */
+/* 見えている節の祖先の id。近い順。描画のたびにいまの節の分を控えておき、節が nodes から消えた後の移り先に使う。 */
 export function treeAncestorIds(visible: VisibleTreeNode[], id: string): string[] {
   const ancestors: string[] = [];
   let parentId = visible.find((row) => row.id === id)?.parentId ?? null;
@@ -102,15 +135,6 @@ export function treeAncestorIds(visible: VisibleTreeNode[], id: string): string[
     parentId = visible.find((row) => row.id === current)?.parentId ?? null;
   }
   return ancestors;
-}
-
-/* フォーカスしていた節が外から隠れた・消えたときの移り先。ancestorIds（近い順）のうち見えている最も近いもの、無ければ Tab の止まる先。
-   祖先はフォーカスした時点のものを使う。更新後の nodes からは、消えた節の祖先を辿れないため。 */
-export function treeFocusFallback(visible: VisibleTreeNode[], ancestorIds: string[], selectedId: string | null | undefined): string | null {
-  for (const id of ancestorIds) {
-    if (visible.some((row) => row.id === id)) return id;
-  }
-  return treeTabStop(visible, null, selectedId);
 }
 
 /* APG の Tree View のキー操作。端では回らない。無効の節もフォーカスは置けるが、開閉と選択はしない。

@@ -18,6 +18,18 @@ const files: TreeNode[] = [
 ];
 // 葉だけが消え、親の節は残る。
 const withoutPage = files.map(node => (node.id === 'pages' ? { ...node, children: [] } : node));
+// 外からの更新（並べ替え・親子の入れ替え・空にする）。見える順は src, lib, a, b, c。
+const updatable: TreeNode[] = [
+  { id: 'src', label: 'src', children: [{ id: 'lib', label: 'lib', children: [] }, { id: 'a', label: 'a.ts' }] },
+  { id: 'b', label: 'b.ts' },
+  { id: 'c', label: 'c.ts' },
+];
+// a を lib の下へ移す。見える順は変わらない。
+const moveAIntoLib = (list: TreeNode[]) => list.map(node => (node.id === 'src'
+  ? { ...node, children: [{ id: 'lib', label: 'lib', children: [{ id: 'a', label: 'a.ts' }] }] }
+  : node));
+// 最上段の先頭を末尾へ回す。
+const rotate = (list: TreeNode[]) => [...list.slice(1), ...list.slice(0, 1)];
 
 function Selectable(args: TreeProps) {
   const [selected, setSelected] = useState<string | null>('state');
@@ -79,3 +91,19 @@ function LateNodesDemo(args: TreeProps) {
   );
 }
 export const LateNodes: Story = { render: args => <LateNodesDemo {...args} /> };
+// nodes と開閉を外から持ち、フォーカスが木にある間に更新する。ボタンは木の後ろに置き、最初の Tab で木に入る。
+function ExternalUpdatesDemo(args: TreeProps) {
+  const [nodes, setNodes] = useState<TreeNode[]>(updatable);
+  const [expanded, setExpanded] = useState<string[]>(['src', 'lib']);
+  return (
+    <div style={{ width: 240 }}>
+      <Tree {...args} nodes={nodes} expandedIds={expanded} onExpandedChange={setExpanded} />
+      <button type="button" onClick={() => setNodes(moveAIntoLib)}>a を lib の下へ移す</button>
+      <button type="button" onClick={() => setExpanded(ids => ids.filter(id => id !== 'lib'))}>lib を閉じる</button>
+      <button type="button" onClick={() => setNodes(rotate)}>並びを回す</button>
+      <button type="button" onClick={() => setNodes([])}>空にする</button>
+      <button type="button" onClick={() => { setNodes(updatable); setExpanded(['src', 'lib']); }}>元に戻す</button>
+    </div>
+  );
+}
+export const ExternalUpdates: Story = { args: { heading: undefined }, render: args => <ExternalUpdatesDemo {...args} /> };

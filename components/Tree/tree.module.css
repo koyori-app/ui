@@ -53,7 +53,10 @@
 
 .item:active:not([aria-disabled='true']) { background: var(--koyori-color-surface-active); }
 
-.item:focus-visible {
+/* フォーカスは入れ物にあり、いまの節に輪郭を出す。行が無いときだけ入れ物に既定の輪郭が出る。 */
+.list[aria-activedescendant]:focus-visible { outline: none; }
+
+.list:focus-visible .item[data-active='true'] {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: calc(var(--koyori-focus-width) * -1);
 }
@@ -99,5 +102,5 @@
   }
   .item[aria-selected='true'] { outline: 1px solid Highlight; outline-offset: -1px; color: Highlight; }
   .item[aria-disabled='true'] { color: GrayText; }
-  .item.item:focus-visible { outline: var(--koyori-focus-width) solid CanvasText; outline-offset: calc(var(--koyori-focus-width) * -1); }
+  .list:focus-visible .item.item[data-active='true'] { outline: var(--koyori-focus-width) solid CanvasText; outline-offset: calc(var(--koyori-focus-width) * -1); }
 }
