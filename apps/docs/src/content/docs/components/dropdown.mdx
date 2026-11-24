@@ -38,8 +38,37 @@ Vue では `:on-select="handler"` でコールバックを渡します。
 | `value` | `string` | 一覧内で一意な値。実行時のコールバックに渡す |
 | `label` | `string` | 項目に表示するラベル |
 | `disabled` | `boolean`（任意） | 実行を無効にする。キーボードでフォーカスは可能 |
+| `icon` | `any`（任意） | ラベルの前に出すアイコン。React は描画済みの要素、Vue は `#item-icon` スロットに渡す値 |
 
 `items` が空の場合は「項目がありません」を無効な項目として表示します。`emptyMessage` で差し替えられます。
+
+### 項目ごとのアイコン
+
+```tsx
+// React: icon に描画済みの要素を渡す
+<Dropdown label="ステータス" items={[
+  { value: 'todo', label: '未着手', kind: 'radio', icon: <StatusIcon status="todo" /> },
+  { value: 'doing', label: '進行中', kind: 'radio', checked: true, icon: <StatusIcon status="doing" /> },
+  { value: 'none', label: 'なし', kind: 'radio' },
+]} onSelect={select} />
+```
+
+```vue
+<!-- Vue: icon に入れた値を、#item-icon スロットの item.icon で読む -->
+<Dropdown label="ステータス" :items="[
+  { value: 'todo', label: '未着手', kind: 'radio', icon: 'todo' },
+  { value: 'doing', label: '進行中', kind: 'radio', checked: true, icon: 'doing' },
+  { value: 'none', label: 'なし', kind: 'radio' },
+]" :on-select="select">
+  <template #item-icon="{ item }"><StatusIcon :status="item.icon" /></template>
+</Dropdown>
+```
+
+どれかの項目に `icon` があると、全項目のラベルの前に 16px の箱を置きます。`icon` の無い項目も同じ幅を空けるので、ラベルの位置がそろいます。
+このとき `radio` の印は、行の先頭の点ではなく行の右端の ✓ になります。`checkbox` の ✓ は先頭のままです。
+Vue では、`icon` が真値の項目だけスロットを描きます。`0`・空文字・`false` は偽なので、その項目にはアイコンが出ません。
+`#item-icon` スロットを渡していない場合は、`icon` の無いメニューと同じ見た目（箱なし、ラジオは先頭の点）になります。
+アイコンは装飾として読み上げから外し、項目の名前は `label` だけです。先頭文字での移動は行の文字を読むので、アイコンの中に文字（`<title>` など）を入れないでください。
 
 ## キーボード操作
 

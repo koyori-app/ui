@@ -340,6 +340,91 @@ let browser;
       assert.deepEqual(await radioStates(), ['false', 'false', 'true']);
       await radios.first().click();
       assert.equal(await button.getAttribute('aria-expanded'), 'false');
+      // 行の位置と大きさ。開くときの変形（menu-in）の途中で測ると小数以下がずれるので、動きが終わるのを待ち、同じフレームで測る。
+      const measure = async (target) => {
+        await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+        return target.evaluate(list => [...list.querySelectorAll('button[role^="menuitem"]')].map(row => {
+          const rect = row.getBoundingClientRect();
+          const box = row.querySelector('[class*="itemIcon"]');
+          return {
+            height: rect.height,
+            spans: row.querySelectorAll(':scope > span').length,
+            label: row.querySelector('[class*="itemLabel"]').getBoundingClientRect().x - rect.x,
+            box: box && { x: box.getBoundingClientRect().x - rect.x, width: box.getBoundingClientRect().width, children: box.children.length, hidden: box.getAttribute('aria-hidden'), position: getComputedStyle(box).position },
+            dot: row.querySelectorAll('[class*="_dot_"]').length,
+          };
+        }));
+      };
+      await button.click();
+      await menu.waitFor();
+      const radioRows = await measure(menu);
+      // アイコンの無いメニューは今のまま（先頭の印と label だけ。箱を出さない）。
+      assert.deepEqual(radioRows.map(row => [row.spans, row.box, row.dot]), [[2, null, 1], [2, null, 1], [2, null, 1]]);
+      await page.keyboard.press('Escape');
+
+      // 項目のアイコン。どれかの項目にあれば、無い項目も同じ幅の箱を空けて label をそろえ、ラジオの印は右端の ✓ になる。
+      button = await visit('item-icons', 'ステータス');
+      menu = page.getByRole('menu', { name: 'ステータス' });
+      await menu.waitFor();
+      await page.waitForTimeout(60);
+      const statusItem = name => menu.getByRole('menuitemradio', { name, exact: true });
+      const statusStates = () => menu.getByRole('menuitemradio').evaluateAll(els => els.map(el => el.getAttribute('aria-checked')));
+      for (const name of ['未着手', '進行中', '完了', 'なし']) assert.equal(await statusItem(name).count(), 1, `${framework}: ${name} の名前は label だけ`);
+      assert.deepEqual(await statusStates(), ['false', 'true', 'false', 'false']);
+      const circles = menu.locator('svg[data-status]');
+      assert.equal(await circles.count(), 3);
+      assert.deepEqual(await circles.evaluateAll(els => els.map(el => el.parentElement.getAttribute('aria-hidden'))), ['true', 'true', 'true']);
+      assert.deepEqual((await circles.evaluateAll(els => els.map(el => getComputedStyle(el).color))).slice(0, 2), ['rgb(107, 114, 128)', 'rgb(59, 130, 246)']);
+      const iconRows = await measure(menu);
+      assert.equal(new Set(iconRows.map(row => row.label)).size, 1, `${framework}: label の x がそろう: ${JSON.stringify(iconRows)}`);
+      assert.equal(new Set(iconRows.map(row => `${row.box.x}/${row.box.width}`)).size, 1, `${framework}: 箱の x と幅がそろう: ${JSON.stringify(iconRows)}`);
+      assert.equal(iconRows[0].box.width, 16);
+      assert.equal(iconRows[3].box.children, 0, 'icon の無い項目の箱は空');
+      assert.deepEqual(iconRows.map(row => row.box.position), ['relative', 'relative', 'relative', 'relative']);
+      assert.deepEqual(iconRows.map(row => row.dot), [0, 0, 0, 0], '先頭の点を出さない');
+      assert.deepEqual(iconRows.map(row => row.height), Array(4).fill(radioRows[0].height), '行の高さは radios と同じ');
+      // 選択中の印は label の右（行の右端）の ✓ で、選択中の行だけ見える。
+      const marks = await menu.getByRole('menuitemradio').evaluateAll(els => els.map(el => {
+        const check = el.querySelector(':scope > [class*="_check_"]');
+        return { after: check.getBoundingClientRect().x > el.querySelector('[class*="itemLabel"]').getBoundingClientRect().right, svg: !!check.querySelector('svg'), opacity: getComputedStyle(check).opacity };
+      }));
+      assert.deepEqual(marks.map(mark => [mark.after, mark.svg, mark.opacity]), [[true, true, '0'], [true, true, '1'], [true, true, '0'], [true, true, '0']]);
+      // ホバーの背景が出ても、アイコンはその上に見える。
+      await statusItem('未着手').hover();
+      await page.waitForTimeout(350);
+      assert.equal(await menu.locator('[role="presentation"]').first().evaluate(el => el.style.getPropertyValue('--highlight-opacity')), '1');
+      const onTop = await circles.first().evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + 2));
+      });
+      assert(onTop, `${framework}: アイコンはホバーの背景より前`);
+      await audit();
+      // アイコンの上をクリックしても、その項目が選ばれて閉じる。
+      await circles.nth(2).click();
+      assert.equal(await button.getAttribute('aria-expanded'), 'false');
+      await button.click();
+      await menu.waitFor();
+      await page.waitForTimeout(60);
+      assert.deepEqual(await statusStates(), ['false', 'false', 'true', 'false']);
+      // 先頭文字の移動と矢印の移動は今までどおり。
+      await statusItem('未着手').focus();
+      await statusItem('未着手').dispatchEvent('keydown', { key: '完' });
+      assert.equal(await activeText(), '完了');
+      await page.keyboard.press('ArrowDown');
+      assert.equal(await activeText(), 'なし');
+      await page.keyboard.press('ArrowUp');
+      assert.equal(await activeText(), '完了');
+      await page.keyboard.press('Escape');
+
+      if (framework === 'vue') {
+        // icon を入れても #item-icon を渡さなければ、アイコンの無いメニューと同じ並び（箱なし、先頭の点）。
+        await visit('item-icons-without-slot', 'ステータス');
+        await menu.waitFor();
+        const bareRows = await measure(menu);
+        assert.deepEqual(bareRows.map(row => [row.spans, row.box, row.dot]), Array(4).fill([2, null, 1]));
+        assert.equal(bareRows[0].label, radioRows[0].label, 'label の位置が radios と同じ');
+        await audit();
+      }
 
       button = await visit('sections', 'アカウント');
       menu = page.getByRole('menu', { name: 'アカウント' });
@@ -383,7 +468,7 @@ let browser;
       await audit();
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`${framework}: action menus, ARIA, focus/Tab, icons, placement, hover, keyboard, disabled/empty, reduced motion, checkbox/radio items, sections, triggers and axe passed`);
+      console.log(`${framework}: action menus, ARIA, focus/Tab, icons, placement, hover, keyboard, disabled/empty, reduced motion, checkbox/radio items, item icons, sections, triggers and axe passed`);
     }
   } finally {
     await browser?.close();

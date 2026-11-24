@@ -17,6 +17,11 @@ export interface DropdownItem {
   kind?: 'item' | 'checkbox' | 'radio';
   /** State of a checkbox or radio. The app owns it and updates items from onSelect. */
   checked?: boolean;
+  /** ラベルの前に出すアイコン。React: 描画済みのノード。Vue: 真値（0・空文字・false 以外）を入れた項目だけ item-icon スロット（{ item }）を出す。
+      スロットを渡していなければ何も出さない。装飾として読み上げから外す。
+      どれかの項目にあれば、無い項目も同じ幅を空けて文字をそろえ、ラジオの印は行の先頭の点ではなく右端の ✓ になる。
+      先頭文字での移動は行の文字を読むので、アイコンの中に文字（<title> など）を入れない */
+  icon?: any;
 }
 
 export interface DropdownSection {
@@ -67,6 +72,12 @@ export default function Dropdown(props: DropdownProps) {
     get sections() {
       const first = props.items[0];
       return first && 'items' in first ? props.items as DropdownSection[] : [{ items: props.items as DropdownItem[] }];
+    },
+    /* sections と同じ理由で展開をここにも書く。セクションをまたいでメニュー全体で 1 つに決め、文字の位置をそろえる。 */
+    get hasIcons() {
+      const first = props.items[0];
+      const sections = first && 'items' in first ? props.items as DropdownSection[] : [{ items: props.items as DropdownItem[] }];
+      return sections.some((section) => section.items.some((item) => !!item.icon));
     },
     select(item: DropdownItem, target: EventTarget | null) {
       if (item.disabled || props.disabled) return;
@@ -189,10 +200,19 @@ export default function Dropdown(props: DropdownProps) {
                         <Show when={item.kind === 'checkbox'}>
                           <span class={styles.check} aria-hidden="true"><CheckIcon /></span>
                         </Show>
-                        <Show when={item.kind === 'radio'}>
+                        <Show when={item.kind === 'radio' && !state.hasIcons}>
                           <span class={styles.check} aria-hidden="true"><span class={styles.dot} /></span>
                         </Show>
+                        {/* Vue では scripts/patch-vue-dropdown-item-icon.mjs が {{ item.icon }} を item-icon スロットに置き換え、
+                            hasIcons の判定にスロットの有無を加える。Mitosis の Slot は行の項目をスロットへ渡せないため。 */}
+                        <Show when={state.hasIcons}>
+                          <span class={styles.itemIcon} aria-hidden="true">{item.icon}</span>
+                        </Show>
                         <span class={styles.itemLabel}>{item.label}</span>
+                        {/* アイコンのあるメニューでは、ラジオの印を Picker と同じ右端の ✓ にする。 */}
+                        <Show when={item.kind === 'radio' && state.hasIcons}>
+                          <span class={styles.check} aria-hidden="true"><CheckIcon /></span>
+                        </Show>
                       </button>
                     )}
                   </For>

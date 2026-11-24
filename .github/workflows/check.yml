@@ -61,3 +61,6 @@ jobs:
 
       - name: Field の requiredMark・descriptionPosition と DataList の hideHeading のサーバー描画
         run: node scripts/check-field-data-list.cjs
+
+      - name: Dropdown の項目のアイコンと幅をそろえる箱のサーバー描画
+        run: node scripts/check-dropdown-item-icon.cjs

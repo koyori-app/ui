@@ -116,6 +116,27 @@ export const Radios: Story = {
   args: { label: '並び順', variant: 'tertiary', defaultOpen: true },
   render: (args) => <RadioExample {...args} />,
 };
+// 項目ごとのアイコンの例。円は依存を増やさないよう、ここで描く。
+// アイコンのあるメニューでは、ラジオの印は右端の ✓ になり、アイコンの無い項目も同じ幅を空ける。
+const StatusCircle = ({ color }: { color: string }) => (
+  <svg data-status="" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color }}>
+    <circle cx="8" cy="8" r="6" />
+  </svg>
+);
+function StatusExample(args: DropdownProps) {
+  const [status, setStatus] = useState('doing');
+  const items = [
+    { value: 'todo', label: '未着手', icon: <StatusCircle color="#6b7280" /> },
+    { value: 'doing', label: '進行中', icon: <StatusCircle color="#3b82f6" /> },
+    { value: 'done', label: '完了', icon: <StatusCircle color="#22c55e" /> },
+    { value: 'none', label: 'なし' },
+  ].map((item): DropdownItem => ({ ...item, kind: 'radio', checked: item.value === status }));
+  return <Dropdown {...args} items={items} onSelect={(value) => { setStatus(value); args.onSelect?.(value); }} />;
+}
+export const ItemIcons: Story = {
+  args: { label: 'ステータス', defaultOpen: true },
+  render: (args) => <StatusExample {...args} />,
+};
 export const Sections: Story = {
   args: {
     label: 'アカウント',

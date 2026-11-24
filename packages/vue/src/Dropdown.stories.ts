@@ -143,6 +143,40 @@ export const Radios: Story = {
     template: '<Dropdown v-bind="args" :items="items" :on-select="select" />',
   }),
 };
+// 項目ごとのアイコンの例。icon に色を入れ、item-icon スロットで円を描く。円は依存を増やさないよう、ここで描く。
+// アイコンのあるメニューでは、ラジオの印は右端の ✓ になり、アイコンの無い項目も同じ幅を空ける。
+const statusItems = [
+  { value: 'todo', label: '未着手', icon: '#6b7280' },
+  { value: 'doing', label: '進行中', icon: '#3b82f6' },
+  { value: 'done', label: '完了', icon: '#22c55e' },
+  { value: 'none', label: 'なし' },
+];
+const statusRender = (slot: boolean) => (args: Record<string, any>) => ({
+  components: { Dropdown },
+  setup() {
+    const status = ref('doing');
+    const items = computed(() => statusItems.map((item): DropdownItem => ({ ...item, kind: 'radio', checked: item.value === status.value })));
+    const select = (value: string) => { status.value = value; args.onSelect?.(value); };
+    return { args, items, select };
+  },
+  template: slot
+    ? `<Dropdown v-bind="args" :items="items" :on-select="select">
+      <template #item-icon="{ item }">
+        <svg data-status width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+          :style="{ color: item.icon }"><circle cx="8" cy="8" r="6" /></svg>
+      </template>
+    </Dropdown>`
+    : '<Dropdown v-bind="args" :items="items" :on-select="select" />',
+});
+export const ItemIcons: Story = {
+  args: { label: 'ステータス', defaultOpen: true },
+  render: statusRender(true),
+};
+// icon を入れても #item-icon を渡さない場合。箱も出さず、ラジオの印も先頭の点のまま（アイコンの無いメニューと同じ）。
+export const ItemIconsWithoutSlot: Story = {
+  args: { label: 'ステータス', defaultOpen: true },
+  render: statusRender(false),
+};
 export const Sections: Story = {
   args: {
     label: 'アカウント',
