@@ -5,7 +5,7 @@ import XIcon from '../XIcon/XIcon.lite';
 import { listenToMenu, positionMenu } from '../shared/menu';
 import FieldContext from '../Field/field.context.lite';
 import { getFieldContext } from '../Field/field';
-import { comboboxActiveValue, comboboxEnabledValues, comboboxLabelParts, comboboxSections, isComposingKey, nextComboboxValue } from './combobox';
+import { comboboxActiveValue, comboboxEnabledValues, comboboxLabelParts, comboboxRectHasPoint, comboboxSections, isComposingKey, nextComboboxValue } from './combobox';
 import type { ComboboxOption, ComboboxSection, ComboboxTag } from './combobox';
 import controls from '../shared/control.module.css';
 import labels from '../shared/label.module.css';
@@ -67,10 +67,8 @@ export default function Combobox(props: ComboboxProps) {
   let quietFocusRef = useRef<boolean | null>(null);
   let pointerRef = useRef<string | null>(null);
   let byPointerRef = useRef<boolean | null>(null);
-  /* 候補をクリックした後、押した位置の候補はホバーで選択中にしない。一覧が開いたまま作り直されると、押した位置の別の候補が選ばれて次の Enter が onSelect に入るため。別の候補へ動くか一覧を出たら解く。 */
-  let suppressHoverRef = useRef<boolean | null>(null);
-  /* クリックの後、最初にホバーした候補（押した位置の候補）の value。 */
-  let suppressedValueRef = useRef<string | null>(null);
+  /* 候補をクリックした位置（viewport の座標）。この位置にある候補はホバーで選択中にしない。一覧が開いたまま作り直されると、押した位置に来た別の候補が選ばれて次の Enter が onSelect に入るため。 */
+  let pressedPointRef = useRef<{ x: number; y: number } | null>(null);
   let revealedRequestRef = useRef<number | null>(null);
   let revealedValueRef = useRef<string | null>(null);
   const state = useStore({
@@ -138,11 +136,10 @@ export default function Combobox(props: ComboboxProps) {
       state.expanded = true;
       props.onValueChange?.(input.value, at);
     },
-    select(value: string, unavailable?: boolean, byClick?: boolean) {
+    select(value: string, unavailable?: boolean, press?: { clientX: number; clientY: number }) {
       if (unavailable || props.disabled) return;
       byPointerRef = false;
-      suppressHoverRef = !!byClick;
-      suppressedValueRef = null;
+      pressedPointRef = press ? { x: press.clientX, y: press.clientY } : null;
       state.activeValue = null;
       props.onSelect?.(value);
     },
@@ -173,11 +170,10 @@ export default function Combobox(props: ComboboxProps) {
       state.expanded = true;
       inputRef?.focus();
     },
-    hover(option: { value: string; disabled?: boolean }, event: { screenX: number; screenY: number }) {
-      if (suppressHoverRef) {
-        if (suppressedValueRef === null) suppressedValueRef = option.value;
-        if (suppressedValueRef === option.value) return;
-        suppressHoverRef = false;
+    hover(option: { value: string; disabled?: boolean }, event: { screenX: number; screenY: number; currentTarget: EventTarget | null }) {
+      if (pressedPointRef) {
+        if (comboboxRectHasPoint((event.currentTarget as Element).getBoundingClientRect(), pressedPointRef)) return;
+        pressedPointRef = null;
       }
       const point = `${event.screenX},${event.screenY}`;
       if (point === pointerRef) return;
@@ -187,7 +183,7 @@ export default function Combobox(props: ComboboxProps) {
       state.activeValue = option.value;
     },
     leave() {
-      suppressHoverRef = false;
+      pressedPointRef = null;
       if (!byPointerRef) return;
       byPointerRef = false;
       state.activeValue = null;
@@ -199,7 +195,7 @@ export default function Combobox(props: ComboboxProps) {
         if (!values.length) return;
         event.preventDefault();
         byPointerRef = false;
-        suppressHoverRef = false;
+        pressedPointRef = null;
         state.revealRequest = state.revealRequest + 1;
         const wasOpen = state.isOpen();
         state.expanded = true;
@@ -254,7 +250,7 @@ export default function Combobox(props: ComboboxProps) {
     const open = state.isOpen();
     if (!!openedRef === open) return;
     openedRef = open;
-    if (!open) suppressHoverRef = false;
+    if (!open) pressedPointRef = null;
     props.onOpenChange?.(open);
   }, [state.isOpen(), comboboxSections(props.options).reduce((count, section) => count + section.options.length, 0), state.expanded, props.options, props.disabled]);
   onUpdate(() => {
@@ -323,7 +319,7 @@ export default function Combobox(props: ComboboxProps) {
                           aria-selected={option.active ? 'true' : 'false'} aria-disabled={option.disabled || undefined}
                           data-active={option.active}
                           onPointerMove={(event) => state.hover(option, event)}
-                          onClick={() => state.select(option.value, option.disabled, true)}
+                          onClick={(event) => state.select(option.value, option.disabled, event)}
                         >
                           <Show when={option.color}>
                             <span class={styles.dot} style={{ backgroundColor: option.color ?? 'currentColor' }} aria-hidden="true" />

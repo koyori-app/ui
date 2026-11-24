@@ -388,7 +388,7 @@ let browser;
       const clicked = await option(/^status:/).boundingBox();
       await page.mouse.move(clicked.x + clicked.width / 2 + 3, clicked.y + clicked.height / 2 + 1, { steps: 3 });
       await settle();
-      assert.equal(await selected.count(), 0, at('クリック後、一覧を出るまでホバーで選ばない'));
+      assert.equal(await selected.count(), 0, at('押した位置の候補はホバーで選ばない'));
       await input.press('Enter');
       await settle();
       assert.equal(await log.innerText(), 'commit:status:', at('クリック後のホバーの後の Enter は onCommit'));
@@ -423,6 +423,41 @@ let browser;
       await page.mouse.move(otherBox.x + 20, otherBox.y + otherBox.height / 2, { steps: 4 });
       await settle();
       await assertSingleSelected((await other.innerText()).split('\n')[0]);
+      // 押した位置で動かさずに別の候補へ入っても、最初の hover からその候補を選択中にする
+      const directPoint = await clickLabel();
+      const directPressed = await textAt(directPoint.x, directPoint.y);
+      const directBefore = await selectedText();
+      let direct;
+      for (const name of ['bug', 'backend', 'feature']) {
+        const text = await option(new RegExp(`^${name}`)).textContent();
+        if (text !== directPressed && text !== directBefore) { direct = name; break; }
+      }
+      const directBox = await option(new RegExp(`^${direct}`)).boundingBox();
+      await page.mouse.move(directBox.x + 20, directBox.y + directBox.height / 2);
+      await page.mouse.move(directBox.x + 24, directBox.y + directBox.height / 2 + 1);
+      await settle();
+      await assertSingleSelected(direct);
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), `select:label:${direct}`, at('予備の移動なしで入った候補は Enter で onSelect'));
+      // 字を変えて一覧が作り直されても、押した位置に来た候補はホバーで選ばない
+      const editPoint = await clickLabel();
+      await page.mouse.move(editPoint.x + 3, editPoint.y + 1, { steps: 3 });
+      await settle();
+      const editBefore = await textAt(editPoint.x, editPoint.y);
+      // 1 字ずつ消すと途中で一覧が 1 行に縮み、ポインターが一覧を出て抑止が解ける。一度に消して一覧を keys に戻す
+      await input.press('ControlOrMeta+A');
+      await input.press('Backspace');
+      await settle();
+      const editAfter = await textAt(editPoint.x, editPoint.y);
+      assert(editAfter, at('字を消した後も押した位置に候補がある'));
+      assert.notEqual(editAfter, editBefore, at('字を消すと押した位置の候補が変わる'));
+      await page.mouse.move(editPoint.x + 5, editPoint.y + 2, { steps: 3 });
+      await settle();
+      assert.equal(await selected.count(), 0, at('字を変えた後も押した位置の候補はホバーで選ばない'));
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), 'commit:', at('字を変えた後のホバーの後の Enter は onCommit'));
       // 矢印キーで抑止を解く: 矢印の後は押した位置の候補でもホバーで選ぶ
       const arrowPoint = await clickLabel();
       await input.press('ArrowUp');

@@ -81,3 +81,8 @@ export function comboboxLabelParts(label: string, ranges: [number, number][] | u
 export function isComposingKey(event: { isComposing?: boolean; keyCode?: number; nativeEvent?: { isComposing?: boolean } }): boolean {
   return !!event.isComposing || !!event.nativeEvent?.isComposing || event.keyCode === 229;
 }
+
+/* 点が矩形の中か。辺の上も中に数える。 */
+export function comboboxRectHasPoint(rect: { left: number; right: number; top: number; bottom: number }, point: { x: number; y: number }): boolean {
+  return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+}

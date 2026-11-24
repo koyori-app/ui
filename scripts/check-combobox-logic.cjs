@@ -14,7 +14,7 @@ try {
 } finally {
   rmSync(compiled, { recursive: true, force: true });
 }
-const { comboboxSections, comboboxEnabledValues, comboboxActiveValue, nextComboboxValue, comboboxLabelParts, isComposingKey } = combobox;
+const { comboboxSections, comboboxEnabledValues, comboboxActiveValue, nextComboboxValue, comboboxLabelParts, isComposingKey, comboboxRectHasPoint } = combobox;
 
 assert.equal(comboboxActiveValue(['', 'a'], null, false), null);
 assert.equal(comboboxActiveValue(['', 'a'], '', true), '');
@@ -111,4 +111,14 @@ assert.equal(isComposingKey({ keyCode: 229 }), true);
 assert.equal(isComposingKey({}), false);
 assert.equal(isComposingKey({ isComposing: false, keyCode: 13, nativeEvent: { isComposing: false } }), false);
 
-console.log('Combobox sections, active value, arrow movement, label highlight parts (2,000 random cases) and IME key detection passed.');
+// comboboxRectHasPoint
+const rect = { left: 10, right: 110, top: 20, bottom: 52 };
+assert.equal(comboboxRectHasPoint(rect, { x: 60, y: 36 }), true);
+for (const point of [{ x: 10, y: 36 }, { x: 110, y: 36 }, { x: 60, y: 20 }, { x: 60, y: 52 }, { x: 10, y: 20 }, { x: 110, y: 52 }]) {
+  assert.equal(comboboxRectHasPoint(rect, point), true, `辺の上 ${JSON.stringify(point)}`);
+}
+for (const point of [{ x: 9, y: 36 }, { x: 111, y: 36 }, { x: 60, y: 19 }, { x: 60, y: 53 }]) {
+  assert.equal(comboboxRectHasPoint(rect, point), false, `辺の 1px 外 ${JSON.stringify(point)}`);
+}
+
+console.log('Combobox sections, active value, arrow movement, label highlight parts (2,000 random cases), IME key detection and rect hit test passed.');
