@@ -383,6 +383,132 @@ let browser;
       await settle();
       assert.equal(await log.innerText(), 'select:status:');
       assert.equal(await focused(), true, at('クリック後もフォーカスは入力欄'));
+      // 開いたまま作り直された一覧の上でポインターが動いても、押した位置の候補を選ばない（次の Enter は onCommit）
+      assert.equal(await expanded(), 'true', at('クリック後も一覧は開いたまま'));
+      const clicked = await option(/^status:/).boundingBox();
+      await page.mouse.move(clicked.x + clicked.width / 2 + 3, clicked.y + clicked.height / 2 + 1, { steps: 3 });
+      await settle();
+      assert.equal(await selected.count(), 0, at('押した位置の候補はホバーで選ばない'));
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), 'commit:status:', at('クリック後のホバーの後の Enter は onCommit'));
+      // クリック後、一覧を出ずに別の候補へ動くと、その候補を選択中にする
+      const textAt = (x, y) => page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.closest('[role="option"]')?.textContent ?? '', [x, y]);
+      const clickLabel = async () => {
+        await story('default');
+        await input.click();
+        const box = await option(/^label:/).boundingBox();
+        const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        await page.mouse.click(point.x, point.y);
+        await settle();
+        assert.equal(await log.innerText(), 'select:label:');
+        assert.equal(await expanded(), 'true', at('label: のクリック後も一覧は開いたまま'));
+        return point;
+      };
+      const labelPoint = await clickLabel();
+      const pressedText = await textAt(labelPoint.x, labelPoint.y);
+      assert(pressedText, at('押した位置に作り直した候補がある'));
+      const selectedText = async () => (await selected.count()) ? await selected.textContent() : '';
+      const beforeMove = await selectedText();
+      assert.notEqual(beforeMove, pressedText, at('クリック直後、押した位置の候補は選択中でない'));
+      await page.mouse.move(labelPoint.x + 3, labelPoint.y + 1, { steps: 3 });
+      await settle();
+      assert.equal(await selectedText(), beforeMove, at('押した位置の候補はホバーで選ばない'));
+      let other;
+      for (const name of [/^bug/, /^backend/, /^feature/]) {
+        const text = await option(name).textContent();
+        if (text !== pressedText && text !== beforeMove) { other = option(name); break; }
+      }
+      const otherBox = await other.boundingBox();
+      await page.mouse.move(otherBox.x + 20, otherBox.y + otherBox.height / 2, { steps: 4 });
+      await settle();
+      await assertSingleSelected((await other.innerText()).split('\n')[0]);
+      // 押した位置で動かさずに別の候補へ入っても、最初の hover からその候補を選択中にする
+      const directPoint = await clickLabel();
+      const directPressed = await textAt(directPoint.x, directPoint.y);
+      const directBefore = await selectedText();
+      let direct;
+      for (const name of ['bug', 'backend', 'feature']) {
+        const text = await option(new RegExp(`^${name}`)).textContent();
+        if (text !== directPressed && text !== directBefore) { direct = name; break; }
+      }
+      const directBox = await option(new RegExp(`^${direct}`)).boundingBox();
+      await page.mouse.move(directBox.x + 20, directBox.y + directBox.height / 2);
+      await page.mouse.move(directBox.x + 24, directBox.y + directBox.height / 2 + 1);
+      await settle();
+      await assertSingleSelected(direct);
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), `select:label:${direct}`, at('予備の移動なしで入った候補は Enter で onSelect'));
+      // 字を変えて一覧が作り直されても、押した位置に来た候補はホバーで選ばない
+      const editPoint = await clickLabel();
+      await page.mouse.move(editPoint.x + 3, editPoint.y + 1, { steps: 3 });
+      await settle();
+      const editBefore = await textAt(editPoint.x, editPoint.y);
+      // 1 字ずつ消すと途中で一覧が 1 行に縮み、ポインターが一覧を出て抑止が解ける。一度に消して一覧を keys に戻す
+      await input.press('ControlOrMeta+A');
+      await input.press('Backspace');
+      await settle();
+      const editAfter = await textAt(editPoint.x, editPoint.y);
+      assert(editAfter, at('字を消した後も押した位置に候補がある'));
+      assert.notEqual(editAfter, editBefore, at('字を消すと押した位置の候補が変わる'));
+      await page.mouse.move(editPoint.x + 5, editPoint.y + 2, { steps: 3 });
+      await settle();
+      assert.equal(await selected.count(), 0, at('字を変えた後も押した位置の候補はホバーで選ばない'));
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), 'commit:', at('字を変えた後のホバーの後の Enter は onCommit'));
+      // 矢印キーで抑止を解く: 矢印の後は押した位置の候補でもホバーで選ぶ
+      const arrowPoint = await clickLabel();
+      await input.press('ArrowUp');
+      await settle();
+      const arrowed = await selected.textContent();
+      assert.notEqual(arrowed, await textAt(arrowPoint.x, arrowPoint.y), at('矢印で選んだ候補は押した位置と別'));
+      await page.mouse.move(arrowPoint.x + 3, arrowPoint.y + 1, { steps: 3 });
+      await settle();
+      assert.equal(await selected.textContent(), await textAt(arrowPoint.x, arrowPoint.y), at('矢印の後は押した位置の候補もホバーで選ぶ'));
+      // 閉じて開き直すと抑止を解く
+      await story('default');
+      await input.click();
+      await option(/^status:/).click();
+      await settle();
+      await input.press('Escape');
+      await settle();
+      assert.equal(await expanded(), 'false', at('Escape で閉じる'));
+      await input.press('Backspace');
+      await settle();
+      assert.equal(await expanded(), 'true', at('字を消すと開き直す'));
+      const reopened = await option(/^status:/).boundingBox();
+      await page.mouse.move(reopened.x + reopened.width / 2 + 3, reopened.y + reopened.height / 2 + 1, { steps: 3 });
+      await settle();
+      await assertSingleSelected('status:');
+      // 対照: 一覧を出てから戻ると、ホバーで選び Enter で onSelect
+      await story('default');
+      await input.click();
+      await option(/^status:/).click();
+      await settle();
+      await page.mouse.move(700, 650, { steps: 4 });
+      await settle();
+      const back = await option(/^status:/).boundingBox();
+      await page.mouse.move(back.x + 20, back.y + back.height / 2, { steps: 4 });
+      await settle();
+      await assertSingleSelected('status:');
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), 'select:status:', at('一覧を出て戻った後のホバーは選ぶ'));
+      // 対照: キーボードで選んだ後のホバーは今までどおり選ぶ
+      await story('default');
+      await page.mouse.move(700, 650);
+      await input.click();
+      await input.press('ArrowDown');
+      await input.press('Enter');
+      await settle();
+      assert.equal(await log.innerText(), 'select:status:');
+      assert.equal(await selected.count(), 0);
+      const afterKey = await option(/^status:/).boundingBox();
+      await page.mouse.move(afterKey.x + 20, afterKey.y + afterKey.height / 2, { steps: 4 });
+      await settle();
+      await assertSingleSelected('status:');
 
       // 10. 札の ×
       await story('default');
