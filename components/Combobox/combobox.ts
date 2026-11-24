@@ -82,7 +82,7 @@ export function isComposingKey(event: { isComposing?: boolean; keyCode?: number;
   return !!event.isComposing || !!event.nativeEvent?.isComposing || event.keyCode === 229;
 }
 
-/* 点が矩形の中か。辺の上も中に数える。 */
+/* 点が矩形の中か。左端と上端は中に、右端と下端は外に数える（隣り合う候補の境目の点が両方に入らないように）。 */
 export function comboboxRectHasPoint(rect: { left: number; right: number; top: number; bottom: number }, point: { x: number; y: number }): boolean {
-  return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+  return point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom;
 }

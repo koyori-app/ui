@@ -114,11 +114,15 @@ assert.equal(isComposingKey({ isComposing: false, keyCode: 13, nativeEvent: { is
 // comboboxRectHasPoint
 const rect = { left: 10, right: 110, top: 20, bottom: 52 };
 assert.equal(comboboxRectHasPoint(rect, { x: 60, y: 36 }), true);
-for (const point of [{ x: 10, y: 36 }, { x: 110, y: 36 }, { x: 60, y: 20 }, { x: 60, y: 52 }, { x: 10, y: 20 }, { x: 110, y: 52 }]) {
-  assert.equal(comboboxRectHasPoint(rect, point), true, `辺の上 ${JSON.stringify(point)}`);
+for (const point of [{ x: 10, y: 36 }, { x: 60, y: 20 }, { x: 10, y: 20 }]) {
+  assert.equal(comboboxRectHasPoint(rect, point), true, `左端・上端の上 ${JSON.stringify(point)}`);
 }
-for (const point of [{ x: 9, y: 36 }, { x: 111, y: 36 }, { x: 60, y: 19 }, { x: 60, y: 53 }]) {
-  assert.equal(comboboxRectHasPoint(rect, point), false, `辺の 1px 外 ${JSON.stringify(point)}`);
+for (const point of [{ x: 110, y: 36 }, { x: 60, y: 52 }, { x: 110, y: 52 }, { x: 9, y: 36 }, { x: 111, y: 36 }, { x: 60, y: 19 }, { x: 60, y: 53 }]) {
+  assert.equal(comboboxRectHasPoint(rect, point), false, `右端・下端の上か外 ${JSON.stringify(point)}`);
 }
+// 縦に隣り合う候補の境目の点は、下の候補だけに入る
+const below = { left: 10, right: 110, top: 52, bottom: 84 };
+assert.equal(comboboxRectHasPoint(below, { x: 60, y: 52 }), true);
+assert.equal(comboboxRectHasPoint(rect, { x: 60, y: 52 }), false);
 
 console.log('Combobox sections, active value, arrow movement, label highlight parts (2,000 random cases), IME key detection and rect hit test passed.');
