@@ -169,6 +169,7 @@ Storybook の Actions で実行通知と Tab 移動を確認できます。
 `items` に `{ heading?, items }[]` を渡すと節に分かれ、節は `group`、節の間には `separator` が入ります。矢印キーは節をまたいで移動し、見出しと区切りは飛ばします。
 `ariaLabel` だけを渡すとアイコンだけの正方形のトリガーになります。`variant`（既定 `ghost`）は Button と同じです。
 `trigger`（React は要素、Vue は `#trigger` スロット）でトリガーの文字をアバターなどに差し替えられます。読み上げ名は `ariaLabel`、なければ `label` です。開閉は `onOpenChange(open)` で通知します。
+`items` の `icon` でラベルの前にアイコンを出せます（React は要素、Vue は `#item-icon="{ item }"` スロット。Storybook の ItemIcons）。アイコンの無い項目も同じ幅を空け、ラジオの印は右端の ✓ になります。
 
 Picker は単一・複数選択用です。`label` と `items: { value, label, disabled? }[]` を渡します。
 検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
@@ -248,6 +249,7 @@ React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIc
 `node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
 Storybook をビルド済みなら、続けて中央寄せとブラウザーが閉じたときの同期をブラウザーで検証します（`DIALOG_TEST_FRAMEWORK` で片方に絞り、`DIALOG_TEST_PORT` でポート変更可能）。
 `node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
+`node scripts/check-dropdown-item-icon.cjs` は、Dropdown の項目のアイコン（幅をそろえる箱・右端の ✓・Vue のスロットの有無）をブラウザーなしのサーバー描画で検証します（`pnpm build` のあと。CI でも回します）。
 `node scripts/check-field-data-list.cjs` は、Field の `requiredMark`・`descriptionPosition` と DataList の `hideHeading` の DOM をブラウザーなしのサーバー描画で（`pnpm build` のあと。CI でも回します）、Storybook をビルド済みなら見た目・読み上げ・axe をブラウザーで検証します（`FIELD_DATA_LIST_TEST_PORT` でポート変更可能）。
 `node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
 `node scripts/check-button.cjs` は、Button が狭い行で縮まず折れないこと、広げると面も広がること、ButtonGroup のつながり、`tone="danger"` の色、`href` のリンクと無効のリンクを両フレームワークで検証します（`BUTTON_TEST_PORT` でポート変更可能）。
