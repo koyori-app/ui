@@ -67,8 +67,10 @@ export default function Combobox(props: ComboboxProps) {
   let quietFocusRef = useRef<boolean | null>(null);
   let pointerRef = useRef<string | null>(null);
   let byPointerRef = useRef<boolean | null>(null);
-  /* 候補をクリックした後、ポインターが一覧を出るまでホバーで選択中の候補を変えない。一覧が開いたまま作り直されると、押した位置の別の候補が選ばれて次の Enter が onSelect に入るため。 */
+  /* 候補をクリックした後、押した位置の候補はホバーで選択中にしない。一覧が開いたまま作り直されると、押した位置の別の候補が選ばれて次の Enter が onSelect に入るため。別の候補へ動くか一覧を出たら解く。 */
   let suppressHoverRef = useRef<boolean | null>(null);
+  /* クリックの後、最初にホバーした候補（押した位置の候補）の value。 */
+  let suppressedValueRef = useRef<string | null>(null);
   let revealedRequestRef = useRef<number | null>(null);
   let revealedValueRef = useRef<string | null>(null);
   const state = useStore({
@@ -140,6 +142,7 @@ export default function Combobox(props: ComboboxProps) {
       if (unavailable || props.disabled) return;
       byPointerRef = false;
       suppressHoverRef = !!byClick;
+      suppressedValueRef = null;
       state.activeValue = null;
       props.onSelect?.(value);
     },
@@ -171,7 +174,11 @@ export default function Combobox(props: ComboboxProps) {
       inputRef?.focus();
     },
     hover(option: { value: string; disabled?: boolean }, event: { screenX: number; screenY: number }) {
-      if (suppressHoverRef) return;
+      if (suppressHoverRef) {
+        if (suppressedValueRef === null) suppressedValueRef = option.value;
+        if (suppressedValueRef === option.value) return;
+        suppressHoverRef = false;
+      }
       const point = `${event.screenX},${event.screenY}`;
       if (point === pointerRef) return;
       pointerRef = point;
