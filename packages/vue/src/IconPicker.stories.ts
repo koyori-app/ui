@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { ref } from 'vue';
 import { IconPicker, type IconPickerProps } from './index';
 
+/* 「おすすめ」に出す候補。選べる絵文字はこれに限らず、部品が持つ 1,238 個から検索して選べる。 */
 const emojis = ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪'];
 const sample = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23c4b5df"/></svg>';
 
@@ -15,13 +16,14 @@ const example = (args: IconPickerProps, images = true) => ({
     return {
       args, emoji, imageUrl, picked, images,
       change(value: string) { emoji.value = value; imageUrl.value = undefined; },
+      clear() { emoji.value = undefined; imageUrl.value = undefined; },
       select(file: File) { picked.value = `${file.name} / ${file.type}`; imageUrl.value = sample; },
       remove() { imageUrl.value = undefined; },
     };
   },
   template: `<div style="display: grid; gap: 12px; width: 320px">
     <IconPicker v-bind="args" :emoji="emoji" :image-url="imageUrl"
-      :on-emoji-change="change" :on-image-select="images ? select : undefined" :on-image-remove="images ? remove : undefined" />
+      :on-emoji-change="change" :on-clear="clear" :on-image-select="images ? select : undefined" :on-image-remove="images ? remove : undefined" />
     <p>選んだファイル: <output>{{ picked }}</output></p>
   </div>`,
 });
@@ -38,14 +40,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = { args: { emoji: '📘' }, render: args => example(args) };
+/* 何も選んでいない状態。トリガーは「＋」で、「なしにする」は押せない。 */
+export const Unset: Story = { args: { emoji: undefined }, render: args => example(args) };
 export const WithImage: Story = { args: { emoji: '📘', imageUrl: sample }, render: args => example(args) };
 export const ImageError: Story = { args: { emoji: '📘', imageUrl: '/koyori-missing-icon.png' }, render: args => example(args) };
 export const Disabled: Story = { args: { emoji: '📘', disabled: true }, render: args => example(args) };
-/* 画像を受け取らない利用側。画像のボタンは出さない。 */
+/* 画像を受け取らない利用側。「画像」のタブを出さない。 */
 export const EmojiOnly: Story = { args: { emoji: '📘' }, render: args => example(args, false) };
-
-/* 折り返しが起きる数で、↑ ↓ の移動を確かめる。 */
-export const ManyEmojis: Story = {
-  args: { emoji: '🍎', emojis: ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪', '🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🥝', '🍍'] },
-  render: args => example(args),
-};

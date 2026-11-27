@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { IconPicker } from './index';
 
+/* 「おすすめ」に出す候補。選べる絵文字はこれに限らず、部品が持つ 1,238 個から検索して選べる。 */
 const emojis = ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪'];
 const sample = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23c4b5df"/></svg>';
 
@@ -24,6 +25,7 @@ function Example({ images = true, ...args }: React.ComponentProps<typeof IconPic
   return <div style={{ display: 'grid', gap: 12, width: 320 }}>
     <IconPicker {...args} emoji={emoji} imageUrl={imageUrl}
       onEmojiChange={value => { setEmoji(value); setImageUrl(undefined); }}
+      onClear={() => { setEmoji(undefined); setImageUrl(undefined); }}
       onImageSelect={images ? file => { setPicked(`${file.name} / ${file.type}`); setImageUrl(sample); } : undefined}
       onImageRemove={images ? () => setImageUrl(undefined) : undefined} />
     <p>選んだファイル: <output>{picked}</output></p>
@@ -31,14 +33,10 @@ function Example({ images = true, ...args }: React.ComponentProps<typeof IconPic
 }
 
 export const Default: Story = { args: { emoji: '📘' }, render: args => <Example {...args} /> };
+/* 何も選んでいない状態。トリガーは「＋」で、「なしにする」は押せない。 */
+export const Unset: Story = { args: { emoji: undefined }, render: args => <Example {...args} /> };
 export const WithImage: Story = { args: { emoji: '📘', imageUrl: sample }, render: args => <Example {...args} /> };
 export const ImageError: Story = { args: { emoji: '📘', imageUrl: '/koyori-missing-icon.png' }, render: args => <Example {...args} /> };
 export const Disabled: Story = { args: { emoji: '📘', disabled: true }, render: args => <Example {...args} /> };
-/* 画像を受け取らない利用側。画像のボタンは出さない。 */
+/* 画像を受け取らない利用側。「画像」のタブを出さない。 */
 export const EmojiOnly: Story = { args: { emoji: '📘' }, render: args => <Example {...args} images={false} /> };
-
-/* 折り返しが起きる数で、↑ ↓ の移動を確かめる。 */
-export const ManyEmojis: Story = {
-  args: { emoji: '🍎', emojis: ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪', '🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🥝', '🍍'] },
-  render: args => <Example {...args} />,
-};
