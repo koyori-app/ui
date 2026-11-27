@@ -3,8 +3,9 @@ import { ref } from 'vue';
 import { IconPicker } from '@koyori-app/ui-vue';
 import '@koyori-app/ui-vue/style.css';
 
+// 「おすすめ」に出す候補。ほかの絵文字はパネルの検索とカテゴリから選べる。
 const emojis = ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪', '🍎', '🗂️'];
-const emoji = ref('📘');
+const emoji = ref<string | undefined>('📘');
 const imageUrl = ref<string | undefined>(undefined);
 const message = ref('');
 
@@ -24,14 +25,20 @@ function select(file: File) {
 
 function remove() {
   imageUrl.value = undefined;
-  message.value = '画像を削除しました。';
+  message.value = '画像を外しました。';
+}
+
+function clear() {
+  emoji.value = undefined;
+  imageUrl.value = undefined;
+  message.value = 'アイコンをなしにしました。';
 }
 </script>
 
 <template>
   <div style="display: grid; gap: 12px; max-width: 360px">
     <IconPicker label="プロジェクトのアイコン" :emojis="emojis" :emoji="emoji" :image-url="imageUrl"
-      :on-emoji-change="change" :on-image-select="select" :on-image-remove="remove" />
+      :on-emoji-change="change" :on-clear="clear" :on-image-select="select" :on-image-remove="remove" />
     <p role="status" style="margin: 0">{{ message }}</p>
   </div>
 </template>

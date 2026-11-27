@@ -1,13 +1,14 @@
 ---
 title: IconPicker
-description: 絵文字の候補と画像アップロードで、テナントやプロジェクトのアイコンを設定する。
+description: 絵文字の検索と画像アップロードで、テナントやプロジェクトのアイコンを設定する。
 ---
 
 import IconPickerPreview from '../../../components/IconPickerPreview.astro';
 
-IconPicker は、テナントやプロジェクトのアイコンを「候補から絵文字を選ぶ」か「画像をアップロードする」で設定します。
-候補の用意、MIME とサイズの検証、アップロード、保存はすべてアプリ側で行います。
-コンポーネントは表示と操作だけを担当します。
+IconPicker は、テナントやプロジェクトのアイコンを「絵文字を選ぶ」か「画像をアップロードする」で設定します。
+閉じているときは 40px のボタンだけで、押すとパネルが開きます。
+絵文字は部品が持つ 1,238 個から名前とタグで検索して選べます。渡した `emojis` は「おすすめ」として先頭に出ます。
+MIME とサイズの検証、アップロード、保存はすべてアプリ側で行います。コンポーネントは表示と操作だけを担当します。
 
 ## プレビュー
 
@@ -18,13 +19,13 @@ IconPicker は、テナントやプロジェクトのアイコンを「候補か
 ```tsx
 // React
 <IconPicker label="プロジェクトのアイコン" emojis={emojis} emoji={emoji} imageUrl={imageUrl}
-  onEmojiChange={setEmoji} onImageSelect={upload} onImageRemove={remove} />
+  onEmojiChange={setEmoji} onClear={clear} onImageSelect={upload} onImageRemove={remove} />
 ```
 
 ```vue
 <!-- Vue -->
 <IconPicker label="プロジェクトのアイコン" :emojis="emojis" :emoji="emoji" :image-url="imageUrl"
-  :on-emoji-change="(value) => (emoji = value)" :on-image-select="upload" :on-image-remove="remove" />
+  :on-emoji-change="(value) => (emoji = value)" :on-clear="clear" :on-image-select="upload" :on-image-remove="remove" />
 ```
 
 `onImageSelect` は選ばれた `File` をそのまま渡します。送信はアプリ側で行います。
@@ -44,44 +45,61 @@ async function upload(file: File) {
 
 | 名前 | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| `label` | `string` | 必須 | 全体の読み上げ名。例: `プロジェクトのアイコン` |
-| `emojis` | `string[]` | 必須 | 絵文字の候補。重複は取り除かれる |
+| `label` | `string` | 必須 | トリガーとパネルの読み上げ名。例: `プロジェクトのアイコン` |
 | `emoji` | `string` | — | 現在の絵文字 |
 | `imageUrl` | `string` | — | 現在の画像。指定すると絵文字より優先して表示する |
+| `emojis` | `string[]` | — | 「おすすめ」に出す候補。重複は除く。省くか空なら見出しごと出さない |
 | `accept` | `string` | `'image/*'` | ファイル選択の `accept`。検証は利用側 |
-| `disabled` | `boolean` | `false` | すべての操作を無効にする |
-| `uploadLabel` | `string` | `'画像を選ぶ'` | アップロードのボタンの文言 |
-| `removeLabel` | `string` | `'画像を削除'` | 削除のボタンの文言 |
+| `disabled` | `boolean` | `false` | トリガーを無効にし、開かない。開いている間に `true` になったら閉じる |
+| `uploadLabel` | `string` | `'画像を選ぶ'` | 画像が無いときのボタンの文言 |
+| `changeLabel` | `string` | `'画像を変更'` | 画像があるときのボタンの文言 |
+| `removeLabel` | `string` | `'画像を外す'` | 画像を外すボタンの文言 |
+| `clearLabel` | `string` | `'なしにする'` | 絵文字も画像も外すボタンの文言 |
+| `imageHint` | `string` | `'PNG か JPEG で、正方形に切り抜いて表示します'` | 画像タブのヒント。`accept` を変えるなら合わせて渡す |
 | `imageErrorMessage` | `string` | `'画像を読み込めませんでした'` | 画像の読み込みに失敗したときの文言 |
-| `onEmojiChange` | `(emoji: string) => void` | — | 候補を選んだときの通知 |
-| `onImageSelect` | `(file: File) => void` | — | ファイルを選んだときの通知 |
-| `onImageRemove` | `() => void` | — | 削除ボタンの押下を通知。`imageUrl` があるときだけボタンを出す |
+| `onEmojiChange` | `(emoji: string) => void` | — | 絵文字を選んだときの通知。パネルは閉じる。カテゴリから選ぶと U+FE0F 付きの絵文字が来ることがある |
+| `onClear` | `() => void` | — | あれば「なしにする」を出す。絵文字と画像の両方を外すのは利用側 |
+| `onImageSelect` | `(file: File) => void` | — | ファイルを選んだときの通知。無ければ「画像」のタブを出さない |
+| `onImageRemove` | `() => void` | — | 「画像を外す」の通知。`imageUrl` があるときだけボタンを出す |
 
 同じファイルを続けて選び直せるよう、通知のあとに入力欄の値は空に戻します。
+画像を選んだり外したりしてもパネルは開いたままです。絵文字を選ぶ・なしにするとパネルは閉じ、フォーカスがトリガーに戻ってから通知が届きます。
+
+## 絵文字のデータ
+
+- 絵文字は emojibase-data 18.0.0 の日本語のデータ（元は Unicode CLDR）から、Emoji 15.0 までの 1,238 個を使います。人と体・旗は含みません。
+- カテゴリは「物と道具」「乗り物と場所」「活動」「動物と自然」「食べ物と飲み物」「記号」「顔と気持ち」の順です。
+- データは初めてパネルを開いたときに別のチャンクで読み込みます（gzip で約 27KB）。一度読み込んだら同じページの間は使い回します。
+- 読み込みに失敗したら `role="alert"` で知らせ、「もう一度読み込む」を出します。その間も「おすすめ」は選べます。
+  Chrome は失敗したチャンクを同じページの中では取り直さないため、ネットワークの失敗から戻すにはページの再読み込みが要ります。
 
 ## 操作とアクセシビリティ
 
-- 全体は `role="group"` で `label` が名前になります。候補の一覧も `role="group"`（「絵文字の候補」）です。
-- プレビューは `role="img"` で、現在の状態を読み上げます（`画像のアイコン` / `絵文字 📘` / `アイコン未設定`）。
-- 候補は `aria-pressed` の切り替えボタンです。選ばれているのは常に 1 つだけで、`imageUrl` があるときはどれも押されていない状態になります。
-- 候補の一覧は roving tabindex です。Tab で一覧に入ると現在の候補（無ければ先頭）にフォーカスし、
-  ← → で 1 つ前後、↑ ↓ で 1 行ぶん、Home / End で先頭・末尾へ移ります。端では止まり、先頭と末尾はつながりません。
-  行の折り返しは表示幅で変わるため、列数はキーを押した時点の実際の並びから求めます。
+- トリガーは `aria-haspopup="dialog"` と `aria-expanded` を持つボタンです。読み上げ名は `label` と現在の状態（`プロジェクトのアイコン: ロケット` / `: 画像` / `: 未設定`）です。データを読み込む前は名前の代わりに絵文字そのものを読みます。
+- トリガーを押すか ↓ でパネル（`role="dialog"`）を開きます。Escape・外側の押下・パネルの外へのフォーカスの移動で閉じます。Escape はトリガーへフォーカスを戻します。
+- 開くと検索欄にフォーカスが移ります（画像タブで開いたときは最初のボタン、タッチではパネル自身）。画像があり `onImageSelect` があるときは画像タブで開きます。
+- タブは ← → Home End でフォーカスだけが移り、Enter・Space・クリックで切り替えます。
+- 検索はひらがな・カタカナ、全角・半角、大文字・小文字の違いを無視します。件数は `aria-live` で知らせます。Enter で先頭を選び、↓ でセルへ移ります。
+- セルの読み上げ名は日本語の名前（`ロケット`）で、選択中は `aria-pressed="true"` です。`imageUrl` があるときはどれも押されていない状態になります。
+- セルは節（おすすめ・各カテゴリ）をまたぐ roving tabindex です。← → で 1 つ前後、↑ ↓ で 1 行（節の端では隣の節の同じ列）、
+  Home / End で行の先頭・末尾、Ctrl（Mac は ⌘）+ Home / End で全体の先頭・末尾へ移ります。端では止まります。
+  列数は表示幅で変わるため、キーを押した時点の実際の並びから求めます。
 - 画像の選択はボタンから開きます。`input[type="file"]` 自体は Tab の順にも読み上げにも出てきません。
-- 削除は取り消せない操作なので danger のボタンです。削除後の確認や取り消しが必要なら、アプリ側で用意してください。
-- 画像の読み込みに失敗したら `role="status"` で知らせ、絵文字またはプレースホルダーに戻ります。`imageUrl` を変えると失敗の状態は解除されます。
-- 候補にマウスを乗せたときの背景は Dropdown と同じ動きで、「動きを減らす」設定とホバーできない端末では動きません。
+- 画像の読み込みに失敗したら `role="status"` で知らせ、トリガーは絵文字（無ければ ＋）に戻ります。`imageUrl` を変えると失敗の状態は解除されます。
+- セルとタブにマウスを乗せたときの背景は Dropdown と同じ動きで、「動きを減らす」設定とホバーできない端末では動きません。
 
 ## スタイル
 
-- プレビューは 64px 角、角丸は `--koyori-radius-md` です。画像は `object-fit: cover` で収めます。
-- 候補は `--koyori-control-height-sm`（32px）を下限に `auto-fill` で並び、幅に応じて折り返します。間隔は `--koyori-space-xs` です。
-- 選択中の候補は `--koyori-color-selection` の背景と `--koyori-color-selection-indicator` の枠です（Checkbox のチェック時と同じ）。
+- トリガーは 40px 角、枠は `--koyori-color-border-strong`、角丸は `--koyori-radius-md` です。開いている間は `--koyori-color-surface-active` の背景になります。
+- パネルは幅 320px（内側 302px）で、角丸は `--koyori-radius-md` と余白の和です。一覧は高さ 352px でスクロールし、画面が低いと縮みます。
+- セルは 36px 角で、間隔 2px の 8 列に並びます。狭い画面では列が減ります。
+- 選択中のセルとタブは `--koyori-color-selection` の背景です。セルには `--koyori-color-selection-indicator` の枠、タブには同じ色の 2px の下線が付きます。
 - ホバーの背景は `--highlight-background`（既定 `--koyori-color-surface-hover`）で変えられます。
 
 ## 検証
 
 ```sh
+node scripts/build-emoji-data.mjs --check   # データが emojibase-data と一致するか
 pnpm build-storybook
 node scripts/check-icon-picker.cjs
 ```

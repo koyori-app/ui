@@ -481,15 +481,21 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 [使い方とプレビュー](apps/docs/src/content/docs/components/card-separator.mdx)を参照してください。
 ## IconPicker
 
-`IconPicker` はテナントやプロジェクトのアイコンを、絵文字の候補または画像のアップロードで設定する部品です。
-`label`・`emojis`（重複は除く）と、現在値の `emoji`・`imageUrl` を渡します。`imageUrl` があれば絵文字より優先して表示します。
-候補の用意、MIME・サイズの検証、アップロード、保存は利用側で行います。`onImageSelect` は選ばれた `File` をそのまま渡し、
-同じファイルを選び直せるよう通知のあとに入力欄の値を空に戻します。削除は取り消せない操作なので danger のボタンです。
-`onImageSelect` を渡さなければ「画像を選ぶ」を出さず、絵文字だけで選べます。「画像を削除」は `imageUrl` と `onImageRemove` があるときだけ出します。
-全体と候補の一覧は `role="group"`、プレビューは `role="img"` で現在の状態（画像・絵文字・未設定）を読み上げます。
-候補は `aria-pressed` の切り替えボタンと roving tabindex で、← → で 1 つ、↑ ↓ で 1 行、Home / End で端へ移り、端では止まります。
+`IconPicker` はテナントやプロジェクトのアイコンを、絵文字の検索または画像のアップロードで設定する部品です。
+閉じているときは 40px のボタンだけで、押すと「絵文字」「画像」のタブと「なしにする」を持つパネル（`role="dialog"`）が開きます。
+`label` と、現在値の `emoji`・`imageUrl` を渡します。`imageUrl` があれば絵文字より優先して表示します。
+絵文字は部品が持つ 1,238 個から名前とタグで検索して選べます。`emojis`（省略可。重複は除く）は「おすすめ」として先頭に出します。
+データは emojibase-data 18.0.0 の日本語のデータから `pnpm emoji-data`（`scripts/build-emoji-data.mjs`）で
+`components/IconPicker/emoji-data.ts` に作り、初めて開いたときに別チャンクで読みます（gzip で約 27KB）。
+`node scripts/build-emoji-data.mjs --check` は作り直した結果と違えば失敗します（CI でも回します）。
+MIME・サイズの検証、アップロード、保存は利用側で行います。`onImageSelect` は選ばれた `File` をそのまま渡し、
+同じファイルを選び直せるよう通知のあとに入力欄の値を空に戻します。`onImageSelect` を渡さなければ「画像」のタブを出しません。
+「画像を外す」は `imageUrl` と `onImageRemove` があるとき、「なしにする」は `onClear` があるときだけ出します。
+絵文字を選ぶ・なしにするとパネルを閉じ、トリガーへフォーカスを戻してから通知します。
+トリガーの読み上げ名は `label` と現在の状態（日本語の名前・画像・未設定）、セルの読み上げ名は日本語の名前で、選択中は `aria-pressed` です。
+セルは節をまたぐ roving tabindex で、← → で 1 つ、↑ ↓ で 1 行、Home / End で行の端、Ctrl+Home / End で全体の端へ移り、端では止まります。
 列数は折り返しの結果なので、キーを押した時点の実際の並びから求めます。ホバーの背景は Dropdown と同じ共通ハイライトです。
-`node scripts/check-icon-picker.cjs` で計算・生成物・ブラウザー操作を検証します（Storybook のビルド後に実行）。
+`node scripts/check-icon-picker.cjs` でデータ・計算・生成物・ブラウザー操作を検証します（Storybook のビルド後に実行）。
 [使い方とプレビュー](apps/docs/src/content/docs/components/icon-picker.mdx)を参照してください。
 
 ## Pagination

@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { IconPicker } from '@koyori-app/ui-react';
 import '@koyori-app/ui-react/style.css';
 
+// 「おすすめ」に出す候補。ほかの絵文字はパネルの検索とカテゴリから選べる。
 const emojis = ['🌱', '📘', '🛠️', '🎯', '🚀', '🧪', '🍎', '🗂️'];
 
 export default function IconPickerDemo() {
-  const [emoji, setEmoji] = useState('📘');
+  const [emoji, setEmoji] = useState<string | undefined>('📘');
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [message, setMessage] = useState('');
 
@@ -20,8 +21,9 @@ export default function IconPickerDemo() {
   return <div style={{ display: 'grid', gap: 12, maxWidth: 360 }}>
     <IconPicker label="プロジェクトのアイコン" emojis={emojis} emoji={emoji} imageUrl={imageUrl}
       onEmojiChange={value => { setEmoji(value); setImageUrl(undefined); setMessage(''); }}
+      onClear={() => { setEmoji(undefined); setImageUrl(undefined); setMessage('アイコンをなしにしました。'); }}
       onImageSelect={select}
-      onImageRemove={() => { setImageUrl(undefined); setMessage('画像を削除しました。'); }} />
+      onImageRemove={() => { setImageUrl(undefined); setMessage('画像を外しました。'); }} />
     <p role="status" style={{ margin: 0 }}>{message}</p>
   </div>;
 }
