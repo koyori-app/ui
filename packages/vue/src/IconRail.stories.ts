@@ -99,6 +99,7 @@ export const WithMenu: Story = {
           <IconRailItem v-for="tenant in tenants" :key="tenant.id" v-bind="tenant" :id="'rail-menu-' + tenant.id" :selected="tenant.id === 'acme'"
             :on-click="() => log.push('click:' + tenant.id)" :on-menu="(position) => openMenu(tenant.id, position)" />
           <IconRailItem id="rail-menu-plain" label="メニューなし" emoji="📦" :on-click="() => log.push('click:plain')" />
+          <IconRailItem id="rail-menu-locked" label="無効なテナント" emoji="🔒" disabled :on-menu="() => log.push('menu:locked')" />
         </IconRail>
       </div></div>
       <ContextMenu label="テナントの操作" id="rail-context-menu" :open="menu.open" :x="menu.x" :y="menu.y" :items="menuItems"

@@ -116,7 +116,7 @@ export function connectIconRailItem(button: HTMLElement | null, handlers: IconRa
     current.onClick?.();
   };
   const contextmenu = (event: MouseEvent) => {
-    if (!current.onMenu) return;
+    if (!current.onMenu || button.matches(':disabled')) return;
     event.preventDefault();
     // 長押しは自前の時計で開く。Android が長押しで出す contextmenu で二重に開かない。
     if (tracker.touching) return;

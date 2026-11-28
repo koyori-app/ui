@@ -161,6 +161,12 @@ async function checkMenu(framework) {
   await item('メニューなし').click({ button: 'right' });
   assert.deepEqual(await s.prevented(), [false], `${framework}: onMenu の無い項目は止めない`);
   assert.equal(await s.log(), 'menu:acme menu:tea');
+
+  // disabled の項目は onMenu があっても開かず、ブラウザーのメニューも止めない。
+  // Chromium は無効なボタンへ右クリックを配らないことがあるので、contextmenu を直に送る。
+  await item('無効なテナント').dispatchEvent('contextmenu', { bubbles: true, cancelable: true });
+  assert.equal(await s.log(), 'menu:acme menu:tea', `${framework}: disabled の項目は onMenu を呼ばない`);
+  assert.deepEqual(await s.prevented(), [false], `${framework}: disabled の項目は contextmenu を止めない`);
   await s.finish();
 
   // タッチ: 長押しで onMenu、続く click では onClick を呼ばない。短いタップは onClick。

@@ -87,6 +87,8 @@ export const WithMenu: Story = {
             onMenu={position => { record(`menu:${tenant.id}`); setMenu({ open: true, ...position, tenant: tenant.id }); }} />)}
           {/* onMenu の無い項目。右クリックでブラウザーのメニューを止めない。 */}
           <IconRailItem id="rail-menu-plain" label="メニューなし" emoji="📦" onClick={() => record('click:plain')} />
+          {/* disabled の項目は onMenu があってもメニューを開かない。 */}
+          <IconRailItem id="rail-menu-locked" label="無効なテナント" emoji="🔒" disabled onMenu={() => record('menu:locked')} />
         </IconRail>
       </Frame>
       <ContextMenu label="テナントの操作" id="rail-context-menu" open={menu.open} x={menu.x} y={menu.y} items={menuItems}
