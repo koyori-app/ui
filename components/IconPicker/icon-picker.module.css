@@ -1,50 +1,205 @@
 @import '../tokens.css';
 
 .root {
-  display: grid;
-  gap: var(--koyori-space-md);
-  justify-items: start;
   color: var(--koyori-color-text);
-  font: var(--koyori-font-size-sm)/var(--koyori-line-height-sm) var(--koyori-font-family);
 }
 
-.preview {
+/* 閉じているときは 40px のボタンだけを出す。 */
+.trigger {
   display: inline-flex;
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--koyori-color-border-strong);
   border-radius: var(--koyori-radius-md);
   background: var(--koyori-color-surface);
-  font-size: 32px;
+  color: inherit;
+  font: inherit;
+  font-size: 20px;
   line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+.trigger[aria-expanded='true'] { background: var(--koyori-color-surface-active); }
+
+.trigger:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-width));
+}
+
+.trigger:disabled { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
+.trigger:disabled .image { opacity: 0.5; }
 
 .image { width: 100%; height: 100%; object-fit: cover; }
-.placeholder { color: var(--koyori-color-text-muted); font-size: var(--koyori-font-size-sm); }
-.error { color: var(--koyori-color-danger); }
+.plus { color: var(--koyori-color-text-muted); }
 
-/* 候補の選択は「項目を選ぶ操作」なので、共通ハイライトを使う。 */
-.grid {
-  --highlight-background: var(--koyori-color-surface-hover);
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--koyori-control-height-sm), 1fr));
-  gap: var(--koyori-space-xs);
-  width: 100%;
+/* ボタンから開くため、入力欄自体はレイアウトも読み上げも持たない。 */
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.emoji {
+/* Spinner と同じ「見た目だけ隠す」書き方。読み上げには残す。 */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 内側 302px（36px のセルが間隔 2px で 8 列）に枠と余白を足す。 */
+.panel {
+  --koyori-menu-width: 320px;
+  --koyori-menu-max-height: 520px;
+  padding: var(--koyori-space-md);
+  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-md));
+}
+
+/* 一覧は .scroll がスクロールする。高さが足りない画面では .scroll が縮む。 */
+.body {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--koyori-space-md);
+  min-height: 44px;
+  margin-bottom: var(--koyori-space-md);
+  border-bottom: 1px solid var(--koyori-color-border);
+}
+
+.tabs {
+  --highlight-opacity: 0;
+  --highlight-background: var(--koyori-color-surface-hover);
+  position: relative;
+  display: flex;
+  gap: var(--koyori-space-xs);
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  padding: var(--koyori-space-md) var(--koyori-space-lg);
+  border: 0;
+  border-radius: var(--koyori-radius-md);
+  background: transparent;
+  color: var(--koyori-color-text-secondary);
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tab[aria-selected='true'] {
+  background: var(--koyori-color-selection);
+  color: var(--koyori-color-text);
+}
+
+.tab[aria-selected='true']::after {
+  position: absolute;
+  right: var(--koyori-space-lg);
+  bottom: var(--koyori-space-xs);
+  left: var(--koyori-space-lg);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--koyori-color-selection-indicator);
+  content: '';
+}
+
+.tab:focus-visible, .clear:focus-visible, .panel:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: calc(-1 * var(--koyori-focus-width));
+}
+
+.clear {
+  min-height: 32px;
+  padding: 0 var(--koyori-space-md);
+  border: 0;
+  border-radius: var(--koyori-radius-md);
+  background: transparent;
+  color: var(--koyori-color-text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.clear:hover:not(:disabled) { color: var(--koyori-color-text); }
+.clear:disabled { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
+
+.emojiPanel, .imagePanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.emojiPanel { flex: 1 1 auto; gap: var(--koyori-space-md); }
+.emojiPanel[hidden], .imagePanel[hidden] { display: none; }
+
+.search { flex-shrink: 0; }
+
+/* セルの選択は「項目を選ぶ操作」なので、共通ハイライトを使う。 */
+.scroll {
+  --highlight-opacity: 0;
+  --highlight-background: var(--koyori-color-surface-hover);
+  position: relative;
+  display: flex;
+  flex: 0 1 352px;
+  flex-direction: column;
+  gap: var(--koyori-space-md);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--koyori-space-xs);
+}
+
+.heading {
+  color: var(--koyori-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 幅 302px で 8 列。狭い画面では列が減り、キー移動は実際の列数を読む。 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 36px);
+  gap: 2px;
+}
+
+.cell {
   position: relative;
   display: inline-flex;
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: var(--koyori-control-height-sm);
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: 2px solid transparent;
   border-radius: var(--koyori-radius-md);
@@ -60,40 +215,64 @@
   user-select: none;
 }
 
-.emoji:active:not(:disabled) { background: var(--koyori-color-surface-active); }
+.cell:active:not(:disabled) { background: var(--koyori-color-surface-active); }
 
-.emoji[aria-pressed='true'] {
+/* 背景だけでは地との対比が足りないので、枠でも選択中を示す。 */
+.cell[aria-pressed='true'] {
   border-color: var(--koyori-color-selection-indicator);
   background: var(--koyori-color-selection);
 }
 
-.emoji:focus-visible {
+.cell:focus-visible {
   outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
   outline-offset: calc(-1 * var(--koyori-focus-width));
 }
 
-.emoji:disabled { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
+.cell:disabled { color: var(--koyori-color-text-disabled); cursor: not-allowed; }
 
-/* ボタンから開くため、入力欄自体はレイアウトも読み上げも持たない。 */
-.file {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--koyori-space-md);
+  margin: 0;
+  padding: var(--koyori-space-md) 0;
+  color: var(--koyori-color-text-muted);
+}
+
+.imagePanel {
+  align-items: flex-start;
+  gap: var(--koyori-space-md);
+  padding: var(--koyori-space-xs) 0;
+}
+
+.current {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--koyori-radius-md);
+  object-fit: cover;
+}
+
+.error { color: var(--koyori-color-danger); }
+
+.hint {
+  margin: 0;
+  color: var(--koyori-color-text-muted);
+  font-size: 0.75rem;
 }
 
 .actions { display: flex; flex-wrap: wrap; gap: var(--koyori-space-md); }
 
 @media (forced-colors: active) {
-  .emoji[aria-pressed='true'] { border-color: Highlight; }
+  .cell[aria-pressed='true'] { border-color: Highlight; }
+  .tab[aria-selected='true'] { outline: 2px solid Highlight; outline-offset: -2px; }
 }
 
 /* 押すと沈み、選ぶと弾む。 */
 @media (prefers-reduced-motion: no-preference) {
-  .emoji { transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring); }
-  .emoji:active:not(:disabled) { transform: scale(0.82); transition-duration: 80ms; }
-  .emoji[aria-pressed='true'] { animation: emoji-pop 360ms var(--koyori-ease-pop); }
+  .cell { transition: transform var(--koyori-motion-spring) var(--koyori-ease-spring); }
+  .cell:active:not(:disabled) { transform: scale(0.82); transition-duration: 80ms; }
+  .cell[aria-pressed='true'] { animation: emoji-pop 360ms var(--koyori-ease-pop); }
 }
 
 @keyframes emoji-pop {
