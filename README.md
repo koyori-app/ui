@@ -1,576 +1,81 @@
 # Koyori UI
 
-Koyori のプロジェクトで共有する UI。Mitosis の共通ソースから Vue・React 向けのコンポーネントを生成します。
+Koyori のプロジェクトで共有する UI コンポーネントライブラリです。[Mitosis](https://mitosis.builder.io/) の共通ソースから Vue 3・React 19 向けのパッケージを生成しています。
 
-## 公開
+## パッケージ
 
-`@koyori-app/ui-vue` は npm に公開します。`packages/vue/package.json` の `version` を上げて main に取り込み、`v<version>` の tag を push すると `tag-release.yml` が GitHub Release の draft を作ります。内容を確認して Release を公開すると `release.yml` が npm に publish します（npmjs.com に Trusted Publisher として登録済みのリポジトリ + workflow から OIDC で認証）。初版だけは手元で `pnpm --filter @koyori-app/ui-vue publish` を実行してから Trusted Publisher を登録します。
+| パッケージ | 対象 | 配布状況 |
+| --- | --- | --- |
+| [`@koyori-app/ui-vue`](packages/vue) | Vue 3.5+ | [npm](https://www.npmjs.com/package/@koyori-app/ui-vue) で公開中 |
+| [`@koyori-app/ui-react`](packages/react) | React 19+ | リポジトリ内パッケージ（未公開） |
 
-## 開発
+## 導入方法
 
-Node.js 24 と pnpm 12.4.1 を使います。
+### Vue
+
+```sh
+pnpm add @koyori-app/ui-vue
+```
+
+エントリーポイントなどでスタイルを読み込み、コンポーネントをインポートして使用します。
+
+```vue
+<script setup lang="ts">
+import '@koyori-app/ui-vue/style.css';
+import { Button } from '@koyori-app/ui-vue';
+</script>
+
+<template>
+  <Button label="作成" />
+</template>
+```
+
+### React
+
+`@koyori-app/ui-react` はまだ npm に公開していないため、このリポジトリからパッケージを作成するか workspace 参照で利用します。
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm storybook:vue    # http://localhost:6006
-pnpm storybook:react  # http://localhost:6007（別ターミナル）
-pnpm typecheck
-pnpm build
-pnpm build-storybook
+pnpm --filter @koyori-app/ui-react pack --pack-destination /tmp/koyori-ui-packages
 ```
 
-| パッケージ | ディレクトリ | Storybook 出力 |
-| --- | --- | --- |
-| `@koyori-app/ui-vue` | `packages/vue/src` | `packages/vue/storybook-static` |
-| `@koyori-app/ui-react` | `packages/react/src` | `packages/react/storybook-static` |
+```tsx
+import '@koyori-app/ui-react/style.css';
+import { Button } from '@koyori-app/ui-react';
 
-共通の実装とスタイルは `components/<コンポーネント名>/` にまとめます。
-例えば Picker は `components/Picker/Picker.lite.tsx` と `components/Picker/picker.module.css` に置きます。
-複数の部品が使うスタイル・計算は `components/shared/` に置きます。
-アイコンも同じ構成にし、共通の型宣言 `css.d.ts` は `components/` 直下に置きます。
-変更後に `pnpm generate` を実行すると、`packages/{vue,react}/src/generated` が更新されます。
-Storybook 起動中もこのコマンドで変更を反映できます。生成物は直接編集・コミットしません。
-Story は各パッケージの `src/*.stories.*` に追加します。
-
-角丸・文字サイズ・行高・余白・最小高さ・色・影・フォーカス・モーション・メニュー配置・スピナーの周期の共通トークンは [components/tokens.css](components/tokens.css) で管理します。
-各コンポーネントが参照し、生成先と配布用の `style.css` にも含まれます。
-Button・Dropdown・Picker・Accordion・SidebarLink は `sm`（13px 相当）の文字と 32px の最小高さ、操作要素の角丸は `md`（6px）、ダイアログやカードなど浮いた面の角丸は `lg`（12px）を使います。
-配色は墨です。既定は黒い面（ダーク）で、祖先に `data-theme="light"` を付けると明るい面に切り替わります。
-利用者に切り替えさせるには `ThemePicker`（3 択）か `ThemeSwitch`（太陽と月の 2 値のスイッチ）を置き、`<head>` に `themeScript` を inline で入れます（[ThemePicker](#themepicker)）。
-`html[data-theme]` は `light` か `dark` の 2 値のままで、選択は `localStorage` の `koyori-theme` に保持します。
-主ボタン・タブの選択・現在のページ・選んだ日・チェックは、白黒を反転した面で示します。色を持つのは成功・情報・警告・エラーと、例外のメンションの札（青と黄の字と薄い地）だけです。
-メニューやダイアログなど浮いた面は `--koyori-color-surface-raised` で塗ります。部品は地の色を塗らないため、ページの背景は利用側が `--koyori-color-surface` で塗ります。
-選択背景とチェックの色は `--koyori-color-selection` と `--koyori-color-selection-indicator` で調整できます。
-カードなど角丸のある要素を入れ子にする場合は、外側の角丸を `内側の角丸 + 外側の padding` にします。
-Dropdown のパネルは `calc(var(--koyori-radius-md) + var(--koyori-space-xs))`（既定値: 8px + 4px = 12px）です。
-計算は外側の要素で行い、その範囲で内側の角丸や余白を上書きした場合も追従させます。
-文字サイズは `rem`、行高は倍率なので、利用側のルート文字サイズに追従します。
-共通値はここで変更し、利用側で調整するときは `style.css` の読み込み後に上書きします。
-`:root` なら全体、親要素のクラスならその範囲だけに適用できます。
-
-```css
-.settings-panel {
-  --koyori-radius-md: 6px;
-  --koyori-font-size-sm: 1rem;
+export function App() {
+  return <Button label="作成" />;
 }
 ```
 
-Button は `variant="primary" | "secondary" | "tertiary" | "ghost" | "danger"` で切り替えます（既定値: `primary`）。
-`danger` は削除など取り消せない操作に使い、ラベルにも結果が分かる言葉を入れてください。
-各種類の通常・無効状態の Story と、Docs・アクセシビリティ確認用のアドオンを用意しています。
-共通 CSS で hover 時の色の遷移と押下時の縮小を実装し、`prefers-reduced-motion` に対応しています。
-`:hover` はホバーできる端末（`@media (hover: hover) and (pointer: fine)`）に限り、タップ後に色を残しません。
-コンテナより長いラベルだけを折り返し、短いラベルは狭い行でも 1 字ずつ折れません。
-キーボードでの移動はホバーの帯もタブの印も動かしません。`node scripts/check-touch-narrow.cjs` で、これらとタッチ端末・狭い幅の表示を検証します。
-押下時は内側の背景・ラベルだけを縮め、外側の寸法・クリック領域・フォーカス枠を維持します。
-アイコンは React では `icon={<EllipsisIcon size={16} />}`、Vue では `#icon` スロットで渡し、ラベルの前に表示します。
-`label` を省略するとアイコンだけの正方形のボタンになります。その場合は `ariaLabel`（Vue も `ariaLabel`）で名前を付けてください。
-`label` がなければ `ariaLabel` を必須にする型を React・Vue の両方で公開します。空文字は避けてください。
-Vue では、利用側の `@click` と、Reka UI の `as-child` など親から流し込まれる `onClick` が同時に付いても、両方を順に呼びます。
-UI の開発では [アクセシビリティの指針](AGENT.md) を参照してください。
+### テーマとトークン
 
-ButtonGroup は子の Button をつなげ、隣り合う枠線を1本に重ねて外側の角だけを丸めます。
-`label` を `role="group"` の `aria-label` に使います。グループ内では押下時の縮小を止めます。
+- 既定はダークテーマです。`<html>` などの祖先要素に `data-theme="light"` を付けるとライトテーマに切り替わります。
+- ユーザーによる切り替えには `ThemePicker` / `ThemeSwitch` と `themeScript` を利用できます。
+- 色・角丸・余白などの CSS カスタムプロパティは [components/tokens.css](components/tokens.css) で定義されており、`style.css` の読み込み後に上書きできます。
 
-Accordion は `id`・`label` と本文を受け取る開閉セクションです。`id` はページ内で一意にします。
-`defaultOpen` は初期表示、`open` と `onOpenChange` は外側からの制御に使います。省略時は各セクションが独立して開閉します。
-同時にひとつだけ開く例は Storybook の SingleOpen、複数を開く例は MultipleOpen にあります。
-`headingLevel`（既定 3）で見出し階層、`disabled` で操作の無効化、`icon`（Vue は `#icon`）で先頭アイコンを指定できます。
-Enter / Space で開閉し、閉じた内容は Tab 移動・読み上げから除きます。本文の DOM と入力内容は保持します。
+## ドキュメントと開発
 
-SplitPane は `primary`・`secondary`（Vue は同名スロット）を左右に並べ、境界のドラッグと ← / →・Home / End で幅を調整します。
-`size` / `defaultSize`、`minSize` / `minSecondarySize` はpxで、`onSizeChange` が操作による変更要求を通知します。
-親が狭い場合は両最小幅の比率で縮め、希望幅を保持します。`label`・一意の `primaryId`、見える見出しには `ariaLabelledBy` を渡します。
-永続化は利用側で行います。[APIと狭い幅の扱い](apps/docs/src/content/docs/components/split-pane.mdx)を参照してください。
-ブラウザー検証は両Storybookのビルド後に `SPLIT_PANE_TEST_PORT=16306 node scripts/check-split-pane.cjs` で実行できます。
+各コンポーネントのデモ・API・キーボード操作は `apps/docs`（Astro + Starlight）と各パッケージの Storybook にまとめています。
 
-Sidebar は `label` をナビゲーションの名前にし、`header`・`footer`（Vue は同名スロット）と本文を縦に並べます。
-SidebarLink の `label`・`href` でページ移動、`current` で現在地、`badge` で補足、`disabled` で移動の無効化を指定します。
-アイコンは `icon`（Vue は `#icon`）で渡します。通常のリンクなので新しいタブでも開け、現在地はアプリの URL から渡します。
-本文に Accordion を置くとグループを開閉できます。幅は `--koyori-sidebar-width`（240px）、高さは親要素で指定します。
-`open`（と `id`）を渡すと開閉でき、閉じると幅（`placement` が `top`・`bottom` なら高さ、既定 `--koyori-sidebar-height`）を 0 まで畳んで隣の領域を広げます。
-開閉ボタンは Button の `ariaExpanded`・`ariaControls` で状態と対象を伝え、閉じるときに中にあったフォーカスはそのボタンへ戻します。
-`rail` を渡すと `--koyori-sidebar-rail-width`（60px）まで縮み、アイコンだけの表示になります。ラベルと badge は見た目だけ隠し、読み上げ名は保ちます。
-`open` と組み合わせると、展開・アイコンだけ・完全に閉じるの 3 状態になります。レールで使うリンクには `icon` を渡してください。
-`onRailChange` を渡すとヘッダーに切り替えボタンが出て（展開時はヘッダーに乗せたときだけ）、押すと rail を反転します。状態は `aria-pressed`、名前は `railLabel` です。
-項目が多い場合はナビゲーション部分だけがスクロールします。Accordion 本文の余白は `--koyori-accordion-padding` で変更できます。
-
-Avatar は利用者を表す円形の画像です。`name`・`src`・`size`（既定: 32px）を受け取ります。
-`src` がない場合と読み込みに失敗した場合はイニシャルを表示し、読み上げは常に `name` になります。
-イニシャルは空白区切りの語の先頭を2つまで使います（「山田 太郎」→「山太」、「山田太郎」→「山」）。
-直径と文字サイズの計算・イニシャルの算出は `components/Avatar/avatar.ts` にまとめ、AvatarGroup と共有します。
-
-AvatarGroup は `items: { name, src? }[]` を少し重ねて並べ、`max` を超えた分を `+N` にまとめます。
-`label` を `role="group"` の `aria-label`、`formatOverflow(count)` を `+N` の読み上げ文（既定: `他 N 人`）に使います。
-重なりは 8px、隣との境界は `--koyori-color-surface` の縁取りで作るため、背景の異なる場所ではこの値を合わせてください。
-
-Mention は `@名` を色付きの字と薄い地で出します（アバターは出しません）。`label`（`@` を含めた字）、`status`（`member`・`outside`・`gone`・`unknown`。既定 `member`）、`self`（本人。`member` のときだけ）、`href`（付けると `a` 要素）を受け取ります。
-member は青、本人は黄の字と地で、地はすべて不透明なトークン（`--koyori-color-mention*`）です。外れた者・退会した者・名の引けぬ者は地を敷かず、灰色の字に破線の下線を引き、色だけで分けません。
-説明文のように HTML を差し込む場所では、固定 class（`koyori-mention` と `koyori-mention-member` などの状態 class）を付けた要素を書きます。CSS は `style.css` に入り、部品と同じ見た目になります。
-class は `mentionClassNames(status, self)`、許可リストは `MENTION_CLASS_NAMES` で組めます。
-状態ごとの対比とサーバー描画は `node scripts/check-mention.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行。CI の Check でも走ります）。
-
-Dialog はネイティブの `dialog` 要素と `showModal()` を使うモーダルです。`open`・`title`・`description`・`onClose` を受け取り、
-本文は既定スロット、操作ボタンは `actions`（Vue は `#actions` スロット）に置きます。表示状態はアプリ側で持ち、`onClose` で false に戻します。`open` を true のままにすると閉じません（ブラウザーが強制的に閉じても `onClose` を呼んで開き直します）。
-フォーカスの閉じ込め・背景の操作停止・Escape・フォーカス復帰はブラウザーに任せ、`open` 属性はバインドしません（非モーダルになるため）。
-背景クリックは pointerdown の対象が dialog 自身のときだけ閉じ、開いている間は `body:has(dialog:modal)` で背景のスクロールを止めます。
-幅は `--koyori-dialog-width`、覆いの色は `--koyori-color-backdrop`、角丸は内側のボタンの角丸 + `--koyori-space-xl` です。
-中身が自前でレイアウトを持つ場合は `plain` を使います。見出しと説明は読み上げにだけ残し、内側の余白を外して本文が全面に広がります。
-幅と高さ（`--koyori-dialog-height`、既定 `auto`）はダイアログを囲む要素で指定します。2 列の組み方は Web ドキュメントのブロックに載せています。
-
-Drawer は画面端から滑り出るモーダルで、ハンバーガーボタン（Button + `MenuIcon`）で開閉するナビゲーションなどに使います。
-`open`・`label`・`placement`（`left` 既定、`right`・`top`・`bottom`）・`onClose` を受け取り、開閉は Dialog と同じ `syncDialog` で同期します。
-画面端に付き、内側の角だけが丸くなります。開閉とも弾まないスライドで、閉じるアニメーションは `transition-behavior: allow-discrete` 対応ブラウザーだけで動きます。
-幅は `--koyori-drawer-width`（280px）、上下の高さは `--koyori-drawer-height`（60vh）です。中の Sidebar が `rail` のときは `--koyori-sidebar-rail-width` に縮みます。
-`modal` に `false` を渡すと `dialog` を使わず中身をその場所に描くため、広い画面では常時表示、狭い画面ではモーダル、という出し分けを同じ記述でできます。中の Sidebar は `--koyori-sidebar-border`・`--koyori-sidebar-radius` で枠と角丸を外します。
-
-ConfirmDialog は Dialog と Button を組み合わせた二択の確認です。`title`・`message`・`confirmLabel` は必須で、
-`destructive` で実行ボタンを danger にします。キャンセルを先頭に置くため、初期フォーカスは常に取り消し側です。
-
-Field は `id`・`label`・`description`・`error`・`required` を受け取り、中の Input（1行）・Textarea（複数行）・Picker（選択）に渡します。Field 内には対象を1つだけ置きます。
-`id` は入力欄に付き、ラベルの `for` と説明・エラーの `aria-describedby` に使います。エラーがあると `aria-invalid="true"` を付けます。
-エラー領域は常設の `aria-live="polite"` で、後から出たエラーも通知します。`requiredText` で「必須」の表示を差し替えられます。
-`aside`（Vue は `#aside` スロット）でラベルの行の右端にリンクや小さなボタンを置けます。`label` の外に置くため、ラベルのクリックや読み上げ名に混ざりません。
-Picker ではトリガーに Field の `id` が付き、`requiredText` を名前に含めて閉じた状態でも必須を伝えます。
-説明・エラーの `aria-describedby` はトリガーにだけ付けます。一覧は `aria-required` と `aria-invalid` で状態を伝えます。必須チェックと送信値の管理はアプリ側で行います。
-Input・Textarea の値は `value` と `onValueChange(value)` で扱い、入力のたびに呼ばれます。Field の外で使う場合は `ariaLabel` で名前を付けます。
-Input・Textarea の `onBlur()` はフォーカスが外れるたびに引数なしで 1 回呼ばれます。数値入力では確定通知（`onNumberCommit`）の後です。
-Input の `type` には `date` も指定できます。`min` / `max` / `step` と確定通知は `number` のときだけ使います。
-Input の `inputMode`（`text`・`decimal`・`numeric`・`tel`・`search`・`email`・`url`）は仮想キーボードの種類を指定するだけで、値は検証しません。
-入力欄の枠線は `--koyori-color-border-strong`（背景比 3:1 以上）、エラーは `--koyori-color-danger`（4.5:1 以上）を使います。
-Input には `prefix` / `suffix`（Vue は同名スロット）で入力欄の前後に要素を置けます。単位・通貨記号のほか、
-パスワードの表示切り替えのようなボタンも置けます。入力欄と前後の要素はひとつの枠に収まり、枠・背景・ホバー・エラー・無効の
-見た目は外側の要素が描きます。`id`・`aria-describedby`・`aria-invalid` は入力欄だけに付き、Tab は入力欄 → 末尾のボタンの順です。
-フォーカス枠は `:has()` で入力欄だけを見るため、末尾のボタンにフォーカスしても枠が二重になりません。
-前後の要素の高さ・角丸は「外側の値 − 余白」で計算し、トークンの上書きにも追従します。
-トグルボタンには Button の `ariaPressed`（`'true' | 'false'`）を使います。
-`node scripts/check-input.cjs` に先頭・末尾の要素の検証も含めています。
-
-PasswordInput は上の組み立て（Input + 末尾の表示切り替えボタン）を部品にしたパスワード欄です。
-`value`・`onValueChange`・`autocomplete`（`current-password` か `new-password` を推奨）・`disabled`・`readOnly` は Input と同じで、
-Field の中では `id`・`aria-describedby`・`aria-invalid`・`required` を入力欄だけに受け取ります。Field の外では `ariaLabel` を付けます。
-表示状態は `visible` / `onVisibleChange` で親が持つか、省略して内部で持ちます（初期値は `defaultVisible`）。
-切り替えボタンの名前は `toggleLabel`（既定 `パスワードを表示`）で固定し、状態は `aria-pressed` で伝えます。
-切り替えでは `type` を `password` と `text` で入れ替え、切り替え前のカーソル位置を描画後に戻します。フォーカスはボタンに残ります。
-Input を合成せず、同じ markup を `Field/field.module.css` で組んでいます（親から子の `suffix` スロットへ要素を渡せないため）。
-カーソル位置の控えと復元は `components/PasswordInput/password-input.ts` にまとめ、`node scripts/check-password-input.cjs` で検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/password-input.mdx)を参照してください。
-
-Dropdown はアクションメニューです。`label` と `items: { value, label, disabled? }[]` を渡し、
-項目を実行すると閉じて `onSelect(value)` を呼び出します。選択状態は持ちません。`value` は一覧内で一意にしてください。
-`disabled` で全体を無効化し、`defaultOpen` で初期表示を開けます。`emptyMessage` で空表示を変更できます。
-トリガーは `aria-haspopup="menu"` と `aria-controls`、一覧は `menu`、項目は `menuitem` を使います。
-Enter・Space・↓ は先頭、↑ は最後へフォーカスを移して開きます。上下キー・Home・End・先頭文字で移動できます。
-無効な項目も矢印キーでフォーカスできますが、実行はできません。
-Tab / Shift + Tab は閉じて次・前の操作へ移動し、Escape は閉じてトリガーへ戻ります。外側クリックでも閉じます。
-Storybook の Actions で実行通知と Tab 移動を確認できます。
-項目の `kind` は `item`（既定）・`checkbox`・`radio` です。`checkbox`（`menuitemcheckbox`）は選んでも閉じずに `onSelect` を呼び、`radio`（`menuitemradio`）は選ぶと閉じます。
-`checked` はアプリが持ち、`onSelect` を受けて `items` を更新します。`destructive` は ContextMenu と同じ danger の色です（ラベルにも結果を書くこと）。
-`items` に `{ heading?, items }[]` を渡すと節に分かれ、節は `group`、節の間には `separator` が入ります。矢印キーは節をまたいで移動し、見出しと区切りは飛ばします。
-`ariaLabel` だけを渡すとアイコンだけの正方形のトリガーになります。`variant`（既定 `ghost`）は Button と同じです。
-`trigger`（React は要素、Vue は `#trigger` スロット）でトリガーの文字をアバターなどに差し替えられます。読み上げ名は `ariaLabel`、なければ `label` です。開閉は `onOpenChange(open)` で通知します。
-`items` の `icon` でラベルの前にアイコンを出せます（React は要素、Vue は `#item-icon="{ item }"` スロット。Storybook の ItemIcons）。アイコンの無い項目も同じ幅を空け、ラジオの印は右端の ✓ になります。
-
-Picker は単一・複数選択用です。`label` と `items: { value, label, disabled? }[]` を渡します。
-検索は既定で有効です。`searchable={false}`（Vue: `:searchable="false"`）で検索欄を省略できます。
-単一選択は選ぶと閉じ、`selectionMode="multiple"` は選択・解除しても開いたままです。
-`avatars` を付けると、選択肢の先頭に 24px の Avatar を出します。画像は `items` の `src`、なければイニシャルです。
-行の上下の余白を詰めて高さは 32px のままにし、アバターは装飾として読み上げから外します。選択肢の名前は `label` のままです。
-`items` の `color`（CSS の色）でラベルの前に 8px の色の点、`description` でラベルの下に小さな補足を出します（Storybook の ColorDots・Descriptions）。
-どちらも装飾として読み上げから外し、選択肢の名前とトリガーの表示は `label` だけです。検索も `label` だけを対象にし、`avatars` があれば `color` は無視します。
-`items` の `icon` でラベルの前にアイコンを出せます（React は要素、Vue は `#item-icon="{ item }"` スロット。Storybook の ItemIcons）。
-トリガーの表示は `trigger`（React の要素、Vue は `#trigger` スロット）で差し替えられます。
-アバターなどを置いても、開閉・キーボード操作・読み上げ名（`label` と選択中のラベル）はそのままです。
-中身は `button` の内容として正しい要素にしてください（AvatarGroup のルートは `span` です）。
-選んだラベルはトリガーとアクセシブルネームに反映します。`label` は選ぶ対象の名前として固定してください。
-`selectedValues: string[]` と `onSelectionChange(values)` で外側から状態を管理できます。
-省略すると内部で管理し、初期値は `defaultSelectedValues` です。
-存在しない値は表示から除き、単一選択では項目順で先頭の1件を使います。単一選択の解除は外側から空配列を渡します。
-検索で見えなくなった項目の選択も保持します。検索はラベルの部分一致で、大文字・小文字と全角・半角を揃えます。
-開き直すと検索文字列をクリアします。`searchPlaceholder`・`searchLabel`・`emptyMessage` で文言を差し替えられます。
-候補0件と検索一致0件を別の文言にする場合は `noResultsMessage` も指定します。未指定時は既存の `emptyMessage` にフォールバックします。
-`loading`・`error`（取得失敗メッセージ）・`onRetry` で非同期状態を表示できます。表示は読み込み中、失敗、空候補／検索結果なし、件数の順に優先します。
-取得済みの候補・選択・検索を保ち、再試行は Tab と Enter / Space でも実行できます。API 呼び出しと状態更新は利用側で行います。
-`loadingMessage`・`retryLabel` で文言を変更できます。Storybook の AsyncLoading・AsyncRetry で成功と再失敗を確認できます。
-候補数の通知は入力が300ms止まってから更新します。候補と空表示はすぐ更新し、閉じると保留中の通知を取り消します。
-`formatResultsCount(count)` は候補数の通知文、`selectionSeparator` は複数の選択ラベルの区切り（既定: `、`）です。
-一覧は `listbox` で、上下キー・Home・End・先頭文字で移動し、Enter / Space で選択、Escape で閉じます。
-検索ありなら開くと検索欄にフォーカスし、検索なしなら現在の選択項目（なければ先頭の有効な項目）に移ります。
-チェックと背景はアニメーションし、隣の選択済み項目から背景が伸びてつながります。
-Storybook の WithoutSearch・MultipleWithoutSearch・ControlledWithoutSearch・AdjacentSelection で検索なしの選択を確認できます。
-
-候補の選択・隣接状態は `get view()` にまとめています。Vue は computed として共有し、React は参照ごとに再計算します。
-各計算は候補数に比例し、1,001 件の Story で検索・選択を確認できます。
-全候補の DOM を描画するため、数万件のデータはアプリ側で検索・分割してください。
-
-Button と両トリガーは `components/shared/control.module.css` を共有し、通常のトリガーには ghost の見た目を使います。
-Field 内の Picker は Input と同じ枠線・背景・エラー色を持ち、Field の幅に揃います。パネル幅は独立しています。
-フォーカスは共通の `--koyori-focus-*`、無効背景は `--koyori-color-surface-disabled`、
-動きは `--koyori-motion-fast/base/slow` と `--koyori-ease-out/pop` を使います。
-一覧と検索欄のフォーカス枠だけは、スクロール領域で切れないよう内側に置きます。
-
-Dropdown と Picker のパネル・項目は `components/shared/menu.module.css`、
-配置・検索文字の正規化・外側クリック等のリスナーは `components/shared/menu.ts` にまとめています。
-Dropdown・Picker・Sidebar は `components/shared/highlight.ts` と `highlight.module.css` を共有し、マウスの入った位置から背景が広がって項目間を移動します。ホバーできない端末（スマホなど）では、タップの瞬間に動いて見えないよう、背景を動かさずその場に表示します。Sidebar 内の Accordion の見出しと入れ子のリンクも同じ動きになり、現在地の色は保ちます。
-`--koyori-menu-width`（200px）・`--koyori-menu-max-height`（360px）・`--koyori-menu-gap`（8px）・
-`--koyori-menu-viewport-margin`（8px）・`--koyori-z-menu`（10）で配置を調整できます。
-`overflow: hidden` / `overflow-x: auto` の中にトリガーを置くときは、Dropdown・Picker に `topLayer` を付けると、パネルを Popover API の top layer に出して切れないようにします（DataList の中では指定不要）。
-配置計算に使う最大高・間隔・画面端の余白は、ブラウザーで長さを解決するため `rem`・`calc()` でも指定できます。長さの計測は開くときだけ行い、スクロール・リサイズ時は再利用します。開いている間にこれらの値を変更した場合は、開き直すと反映されます。
-文字入力の連結待ちは `MENU_TYPEAHEAD_TIMEOUT`（500ms）に集約しています。
-メニュー幅は親から独立し、狭い画面では縮小して長い項目を折り返します。
-下に収まらず上の空きが広い場合は上に開き、両側とも足りなければ高さを制限して一覧をスクロールします。
-開いている間のリサイズ・スクロールにも追従します。親要素の `overflow: hidden` 等による切り取りは回避しません。
-アイコンは回転しません。未指定では矢印、`icon={null}`（Vue: `:icon="null"`）で非表示です。
-React では `icon={<EllipsisIcon />}`、Vue では `<template #icon><EllipsisIcon /></template>` で差し替えます。
-マウスが入った位置から背景が広がり、その後は項目間を移動します。動きを減らす設定ではアニメーションを停止します。
-背景色の上書きは引き続き `--dropdown-hover-background`、Picker の選択背景は `--dropdown-selected-background` を使えます。
-
-以前 Dropdown の選択モードを使っていた箇所は、コンポーネントを Picker に置き換えて `searchable={false}` を指定します。
-`selectionMode`・`selectedValues`・`defaultSelectedValues`・`onSelectionChange` は Picker に移しました。
-`onSelect` は Dropdown の操作実行専用です。選択値の変更通知には Picker の `onSelectionChange` を使ってください。
-単一選択は「選択すると閉じる」動作に統一し、トリガーの表示文言は Picker が更新します。
-ブラウザー検証は Storybook のビルド後に `node scripts/check-picker.cjs` で実行します（Dropdown と同じ実行環境）。
-
-アイコンは [Lucide](https://lucide.dev/) の必要な SVG を Mitosis の共通コンポーネントとして取り込みます。
-`ChevronDownIcon`・`EllipsisIcon`・`CheckIcon`・`XIcon`・`MenuIcon`・`EyeIcon`・`EyeOffIcon` を公開し、Dropdown の既定の矢印には `ChevronDownIcon` を使っています。
-`XIcon` はダイアログの閉じるボタンなどに使います。`EyeIcon`・`EyeOffIcon` はパスワードの表示切り替えに使います。`MenuIcon` は Drawer を開くボタンに使います。アイコンだけのボタンには `ariaLabel` で名前を付けてください。
-`size` で縦横のサイズを指定できます（既定値: 16px）。色は親の `color` を引き継ぎます。
-装飾用として読み上げから除外するため、アイコンだけのボタンにはボタン側で `aria-label` を付けてください。
-アイコンを追加するときは出典・コミット・ライセンスを `THIRD_PARTY_NOTICES.md` に記録します。
-
-ビルドは ESM・型定義・CSS を `dist` に出力します。
-利用側ではコンポーネントと `@koyori-app/ui-vue/style.css` または
-`@koyori-app/ui-react/style.css` を import します。共通トークンはバンドル時にまとめられ、配布 CSS 内では1回だけ定義されます。
-`pnpm --filter @koyori-app/ui-vue pack`（React は `ui-react`）で、ライセンスを含む配布物を生成できます。
-
-ブラウザー検証は Storybook のビルド後に `node scripts/check-dropdown.cjs` で実行します。
-`node scripts/check-picker-logic.cjs` はブラウザーなしで選択計算を検証します。
-`node scripts/check-sidebar.cjs` は、ブラウザーなしで Sidebar の開閉・フォーカスの戻し先・Button の開閉用属性・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
-`node scripts/check-dialog.cjs` は、ブラウザーなしで Dialog の開閉同期・生成物の構造・配布 CSS の規則を検証します（`pnpm build` のあとに実行）。
-Storybook をビルド済みなら、続けて中央寄せとブラウザーが閉じたときの同期をブラウザーで検証します（`DIALOG_TEST_FRAMEWORK` で片方に絞り、`DIALOG_TEST_PORT` でポート変更可能）。
-`node scripts/check-components.cjs` は Field 連携・文言・共通スタイル・大量候補を検証します。
-`node scripts/check-dropdown-item-icon.cjs` は、Dropdown の項目のアイコン（幅をそろえる箱・右端の ✓・Vue のスロットの有無）をブラウザーなしのサーバー描画で検証します（`pnpm build` のあと。CI でも回します）。
-`node scripts/check-field-data-list.cjs` は、Field の `requiredMark`・`descriptionPosition` と DataList の `hideHeading` の DOM をブラウザーなしのサーバー描画で（`pnpm build` のあと。CI でも回します）、Storybook をビルド済みなら見た目・読み上げ・axe をブラウザーで検証します（`FIELD_DATA_LIST_TEST_PORT` でポート変更可能）。
-`node scripts/check-input.cjs` は両フレームワークの数値入力・確定通知・境界値・キーボード操作・axe を検証します（`INPUT_TEST_PORT` でポート変更可能）。
-`node scripts/check-button.cjs` は、Button が狭い行で縮まず折れないこと、広げると面も広がること、ButtonGroup のつながり、`tone="danger"` の色、`href` のリンクと無効のリンクを両フレームワークで検証します（`BUTTON_TEST_PORT` でポート変更可能）。
-Input の数値入力の契約と Vue / React の例は [Field・Input のドキュメント](apps/docs/src/content/docs/components/field.mdx#数値入力)を参照してください。
-`node scripts/check-navigation.cjs` は Accordion の開閉・キーボード操作・入力保持、Sidebar のリンク・現在地・スクロール、
-Breadcrumb の構造・現在地・区切り・折り返しを両フレームワークのブラウザーで検証します。
-Playwright と Chromium、日本語フォント、および Python 3 が必要です。別の場所にある Playwright を使う場合は
-`PLAYWRIGHT_MODULE` にモジュールのパスを指定してください。
-
-## Tooltip
-
-`Tooltip` は1つのボタン・リンクに短い補足を関連付け、ホバー・フォーカスで表示します。
-ホバーでは 300ms 待ってから表示し、別の Tooltip が開いている間と閉じた直後は待ちません。フォーカスでは常にすぐ表示します。
-`id`・`content`・`placement` を指定します。[使い方・無効トリガーの扱い](apps/docs/src/content/docs/components/tooltip.mdx)を参照してください。
-Storybookのビルド後、`node scripts/check-tooltip.cjs` で両フレームワークの操作・配置・アクセシビリティを検証できます（`TOOLTIP_TEST_PORT` でポート変更可能）。
-
-## HoverCard
-
-`HoverCard` は起点にポインターを載せる・フォーカスすると、起点の下（入らなければ上）に操作できる中身（リンクなど）のカードを開きます。中身は利用側が `content`（Vue は `#content` スロット）に入れます。
-ポインターは 400ms 載せると開き、起点からもカードからも離れて 150ms で閉じます（`openDelay`・`closeDelay`）。起点とカードの間を移っても閉じません。タッチの操作では開きません。
-起点は子の要素に加え、`container` と `selector` で外の要素（`v-html` の中の `a` など）も渡せます。Esc で閉じ、カードの中にいたときは起点へフォーカスを戻します。Tab は 起点 → カード → 起点の次、の順に進みます。
-`label`（カードの読み上げ名）が必須です。[使い方と注意点](apps/docs/src/content/docs/components/hover-card.mdx)を参照してください。
-Storybook のビルド後、`node scripts/check-hover-card.cjs` で両フレームワークの開閉の遅れ・間の移動・Esc・フォーカス・タッチ・外の起点・位置を検証できます（`HOVER_CARD_TEST_PORT`・`HOVER_CARD_TEST_FRAMEWORK` で変更可能）。
-
-## Calendar
-
-`Calendar` は月のカレンダーをページ内に表示し、1 日を選びます。値は `'YYYY-MM-DD'` の文字列で、
-`value`・`defaultValue`・`onValueChange` で扱います。`min`・`max`・`isDateDisabled` で選べる日を絞り、
-`locale`・`firstDayOfWeek` で表示を合わせます。キーボード操作は W3C の Date Picker の例に合わせています。
-[使い方とプレビュー](apps/docs/src/content/docs/components/calendar.mdx)を参照してください。
-日付の計算は `components/Calendar/calendar.ts` にまとめ、`node scripts/check-calendar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-
-## DatePicker
-
-`DatePicker` はCalendarをポップアップで開き、選択日または「未設定」をトリガーに表示します。
-`value` / `defaultValue` は `YYYY-MM-DD`、`onValueChange` は選択日（クリア時は空文字）を通知します。
-`presets: { label, value, disabled? }[]` で今日・明日などを渡せます。日時変換・候補の計算・保存は利用側で行います。
-Calendarと同じ範囲制限とキーボード操作を使い、選択・取消はトリガーへ戻ります。非モーダルなのでTabで外へ移動すると閉じます。
-公開APIとVue・Reactの利用例は [DatePicker docs](apps/docs/src/content/docs/components/date-picker.mdx)、ブラウザー検証は `node scripts/check-date-picker.cjs` を参照してください。
-
-## Checkbox
-
-`Checkbox` は `label` を必須にし、`hideLabel` で読み上げ名を保ったまま表示ラベルを隠せます。
-`checked` と `onCheckedChange` で状態を管理でき、省略時は標準の入力要素に任せます。
-チェック時は SVG の線を描画し、外枠や操作領域のサイズは変えません。動きを減らす設定にも対応します。
-`indeterminate` が true の間は混在の状態（横棒と `aria-checked="mixed"`）を出します。クリックでは反転した `checked` を `onCheckedChange` で知らせるので、全選択などでは子の状態から `checked` と `indeterminate` を導いて渡します。
-[使い方とプレビュー](apps/docs/src/content/docs/components/checkbox.mdx)を参照してください。
-Storybook のビルド後に `node scripts/check-checkbox.cjs` で操作と描画を検証できます（`CHECKBOX_TEST_FRAMEWORK=vue` で片方だけ）。
-
-## DataList
-
-`DataList` と `DataListRow` で、列の揃った一覧を組み立てます。各 DataList が1グループになり、
-見出し・件数・折り畳み、行の選択表示、空・読み込み中・エラー・再試行を扱えます。
-セルは通常の `td` / `th scope="row"` で渡し、Button・Avatar・Picker などを組み合わせます。
-データ取得・更新・並べ替え・グループ分けは利用側で管理します。
-列に `sortable` を付けると見出しが並べ替えのボタンになり、`sort`（`{ columnId, direction }` または `null`）と
-`onSortChange` で状態を扱います。押すたびに 昇順 → 降順 → 解除、別の列は昇順から始まります。
-読み上げは `aria-sort` で伝え、DataList 自体は行を並べ替えません。複数のグループに同じ `columns` と `sort` を渡すと表示がそろいます。
-データ取得・更新・ソート・グループ分けは利用側で管理します。
-`hasMore` を渡すと行の下に「さらに読み込む」ボタンが出て、`onLoadMore` で押下を通知します。
-`loadingMore` の間もボタンを消さず `aria-disabled` にしてフォーカスを保ち、行の `tbody` に `aria-busy` を付けます。
-読み終えて `hasMore` を false にするとボタンは消え、フォーカスがあった場合は一覧の領域へ移します。
-取得に失敗したら `status="error"` にすると、行を残したまま既存のエラー表示と再試行ボタンが出ます。
-スクロール連動の自動読み込みは持ちません。
-DataList 内の Dropdown・Picker は Popover API 対応ブラウザーで一覧の枠外にも表示できます。
-仕様と実行できる Vue／React の例は [DataList のページ](apps/docs/src/content/docs/components/data-list.mdx) にあります。
-Storybook のビルド後に `node scripts/check-data-list.cjs` で操作とアクセシビリティを検証できます。
-
-ProgressBar は達成率や進捗を横棒で示す表示専用の部品です。`label`・`value`・`max`（既定 100。0 以下や非有限な値は 100 扱い）を受け取り、
-`valueText` で「3 / 5 件」のような表示と読み上げに差し替えられます。`hideLabel`・`hideValue` で表示を省けます。
-`role="progressbar"` と `aria-valuenow`・`aria-valuemax`・`aria-valuetext` で値を伝え、値の変化は読み上げません。
-高さは `--koyori-progress-height`（8px）、色は棒の要素で `--progress-fill`・`--progress-track` を上書きします。
-満たしたときは `data-complete="true"` が付きます。値の計算は `components/ProgressBar/progress.ts` にまとめ、
-`node scripts/check-progress-bar.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-
-Meter は強度・残量・レベルなど「有限の段階」を区切った横棒で示す表示専用の部品です。進捗率は ProgressBar を使います。
-`label`・`value`（満たした段の数。小数は切り捨て、0..max に収め、非有限は 0）・`max`（段の数。既定 3、非有限・1 未満は 3、上限 20）を受け取り、
-`valueText` で「弱い」のような右上の表示と `aria-valuetext` を渡します。`hideLabel`・`hideValue` で表示を省けます。
-`role="meter"` と `aria-valuenow`・`aria-valuemax`・`aria-valuetext` で値を伝え、値の変化は読み上げません。
-通知が要る場合は利用側が段の変わった時だけ `role="status"` で出してください（打鍵ごとの通知を避けるため）。
-`tone`（既定 `auto`）は 0 段で neutral、1/3 以下 danger、2/3 以下 warning、それ以上 success です。残量のように多いほど良いとは限らない場合は明示します。
-高さは `--koyori-progress-height`、色は棒の要素で `--meter-fill`・`--meter-track` を上書きします。どの tone の塗りも溝に対して 3:1 以上を保ちます。
-段と色の計算は `components/Meter/meter.ts` にまとめ、`node scripts/check-meter.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/meter.mdx)を参照してください。
-
-ContextMenu は右クリック（キーボードは Shift+F10・メニューキー）で開く操作メニューです。`open`・`x`・`y`・`label`・`items`・`onSelect`・`onClose` を受け取り、
-座標と開閉はアプリが持ちます。座標は `contextMenuPosition(event)` で取得し、キーボード起動のときは対象の左下を返します。
-配置・外側クリック・トップレイヤーは Dropdown と同じ `components/shared/menu.ts` を使い、矢印キーと先頭文字の移動は
-`nextMenuIndex`・`typeaheadTarget` として共有します。項目の `destructive` は danger の色になります（ラベルにも結果を書くこと）。
-項目に `items` を渡すと 1 階層だけサブメニューを持てます。サブメニューは右に入らなければ左へ反転し、下にはみ出せば上へずれます。
-右クリックできない利用者（スマホなど）のために、三点ボタンからも同じ ContextMenu を開いてください。`menuButtonPosition(event)` がボタンの左下の座標を返し、
-ボタンの `ariaControls` と ContextMenu の `id` を揃えると、開いている間のボタンの押下で閉じます。Button には `ariaHasPopup` を足しました。`node scripts/check-context-menu.cjs` で
-ブラウザーなしに移動・座標・生成物・配布 CSS を検証します（`pnpm build` のあとに実行）。
-
-Breadcrumb は階層の位置を示し、上の階層へ戻る導線を並べる表示専用の部品です。`items` を上の階層から順に渡し、
-最後の項目が現在地になります（`aria-current="page"`）。`href` を省いた項目はリンクではなく文字列になります。
-`nav` のランドマークと `ol` で階層を伝え、区切り記号は CSS で描いて読み上げから外します。狭い幅では項目単位で折り返します。
-遷移は持たないため、クライアント側で遷移する場合は親でクリックを受けてルーターへ渡してください。
-[使い方とプレビュー](apps/docs/src/content/docs/components/breadcrumb.mdx)を参照してください。
-`node scripts/check-breadcrumb.cjs` で生成物と配布 CSS の規則をブラウザーなしに検証します（`pnpm build` のあとに実行）。
-ブラウザーでの構造・キーボード操作・axe の検証は `node scripts/check-navigation.cjs` に含みます（Storybook のビルド後に実行）。
-
-## InlineEdit
-
-InlineEdit は表示と編集の切り替え、Enter・Escape・任意の blur 確定とフォーカスを共通化します。
-値・下書き・検証・API 更新は利用側で持ち、保存失敗時も下書きを維持できます。
-Input/Textarea を差し替える Vue／React の例と API は [InlineEdit のページ](apps/docs/src/content/docs/components/inline-edit.mdx) にあります。
-Storybook のビルド後に `node scripts/check-inline-edit.cjs` で両フレームワークの操作・IME・フォーカス・アクセシビリティを検証します。
-既存 Playwright は `PLAYWRIGHT_MODULE`、検証サーバーのポートは `INLINE_EDIT_TEST_PORT`（既定 16308）で指定できます。
-
-## Combobox
-
-`Combobox` は札を並べられる入力欄と、入力中に出る候補の一覧です（WAI-ARIA の combobox）。
-候補は `options`（平らな一覧か節の一覧。`label`・`description`・`meta`・`color`・`highlight`）で渡し、
-入力・選択・確定・札の削除は `onValueChange`・`onSelect`・`onCommit`・`onTagRemove` で通知します。
-絞り込みや札の解釈は利用側で行います。
-[使い方と Vue／React の例](apps/docs/src/content/docs/components/combobox.mdx)を参照してください。
-`node scripts/check-combobox-logic.cjs` はブラウザーなしで、Storybook のビルド後の `node scripts/check-combobox.cjs` はブラウザーで検証します。
-
-## Tag・Badge
-
-`Tag`・`Badge` はラベル・ステータス・件数を表示し、`size` と `dotColor` を共有します。
-`Badge` は `tone`（`neutral`・`danger`・`warning`・`success`・`info`）と `appearance`（`soft`・`outline`）で色を変えられます。
-`Tag` は `onRemove` の指定時だけ削除ボタンを表示し、削除操作を外側へ通知します。
-色の意味、データの更新、削除後のフォーカスは利用側で管理します。
-[使い方と Vue／React の例](apps/docs/src/content/docs/components/tag-badge.mdx)を参照してください。
-型検査・Storybook・docs のビルド後に `TAG_BADGE_TEST_PORT=16308 node scripts/check-tag-badge.cjs` でブラウザー検証できます。
-
-## Tree
-
-`Tree` はファイルの一覧のような階層を開閉し、葉を 1 つ選ぶ木です（WAI-ARIA の Tree View）。
-節は `nodes`（`id`・`label`・`children`・`badge`・`disabled`）で渡し、選択と開閉は `onSelect`・`onExpandedChange` で通知します。
-[使い方と Vue／React の例](apps/docs/src/content/docs/components/tree.mdx)を参照してください。
-`node scripts/check-tree-logic.cjs` はブラウザーなしで、型検査・Storybook・docs のビルド後の `node scripts/check-tree.cjs` はブラウザーで検証します。
-
-## Tabs
-
-Tabs と TabPanel は、外部の `value` でリスト・ボードなどの表示を切り替えます。
-矢印・Home/End でフォーカスを移し、Enter/Space・クリックで `onValueChange` に選択を通知します。
-非表示パネルの DOM・入力値は保持します。URL 同期・永続化は利用側で管理します。
-[API と Vue／React の例](apps/docs/src/content/docs/components/tabs.mdx)を参照してください。
-Storybook と docs のビルド後に `node scripts/check-tabs.cjs` で動作とアクセシビリティを検証できます。
-`TABS_TEST_PORT` / `TABS_DOCS_TEST_PORT` で専用ポート、`PLAYWRIGHT_MODULE` で既存 Playwright のモジュールパスを指定できます。
-
-## Skeleton
-
-`Skeleton` は読み込み中の場所を灰色の矩形で示す表示専用の部品です。一覧は DataList の `loading`、
-それ以外のサイドバー・設定セクション・フォームにはこちらを使います。
-`width`・`height`・`radius` で矩形、`lines` でテキスト行を並べます（小数は切り捨て、1 未満・非有限は 1 行）。
-`width` と `height` を同じにして `radius="50%"` を渡すとアバター用の円になります。
-自身は `aria-hidden="true"` の飾りで `role`・`aria-live` を持ちません。読み込み中であることは領域の `aria-busy="true"` と、
-必要に応じた `role="status"` の文言で伝えます。点滅は「動きを減らす」設定で止まり、強制配色では `GrayText` の枠線が付きます。
-塗りと縁は `--skeleton-background`・`--skeleton-border` で上書きできます。行数の計算は `components/Skeleton/skeleton.ts` にまとめ、
-`node scripts/check-skeleton.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/skeleton.mdx)を参照してください。
-## Spinner
-
-`Spinner` は読み込み中を回転するリングと文字で示す表示専用の部品です。場所取りは Skeleton、
-操作の結果待ちや一覧・コメントの取得中はこちらを使います。`label`（既定 `読み込み中`、空白だけなら既定に戻る）・
-`hideLabel`・`size`（直径 px、既定 16。非有限・0 以下は 16）を受け取ります。
-ルートは `role="status"` で、暗黙の `aria-live` に任せて `aria-live` は重ねません。リングは `aria-hidden` の飾りで、
-`hideLabel` でも文字は見た目だけ隠して読み上げに残します。領域全体の読み込み中は親に `aria-busy="true"` を付けてください。
-Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボタンのラベルを「保存中」に変えて状態を伝えます。
-色は親の文字色を継ぎ（Button の中ではボタンの文字色）、`--spinner-color` で上書きできます。周期は `--koyori-spinner-duration`（900ms）です。
-回転は「動きを減らす」設定で止まり、強制配色では弧を `CanvasText`、溝を `GrayText` で描きます。
-文言と直径の補正は `components/Spinner/spinner.ts` にまとめ、`node scripts/check-spinner.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/spinner.mdx)を参照してください。
-## Alert
-
-`Alert` はフォームやセクション単位の失敗・注意・案内を伝える部品です。入力欄ごとのエラーは Field の `error`、
-送信失敗・取得失敗などセクション単位のメッセージはこちらを使います。
-`message` と `variant`（`danger` 既定・`warning`・`info`・`success`）を渡し、`onRetry`・`onDismiss` を渡したときだけ
-再試行ボタン（Button の tertiary）と閉じるボタン（アイコンだけの ghost）が出ます。文言は `retryLabel`・`dismissLabel` で変更できます。
-種類は色だけでなく接頭辞（既定: エラー・注意・お知らせ・完了）でも伝えます。`prefix` で差し替えられ、空文字は既定に戻ります。
-`danger`・`warning` は `role="alert"`、`info`・`success` は `role="status"` で、要素が現れた時点から付くため後から表示しても読み上げられます。
-ライブ領域には接頭辞と本文だけを入れ、`aria-atomic="true"` で差し替え時に 1 回だけ読ませます。
-表示・非表示・再試行の処理と、閉じたあとのフォーカスは利用側の責務です。
-色は `--koyori-color-danger`／`-warning`／`-info`／`-success` と各 `-subtle` 背景で、接頭辞と本文は背景に対して 4.5:1 以上を保ちます。
-個別の上書きは `--alert-color`・`--alert-background` で行います。接頭辞と role の決定は `components/Alert/alert.ts` にまとめ、
-`node scripts/check-alert.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/alert.mdx)を参照してください。
-## Toaster
-
-`Toaster` は操作の結果を画面の右下に一時的に出す部品です。その場に残す失敗や注意は Alert を使います。
-アプリのルートに `<Toaster />`（`limit` 既定 3、`label` 既定「通知」）を 1 つ置き、`toast.success / error / info(message, { action, duration })` で出します。
-`action` に `href` を渡すとリンク、`onClick` だけならボタンです。どちらも押すと `onClick(event)` を呼んでから閉じ、リンクでは `event.preventDefault()` でルーターに任せられます。`toast.dismiss(id?)` で閉じ、省略すると全部閉じます。
-`duration` の既定は 5 秒（`action` 付きは 8 秒）、`0` で手動で閉じるまで残します。上限を超えたら古いものから消えます。
-ホバーかフォーカスが領域の中にある間は全件の自動消去が止まり、両方が外れると残り時間から再開します。
-通知は Toaster と同時に置く見えない読み上げ領域（`success`・`info` は `role="status"`、`error` は `role="alert"`）に入れ、フォーカスは奪いません。閉じるボタンの名前は「閉じる: 本文」です。popover で top layer に出し、動きを減らす設定で入場の動きを止めます。
-ストアと読み上げ・接頭辞の決定は `components/Toaster/toast.ts` にまとめ、`node scripts/check-toaster.cjs` で検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/toaster.mdx)を参照してください。
-## Switch
-
-`Switch` は押した瞬間に反映される設定の入切に使います。送信して初めて効く選択は Checkbox です。
-`label`（必須）と `checked` / `onCheckedChange` で状態を管理し、省略すると内部で持ちます（初期値は `defaultChecked`）。
-中身は `role="switch"` の `button` で、状態は `aria-checked`、Space と Enter で切り替わります。
-ラベル全体が `label` 要素なので文字を押しても切り替わります。Field の中では `hideLabel` を付け、
-`label` に Field と同じ文言を渡すと、`id` と `aria-describedby` を Field から受け取ります。
-つまみは `transform` だけで動かし、キーフレームを使わないため連続して押しても途中から自然に戻ります。
-動きは「動きを減らす」設定で止まり、強制配色ではシステムの強調色とつまみの位置で入切が伝わります。
-`node scripts/check-switch.cjs` で生成物と配布 CSS を検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/switch.mdx)を参照してください。
-## ThemePicker
-
-`ThemePicker` はライト・ダーク・システムを選ぶ部品で、Picker を合成しています。props は `label`（必須。トリガーは「テーマ: ライト」のように読まれる）だけです。
-選択は `localStorage` の `koyori-theme` に `light` / `dark` で保持し、「システム」は保持を消して OS の配色に合わせます。`html[data-theme]` は常に `light` か `dark` です。
-`<head>` に `themeScript`（inline の `<script>` 用の文字列）を置くと、最初の描画の前に配色が決まり、OS の配色の変化にも追従します。置かないと再読み込みで保持が当たりません。
-別の形で切り替えを出すときは `setTheme(theme)`・`storedTheme()` を使います。
-`node scripts/check-theme-picker.cjs` で生成物・配布物・サーバー描画を検証します（`pnpm generate` と `pnpm --filter './packages/*' build` のあとに実行。storybook-static があればブラウザー検証も行う）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/theme-picker.mdx)を参照してください。
-
-## ThemeSwitch
-
-`ThemeSwitch` は太陽（左・ライト）と月（右・ダーク）の 2 値のスイッチです。ライトは昼空に雲と光の輪をまとった太陽、ダークは星空に浮かぶ月のイラスト調です。props は `label`（必須。入がダークなので「ダークテーマ」のように付ける）だけです。
-表示は `html[data-theme]` の配色で、押すと `setTheme` で反対側に固定します（「システム」へ戻すのは ThemePicker か `setTheme('system')`）。
-動きは transition だけで、星の瞬きだけがキーフレームです。動きを減らす設定で止まります。
-`node scripts/check-theme-switch.cjs` で生成物・配布物・サーバー描画を検証します（storybook-static があればブラウザー検証も行う）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/theme-switch.mdx)を参照してください。
-
-## Card・Separator
-
-カードと区切り線はコンポーネントではなく、グローバルなクラスで提供します（`components/shared/utilities.css`）。
-角丸・余白・影・罫線しか持たないため、`div` や `hr` に付けて Vue・React で同じマークアップになります。
-`koyori-card`・`koyori-card-heading`・`koyori-card-actions`・`koyori-separator` の 4 つで、配布 CSS に含まれます。
-カードの余白は `--koyori-card-padding`（既定 16px）で、外側の角丸は「内側の角丸 + 外側の padding」を calc するため、
-トークンを上書きしても中の Button や入れ子のカードと角がそろいます。
-区切りは `hr` に付けます（暗黙で `role="separator"`）。縦にするときは `aria-orientation="vertical"` も付けてください。
-`node scripts/check-card-separator.cjs` で配布 CSS とブラウザーでの見え方を検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/card-separator.mdx)を参照してください。
-## IconPicker
-
-`IconPicker` はテナントやプロジェクトのアイコンを、絵文字の検索または画像のアップロードで設定する部品です。
-閉じているときは 40px のボタンだけで、押すと「絵文字」「画像」のタブと「なしにする」を持つパネル（`role="dialog"`）が開きます。
-`label` と、現在値の `emoji`・`imageUrl` を渡します。`imageUrl` があれば絵文字より優先して表示します。
-絵文字は部品が持つ 1,238 個から名前とタグで検索して選べます。`emojis`（省略可。重複は除く）は「おすすめ」として先頭に出します。
-データは emojibase-data 18.0.0 の日本語のデータから `pnpm emoji-data`（`scripts/build-emoji-data.mjs`）で
-`components/IconPicker/emoji-data.json` に作り、初めて開いたときに `fetch` で読みます（gzip で約 27KB）。
-ライブラリのビルドでは `scripts/emoji-data-asset.mjs` が `index.js` に埋め込まずに `dist/emoji-data.json` として出し、
-`new URL('./emoji-data.json', import.meta.url)` の解決は利用側のバンドラーに任せます。
-`node scripts/build-emoji-data.mjs --check` は作り直した結果と違えば失敗します（CI でも回します）。
-MIME・サイズの検証、アップロード、保存は利用側で行います。`onImageSelect` は選ばれた `File` をそのまま渡し、
-同じファイルを選び直せるよう通知のあとに入力欄の値を空に戻します。`onImageSelect` を渡さなければ「画像」のタブを出しません。
-「画像を外す」は `imageUrl` と `onImageRemove` があるとき、「なしにする」は `onClear` があるときだけ出します。
-絵文字を選ぶ・なしにするとパネルを閉じ、トリガーへフォーカスを戻してから通知します。
-トリガーの読み上げ名は `label` と現在の状態（日本語の名前・画像・未設定）、セルの読み上げ名は日本語の名前で、選択中は `aria-pressed` です。
-セルは節をまたぐ roving tabindex で、← → で 1 つ、↑ ↓ で 1 行、Home / End で行の端、Ctrl+Home / End で全体の端へ移り、端では止まります。
-列数は折り返しの結果なので、キーを押した時点の実際の並びから求めます。ホバーの背景は Dropdown と同じ共通ハイライトです。
-`node scripts/check-icon-picker.cjs` でデータ・計算・生成物・ブラウザー操作を検証します（Storybook のビルド後に実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/icon-picker.mdx)を参照してください。
-
-## Pagination
-
-`Pagination` は「1–20 / 120 件」の範囲、ページ番号、前へ・次へ のボタンで、一覧をページ単位で行き来する部品です。
-ページ番号は先頭・末尾と現在ページの前後 `siblingCount`（既定 2）ページを出し、間を「…」にまとめます。現在ページは `aria-current="page"` です。
-下に読み足す方式は DataList の `hasMore`、ページ単位の往復はこちらを使います。現在のページ・URL 同期・取得は利用側で持ちます。
-`page`（1 始まり、制御のみ）・`pageSize`・`total`・`onPageChange` を渡します。`total` が未取得（カーソル式）なら省略し、範囲とページ番号は出さず次へは `hasNext` に従います。
-`total` を超えたページは末尾ページとして表示し、`onPageChange` を自動では呼びません。`pageSize` の非有限・0 以下は 1、`total` の非有限は 0 として扱います。
-`label`（`nav` の名前、既定 `ページ送り`）・`previousLabel`・`nextLabel`・`pageLabel`（既定 `{page} ページ目`）・`ellipsisLabel`（省略記号の読み上げ、既定 `省略`）・`formatRange`（既定 `{from}–{to} / {total} 件`、0 件は `0 件`）・`hideRange` で表示を変えられます。
-端と `loading` の間はボタンを `disabled` ではなく `aria-disabled` にして押下を無視し、フォーカスを保ちます（DataList の「さらに読み込む」と同じ）。
-範囲の文は `aria-live="polite"` で、ページを変えた直後に新しい範囲が読まれます。取得中は `aria-busy` を付けます。
-ホバーの背景は Tabs と同じく `shared/highlight` の面が項目間を移ります。
-計算と文言は `components/Pagination/pagination.ts` にまとめ、`node scripts/check-pagination.cjs` でブラウザーなしに検証します（`pnpm build` のあとに実行）。
-[使い方とプレビュー](apps/docs/src/content/docs/components/pagination.mdx)を参照してください。
-
-## Web ドキュメント
-
-Astro + Starlight のサイトを `apps/docs` に置いています。
-導入手順・Accordion・Alert・Avatar・Card・Separator・Breadcrumb・Button・ButtonGroup・Calendar・DatePicker・Dialog・Drawer・Dropdown・Picker・ProgressBar・Meter・Mention・Pagination・Sidebar・IconPicker・Switch・ThemePicker・ThemeSwitch・Skeleton・Spinner・Field・PasswordInput のページに、Vue／React のデモ・コピーできるコード・API・キーボード操作を掲載します。
-コード例は実行するデモのソースから読み込みます。サイト内検索は本番ビルドで有効になります。
-複数のコンポーネントを組み合わせた例は「ブロック」にまとめ、`src/content/docs/blocks` に置きます。
-現在は「担当者の選択」（Picker で選んだ人を AvatarGroup で表示）があります。
+開発には Node.js 24 と pnpm 12.4.1 が必要です。
 
 ```sh
-pnpm dev:docs          # http://localhost:4321
-pnpm build:docs    # パッケージとサイトをビルド → apps/docs/dist
-pnpm preview:docs  # ビルド済みサイトをローカルで確認
+pnpm install --frozen-lockfile
+
+pnpm dev:docs         # ドキュメントサイト (http://localhost:4321)
+pnpm storybook:vue    # Vue Storybook (http://localhost:6006)
+pnpm storybook:react  # React Storybook (http://localhost:6007)
+
+pnpm generate         # components/ から Vue・React ソースを生成
+pnpm typecheck        # 型チェック
+pnpm build            # 全パッケージをビルド
 ```
 
-ページは `apps/docs/src/content/docs`、デモは `apps/docs/src/examples` で編集します。
-デモはパッケージの公開エントリーと CSS を使います。共通コンポーネントを変更したら
-`pnpm dev:docs` を起動し直すと、生成・パッケージビルドも反映されます。
-`pnpm typecheck` は型定義を含むパッケージをビルドしてから、ドキュメントと Vue／React の例も検査します。
-
-task への移植前の描画境界と責務は [タスクのプロパティとSSR境界](apps/docs/src/content/docs/blocks/task-properties.mdx) にまとめています。
-Vue の現在値は SSR に残し、Picker だけをマウント後に作る例と、React の SSR / hydration の例があります。
-候補取得・権限・状態判定・再試行・URL 同期・永続化は利用側で管理します。
-`pnpm build:docs` 後に `node scripts/check-migration.cjs` で初回 HTML、hydration、操作、フォーカスと状態保持を検証できます。
-既存 Playwright の場所は `PLAYWRIGHT_MODULE`、検証ポートは `MIGRATION_TEST_PORT`（既定 16318）で指定できます。
-
-[Docs CI](.github/workflows/docs.yml) は PR・main への push・手動実行でビルドと型検査を行います。
-公開先へのデプロイは未設定です。静的ホスティングではリポジトリのルートから
-`pnpm build:docs` を実行し、`apps/docs/dist` を出力ディレクトリに指定します。
-
-## VRT CI
-
-[ワークフロー](.github/workflows/vrt.yml) は PR・main への push・手動実行で、
-共通ソースから Vue と React を生成してそれぞれ型検査・ビルドし、Storybook を [Koyori VRT](https://vrt.koyori.app) に送信します。
-全 Story を撮影し、差分・撮影失敗は各フレームワークのジョブに反映します。
-Fork・Dependabot の PR はビルドまで実行し、VRT への送信は省略します。
-
-実行前に GitHub リポジトリの Settings → Secrets and variables → Actions に以下を設定します。
-
-| 種類 | 名前 | 値 |
-| --- | --- | --- |
-| Secret | `VRT_TOKEN` | 両プロジェクトにアクセスできる PAT。`write:build`・`read:build` スコープが必要 |
-| Variable | `VRT_PROJECT_VUE` | Vue 用の `tenant-slug/project-slug`（例: `koyori/ui-vue`） |
-| Variable | `VRT_PROJECT_REACT` | React 用の `tenant-slug/project-slug`（例: `koyori/ui-react`） |
-
-VRT 側で 2 つのプロジェクトを作成し、比較基準のブランチを `main` に設定してください。
-同じプロジェクトを指定すると比較基準が混ざるため、CI で拒否します。
-初回は main のビルドを実行し、VRT 上で結果を確認・承認して比較基準を用意します。
-必要な設定が欠けている場合も、送信前に設定エラーとして終了します。
+ディレクトリ構成・検証スクリプト・VRT CI・リリース手順などの詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ## ライセンス
 
-独自コードは [MIT License](LICENSE) で提供します。著作権者は yupix と sousuke0422 です。
-task・vrt から移すコードも、両者が権利を持ち、MIT での提供に合意した部分を対象とします。
+[MIT License](LICENSE)
 
-第三者由来のコードには、そのコードの元のライセンスが適用されます。
-コピーや Vue への移植を行う場合も、元の著作権表示とライセンス文を保持し、
-出典・対象ファイル・取り込み元コミットを [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記録します。
-
-npm パッケージなどを配布する際は、各配布物に `LICENSE` と、含まれる第三者コードに対応する
-著作権表示・ライセンス文を同梱します。フォント・アイコンなどの素材も、それぞれのライセンスに従います。
+第三者由来のコードおよび素材については [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照してください。

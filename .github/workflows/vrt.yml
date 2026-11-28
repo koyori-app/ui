@@ -65,7 +65,7 @@ jobs:
           VRT_PROJECT_REACT: ${{ vars.VRT_PROJECT_REACT }}
         run: |
           if [[ -z "$VRT_TOKEN" || -z "$VRT_PROJECT_VUE" || -z "$VRT_PROJECT_REACT" ]]; then
-            echo '::error::Set VRT_TOKEN, VRT_PROJECT_VUE and VRT_PROJECT_REACT. See README.md.'
+            echo '::error::Set VRT_TOKEN, VRT_PROJECT_VUE and VRT_PROJECT_REACT. See CONTRIBUTING.md.'
             exit 1
           fi
           if [[ "$VRT_PROJECT_VUE" == "$VRT_PROJECT_REACT" ]]; then
