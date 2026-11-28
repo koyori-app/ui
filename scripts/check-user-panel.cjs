@@ -92,6 +92,29 @@ async function checkDefault(framework) {
   await sleep(100);
   assert.equal(await card.isVisible(), false, `${framework}: 外側の押下で閉じる`);
 
+  // カードの中の押せない面（名前・帯）を押しても閉じない。
+  await trigger.click();
+  await sleep(150);
+  await card.locator('span', { hasText: /^hanako$/ }).click();
+  await sleep(100);
+  assert.equal(await card.isVisible(), true, `${framework}: カードの名前を押しても開いたまま`);
+  await card.locator('div').first().click();
+  await sleep(100);
+  assert.equal(await card.isVisible(), true, `${framework}: カードの帯を押しても開いたまま`);
+  // 寸法（Figma）: アバターは帯に 37px 掛かり、左は枠の内側から 15px。名前は左 16px。
+  const layout = await card.evaluate(element => {
+    const inner = element.getBoundingClientRect().left + element.clientLeft;
+    const banner = element.firstElementChild.getBoundingClientRect();
+    const avatar = element.querySelector('[class*="_cardAvatar_"]').getBoundingClientRect();
+    const name = element.querySelector('[class*="_cardName_"]').getBoundingClientRect();
+    return { overlap: banner.bottom - avatar.top, avatarLeft: avatar.left - inner, nameLeft: name.left - inner, nameTop: name.top - banner.bottom };
+  });
+  assert.deepEqual(layout, { overlap: 37, avatarLeft: 15, nameLeft: 16, nameTop: 40 }, `${framework}: カードの寸法`);
+  // 開いたまま action を押すとカードを閉じる。
+  await page.getByRole('button', { name: '設定', exact: true }).click();
+  await sleep(100);
+  assert.equal(await card.isVisible(), false, `${framework}: action を押すとカードを閉じる`);
+
   // フォーカスが外へ出たら閉じる。
   await trigger.click();
   await sleep(150);

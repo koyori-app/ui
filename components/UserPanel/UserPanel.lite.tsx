@@ -117,9 +117,11 @@ export default function UserPanel(props: UserPanelProps) {
         </Show>
       </button>
       <Show when={!props.compact}>
-        <span class={styles.action}><Slot name="action" /></span>
+        {/* action は root の中なので、外側の押下として閉じない。押したらカードを閉じる。 */}
+        <span class={styles.action} onClick={() => { if (state.open) state.close(false); }}><Slot name="action" /></span>
       </Show>
-      <div ref={cardRef!} id={state.id || undefined} class={styles.card} role="dialog" aria-label={props.cardLabel} hidden={!state.open}>
+      {/* tabindex="-1": 押せない面を押してもフォーカスがカードに留まり、focusout で閉じない。 */}
+      <div ref={cardRef!} id={state.id || undefined} class={styles.card} role="dialog" aria-label={props.cardLabel} hidden={!state.open} tabIndex={-1}>
         <div class={styles.banner} />
         <div class={styles.profile}>
           <span class={styles.cardAvatar} aria-hidden="true"><Avatar name={props.name} src={props.src} size={64} /></span>

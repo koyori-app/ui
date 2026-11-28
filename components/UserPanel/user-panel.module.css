@@ -111,6 +111,7 @@
 
 .card[hidden] { display: none; }
 .card:not([data-side]) { visibility: hidden; }
+.card:focus { outline: none; }
 
 .banner {
   flex-shrink: 0;
@@ -122,15 +123,16 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding: 0 12px 12px;
+  padding: 0 16px 12px;
 }
 
-/* 帯に半分掛かる。まわりの輪はカードの地色で、帯との境を切る。 */
+/* 帯に 37px 掛かり、左は枠の内側から 15px（Figma）。まわりの輪はカードの地色で、帯との境を切る。 */
 .cardAvatar {
   display: inline-flex;
   align-self: flex-start;
-  margin-top: -32px;
-  margin-bottom: 8px;
+  margin-top: -37px;
+  margin-bottom: 13px;
+  margin-left: -1px;
   border-radius: 50%;
   box-shadow: 0 0 0 4px var(--koyori-color-surface-raised);
 }
