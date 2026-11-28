@@ -83,7 +83,7 @@ export const WithMenu: Story = {
       <Frame>
         <IconRail {...args}>
           {tenants.slice(0, 3).map(tenant => <IconRailItem key={tenant.id} {...tenant} id={`rail-menu-${tenant.id}`} selected={tenant.id === 'acme'}
-            onClick={() => record(`click:${tenant.id}`)}
+            menuOpen={menu.open && menu.tenant === tenant.id} onClick={() => record(`click:${tenant.id}`)}
             onMenu={position => { record(`menu:${tenant.id}`); setMenu({ open: true, ...position, tenant: tenant.id }); }} />)}
           {/* onMenu の無い項目。右クリックでブラウザーのメニューを止めない。 */}
           <IconRailItem id="rail-menu-plain" label="メニューなし" emoji="📦" onClick={() => record('click:plain')} />

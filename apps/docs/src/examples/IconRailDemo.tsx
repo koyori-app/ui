@@ -19,6 +19,7 @@ export default function IconRailDemo() {
           {tenants.map(tenant => (
             <IconRailItem key={tenant.id} id={`demo-rail-${tenant.id}`} label={tenant.label} emoji={tenant.emoji}
               selected={selected === tenant.id} onClick={() => setSelected(tenant.id)}
+              menuOpen={menu.open && menu.tenant === tenant.label}
               onMenu={position => setMenu({ open: true, ...position, tenant: tenant.label })} />
           ))}
           <IconRailSeparator />

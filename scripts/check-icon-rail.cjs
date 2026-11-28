@@ -134,21 +134,76 @@ async function checkMenu(framework) {
   assert.equal(await menu.isVisible(), true);
   const box = await menu.boundingBox();
   assert(Math.abs(box.x - (acme.x + 30)) <= 12 && Math.abs(box.y - (acme.y + 20)) <= 12, `${framework}: メニューはポインターの位置 ${JSON.stringify(box)}`);
-  // ポインターが項目に載ったままなのでツールチップも出ている。Tooltip は Esc を自分だけで受け止めるので、
-  // 1 回目でツールチップ、2 回目でメニューが閉じる。
+  // メニューが開いている間はツールチップを出さない（ポインターが項目に載ったままでも）。読み上げの説明も外す。
+  const tooltips = () => page.locator('[role="tooltip"]:visible').count();
+  const describedBy = label => item(label).getAttribute('aria-describedby');
+  assert.equal(await tooltips(), 0, `${framework}: 右クリックで開いたメニューの間はツールチップを出さない`);
+  assert.equal(await describedBy('Acme'), null, `${framework}: メニューの間は aria-describedby を外す`);
+  // Esc 1 回でメニューが閉じ、フォーカスが項目に戻っても、ツールチップは出ない。
   await page.keyboard.press('Escape');
   await sleep(100);
-  assert.equal(await page.locator('[role="tooltip"]:visible').count(), 0, `${framework}: 1 回目の Esc でツールチップが閉じる`);
-  await page.keyboard.press('Escape');
-  await sleep(100);
-  assert.equal(await menu.isVisible(), false, `${framework}: 2 回目の Esc でメニューが閉じる`);
+  assert.equal(await menu.isVisible(), false, `${framework}: 右クリックのメニューは Esc 1 回で閉じる`);
+  assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-label')), 'Acme', `${framework}: Esc でフォーカスが項目に戻る`);
+  await sleep(400);
+  assert.equal(await tooltips(), 0, `${framework}: Esc で閉じた直後にツールチップを出さない`);
+  assert.notEqual(await describedBy('Acme'), null, `${framework}: 閉じたら aria-describedby を戻す`);
+  // 閉じたあとは普段どおり、ポインターを入れ直すと出る。
   await s.away();
+  await sleep(400);
+  await item('Acme').hover();
+  await sleep(450);
+  assert.equal(await tooltips(), 1, `${framework}: 閉じたあとはホバーでツールチップが出る`);
+  await s.away();
+  await sleep(400);
+
+  // ホバーの表示待ちの間に右クリックしても、あとからツールチップは出ない。
+  await page.mouse.move(acme.x + 30, acme.y + 20);
+  await page.mouse.click(acme.x + 30, acme.y + 20, { button: 'right' });
+  await sleep(400);
+  assert.equal(await menu.isVisible(), true);
+  assert.equal(await tooltips(), 0, `${framework}: 表示待ちのツールチップはメニューを開くと出ない`);
+  // 開いたまま、ポインターが項目を出てまた入っても出ない。
+  await s.away();
+  await sleep(100);
+  await page.mouse.move(acme.x + 5, acme.y + 5);
+  await sleep(450);
+  assert.equal(await tooltips(), 0, `${framework}: メニューの間はポインターが入り直しても出ない`);
+  await page.keyboard.press('Escape');
+  await sleep(100);
+  assert.equal(await menu.isVisible(), false, `${framework}: 入り直したあとも Esc 1 回で閉じる`);
+  await s.away();
+  await sleep(400);
+
+  // ポインターが項目に載ったまま Shift+F10 でも、ツールチップは消えて Esc 1 回で閉じる。
+  await item('Acme').hover();
+  await item('Acme').focus();
+  await sleep(450);
+  assert.equal(await tooltips(), 1);
+  await page.keyboard.press('Shift+F10');
+  await sleep(150);
+  assert.equal(await menu.isVisible(), true);
+  assert.equal(await tooltips(), 0, `${framework}: ホバー中の Shift+F10 でツールチップを消す`);
+  await page.keyboard.press('Escape');
+  await sleep(100);
+  assert.equal(await menu.isVisible(), false, `${framework}: ホバー中の Shift+F10 のメニューも Esc 1 回で閉じる`);
+
+  // 項目を実行して閉じても、ツールチップは出ない。
+  await page.keyboard.press('Shift+F10');
+  await sleep(150);
+  await menu.getByRole('menuitem', { name: 'テナントの設定' }).click();
+  await sleep(400);
+  assert.equal(await menu.isVisible(), false);
+  assert.equal(await tooltips(), 0, `${framework}: 項目の実行で閉じたあとツールチップを出さない`);
+  assert.equal(await s.log(), 'menu:acme menu:acme menu:acme menu:acme select:acme:settings', `${framework}: 項目の実行を記録する`);
+  assert((await s.prevented()).every(Boolean), `${framework}: メニューを開くたびにブラウザーのメニューを止める`);
+  await s.away();
+  await sleep(400);
 
   // キーボード（Shift+F10）
   await item('お茶会').focus();
   await page.keyboard.press('Shift+F10');
   await sleep(150);
-  assert.equal(await s.log(), 'menu:acme menu:tea', `${framework}: Shift+F10 で onMenu`);
+  assert.equal(await s.log(), 'menu:acme menu:acme menu:acme menu:acme select:acme:settings menu:tea', `${framework}: Shift+F10 で onMenu`);
   assert.deepEqual(await s.prevented(), [true]);
   const tea = await item('お茶会').boundingBox();
   const keyboardBox = await menu.boundingBox();
@@ -160,12 +215,12 @@ async function checkMenu(framework) {
   // onMenu の無い項目は止めない。
   await item('メニューなし').click({ button: 'right' });
   assert.deepEqual(await s.prevented(), [false], `${framework}: onMenu の無い項目は止めない`);
-  assert.equal(await s.log(), 'menu:acme menu:tea');
+  assert.equal(await s.log(), 'menu:acme menu:acme menu:acme menu:acme select:acme:settings menu:tea');
 
   // disabled の項目は onMenu があっても開かず、ブラウザーのメニューも止めない。
   // Chromium は無効なボタンへ右クリックを配らないことがあるので、contextmenu を直に送る。
   await item('無効なテナント').dispatchEvent('contextmenu', { bubbles: true, cancelable: true });
-  assert.equal(await s.log(), 'menu:acme menu:tea', `${framework}: disabled の項目は onMenu を呼ばない`);
+  assert.equal(await s.log(), 'menu:acme menu:acme menu:acme menu:acme select:acme:settings menu:tea', `${framework}: disabled の項目は onMenu を呼ばない`);
   assert.deepEqual(await s.prevented(), [false], `${framework}: disabled の項目は contextmenu を止めない`);
   await s.finish();
 

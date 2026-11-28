@@ -21,6 +21,8 @@ export interface IconRailItemProps {
   onClick?: () => void;
   /** 右クリック・Shift+F10・メニューキー・タッチの長押しで呼ぶ。position はメニューを出す位置。 */
   onMenu?: (position: { x: number; y: number }) => void;
+  /** この項目から開いたメニューが開いている間 true。その間ツールチップを出さない。 */
+  menuOpen?: boolean;
 }
 
 export default function IconRailItem(props: IconRailItemProps) {
@@ -37,7 +39,7 @@ export default function IconRailItem(props: IconRailItemProps) {
 
   return (
     <div class={styles.item}>
-      <Tooltip id={props.id} content={props.label} placement="right">
+      <Tooltip id={props.id} content={props.label} placement="right" disabled={props.menuOpen}>
         <button ref={buttonRef!} type="button" class={styles.button} aria-label={props.label}
           aria-current={props.selected && props.variant !== 'action' ? 'true' : undefined}
           disabled={props.disabled} data-variant={props.variant ?? 'item'} data-menu={props.onMenu ? 'true' : undefined}

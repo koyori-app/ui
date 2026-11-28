@@ -96,7 +96,7 @@ export const WithMenu: Story = {
     template: `<div style="display: flex">
       <div :style="frame"><div :style="edge">
         <IconRail v-bind="args">
-          <IconRailItem v-for="tenant in tenants" :key="tenant.id" v-bind="tenant" :id="'rail-menu-' + tenant.id" :selected="tenant.id === 'acme'"
+          <IconRailItem v-for="tenant in tenants" :key="tenant.id" v-bind="tenant" :id="'rail-menu-' + tenant.id" :selected="tenant.id === 'acme'" :menu-open="menu.open && menu.tenant === tenant.id"
             :on-click="() => log.push('click:' + tenant.id)" :on-menu="(position) => openMenu(tenant.id, position)" />
           <IconRailItem id="rail-menu-plain" label="メニューなし" emoji="📦" :on-click="() => log.push('click:plain')" />
           <IconRailItem id="rail-menu-locked" label="無効なテナント" emoji="🔒" disabled :on-menu="() => log.push('menu:locked')" />

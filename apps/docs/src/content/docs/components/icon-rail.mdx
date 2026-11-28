@@ -15,7 +15,8 @@ IconRail は、テナントやワークスペースを切り替えるアイコ�
 <IconRail label="テナント">
   <IconRailItem v-for="tenant in tenants" :key="tenant.id" :id="`rail-${tenant.id}`" :label="tenant.name"
     :src="tenant.icon" :emoji="tenant.emoji" :selected="tenant.id === current"
-    :on-click="() => switchTo(tenant.id)" :on-menu="(position) => openMenu(tenant, position)" />
+    :on-click="() => switchTo(tenant.id)" :on-menu="(position) => openMenu(tenant, position)"
+    :menu-open="menu.open && menu.tenantId === tenant.id" />
   <IconRailSeparator />
   <IconRailItem id="rail-add" label="テナントを追加" variant="action" :on-click="add">
     <template #icon><PlusIcon /></template>
@@ -26,7 +27,8 @@ IconRail は、テナントやワークスペースを切り替えるアイコ�
 ```tsx
 <IconRail label="テナント">
   {tenants.map(tenant => <IconRailItem key={tenant.id} id={`rail-${tenant.id}`} label={tenant.name} src={tenant.icon}
-    selected={tenant.id === current} onClick={() => switchTo(tenant.id)} onMenu={position => openMenu(tenant, position)} />)}
+    selected={tenant.id === current} onClick={() => switchTo(tenant.id)} onMenu={position => openMenu(tenant, position)}
+    menuOpen={menu.open && menu.tenantId === tenant.id} />)}
   <IconRailSeparator />
   <IconRailItem id="rail-add" label="テナントを追加" variant="action" icon={<PlusIcon />} onClick={add} />
 </IconRail>
@@ -60,6 +62,7 @@ IconRail は、テナントやワークスペースを切り替えるアイコ�
 | `disabled` | `boolean` | `false` | 押せない。ツールチップも出さない |
 | `onClick` | `() => void` | なし | 押したとき |
 | `onMenu` | `(position) => void` | なし | 右クリック・Shift + F10・メニューキー・タッチの長押しのとき |
+| `menuOpen` | `boolean` | `false` | この項目のメニューが開いている間 true。その間ツールチップを出さない |
 
 IconRailSeparator は props を持たない、項目の間の線です（読み上げから外れます）。
 
@@ -70,6 +73,7 @@ IconRailSeparator は props を持たない、項目の間の線です（読み�
 - `onMenu` があると、右クリックとキーボード（Shift + F10・メニューキー）でブラウザーのメニューを止めて `onMenu` を呼びます。キーボードからは座標が無いことがあり、そのときは項目の左下を渡します
 - タッチでは 500ms の長押しで `onMenu` を呼び、項目の左下を渡します。指が 10px を超えて動いたら（スクロール）取り消します。長押しのあとの click は捨て、`onClick` は呼びません
 - `onMenu` が無ければ、右クリックも長押しもブラウザーの既定のままです
+- `onMenu` でメニューを出すなら `menuOpen` を渡してください。渡さないと、ツールチップが Escape を先に受けます
 - 項目が入りきらなければ、レールが縦にスクロールします（スクロールバーは出しません）
 
 ## アクセシビリティとスタイル

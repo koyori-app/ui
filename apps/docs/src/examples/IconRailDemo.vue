@@ -19,6 +19,7 @@ const message = ref('');
       <IconRail label="テナント">
         <IconRailItem v-for="tenant in tenants" :key="tenant.id" :id="`demo-rail-${tenant.id}`" :label="tenant.label" :emoji="tenant.emoji"
           :selected="selected === tenant.id" :on-click="() => (selected = tenant.id)"
+          :menu-open="menu.open && menu.tenant === tenant.label"
           :on-menu="(position) => (menu = { open: true, ...position, tenant: tenant.label })" />
         <IconRailSeparator />
         <IconRailItem id="demo-rail-add" label="テナントを追加" variant="action" :on-click="() => (message = '追加を押しました')">
