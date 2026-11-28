@@ -75,6 +75,11 @@ const { EMOJI_DATA } = emojiData;
   assert.deepEqual(found.map((section) => section.label), ['検索結果']);
   assert.deepEqual(found[0].entries.map((item) => item.emoji), ['🚀'], 'おすすめとカテゴリの両方にあっても 1 つ');
   assert.deepEqual(pickerSections(['🚀'], 'ぴよぴよ', catalog), [], '0 件なら節を出さない');
+  // 同じ配列をその場で書き換えても、おすすめに反映する。
+  const mutable = ['🚀'];
+  assert.deepEqual(pickerSections(mutable, '', catalog)[0].entries.map((item) => item.emoji), ['🚀']);
+  mutable.unshift('📘');
+  assert.deepEqual(pickerSections(mutable, '', catalog)[0].entries.map((item) => item.emoji), ['📘', '🚀'], '同じ配列への追加を反映する');
 
   // 失敗を持ち越さない。同時の呼び出しは 1 回の読み込みを共有する。
   let calls = 0;

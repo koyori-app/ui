@@ -137,11 +137,13 @@ export function searchEmojis(sections: { entries: EmojiEntry[] }[], query: strin
   return result;
 }
 
-let lastView: { emojis: string[] | undefined; query: string; catalog: EmojiCatalog | null; sections: EmojiSection[] } | null = null;
+let lastView: { emojis: string | undefined; query: string; catalog: EmojiCatalog | null; sections: EmojiSection[] } | null = null;
 
-/* パネルに並べる節。検索中は 1 節にまとめる。描くたびに何度も呼ばれるので、直前の結果を使い回す。 */
+/* パネルに並べる節。検索中は 1 節にまとめる。描くたびに何度も呼ばれるので、直前の結果を使い回す。
+   候補は中身で比べる。同じ配列への push や splice も反映し、Vue では中身を読むことで依存も付く。 */
 export function pickerSections(emojis: string[] | undefined, query: string, catalog: EmojiCatalog | null): EmojiSection[] {
-  if (lastView && lastView.emojis === emojis && lastView.query === query && lastView.catalog === catalog) return lastView.sections;
+  const emojisKey = emojis?.join('\u0000');
+  if (lastView && lastView.emojis === emojisKey && lastView.query === query && lastView.catalog === catalog) return lastView.sections;
   const recommended = recommendedEntries(emojis);
   const base = [
     ...(recommended.length ? [{ label: 'おすすめ', entries: recommended }] : []),
@@ -150,7 +152,7 @@ export function pickerSections(emojis: string[] | undefined, query: string, cata
   const found = query.trim() ? searchEmojis(base, query) : [];
   /* 0 件の節は描かない。見出しだけが残ると、空のまとまりを読み上げる。 */
   const sections = withStarts(query.trim() ? (found.length ? [{ label: '検索結果', entries: found }] : []) : base);
-  lastView = { emojis, query, catalog, sections };
+  lastView = { emojis: emojisKey, query, catalog, sections };
   return sections;
 }
 
