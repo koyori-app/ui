@@ -1,0 +1,118 @@
+@import '../tokens.css';
+
+/* ホバーは Figma のレール項目に合わせ、タイルの形が変わって左のバーが伸びる。
+   項目は 1 列に離れて並ぶ独立した操作なので、shared/highlight の移る背景は使わない。 */
+.item {
+  display: flex;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Tooltip の根（inline-flex）を行の幅いっぱいに広げる。 */
+.item > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.button {
+  --koyori-icon-tile-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--koyori-color-text);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.button[data-menu='true'] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* フォーカス枠は行ではなくタイルに付ける。Tooltip の根の枠（.root > :focus-visible）より強くする。 */
+.item .button:focus-visible {
+  outline: none;
+}
+
+.item .button:focus-visible .tile,
+.item .button:focus-visible .action {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+.bar {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 4px;
+  height: 0;
+  border-radius: 0 4px 4px 0;
+  background: var(--koyori-color-selection-indicator);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.tile {
+  display: inline-flex;
+  border-radius: var(--koyori-icon-tile-radius);
+}
+
+.button .tile > * {
+  background: var(--koyori-color-surface-hover);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border: 1px dashed var(--koyori-color-border-strong);
+  border-radius: 50%;
+  color: var(--koyori-color-text-secondary);
+}
+
+/* ホバー・フォーカスは :where() で詳細度を下げ、後に書く選択中（バー 32px・選択の地）が勝つようにする。 */
+@media (hover: hover) {
+  .button:where([data-variant='item']:not(:disabled)):hover { --koyori-icon-tile-radius: 12px; }
+  .button:where([data-variant='item']:not(:disabled)):hover .tile > * { background: var(--koyori-color-surface-active); }
+  .button:where([data-variant='item']:not(:disabled)):hover .bar { height: 20px; }
+  .button:where([data-variant='action']:not(:disabled)):hover .action { background: var(--koyori-color-surface-hover); color: var(--koyori-color-text); }
+}
+
+.button:where([data-variant='item']):focus-visible { --koyori-icon-tile-radius: 12px; }
+.button:where([data-variant='item']):focus-visible .tile > * { background: var(--koyori-color-surface-active); }
+.button:where([data-variant='item']):focus-visible .bar { height: 20px; }
+.button:where([data-variant='action']):focus-visible .action { background: var(--koyori-color-surface-hover); color: var(--koyori-color-text); }
+
+/* 選択中はホバー・フォーカスより後に書き、バーは 32px のまま。 */
+.button[aria-current='true'] { --koyori-icon-tile-radius: 12px; }
+.button[aria-current='true'] .tile > * { background: var(--koyori-color-selection); }
+.button[aria-current='true'] .bar { height: 32px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar { transition: height var(--koyori-motion-fast) var(--koyori-ease-out); }
+  .tile, .tile > * { transition: border-radius var(--koyori-motion-fast) var(--koyori-ease-out), background-color var(--koyori-motion-fast) var(--koyori-ease-out); }
+}
+
+@media (forced-colors: active) {
+  .bar { background: Highlight; }
+  .action { border-color: CanvasText; }
+}

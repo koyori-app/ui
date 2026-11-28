@@ -8,7 +8,7 @@ const { resolve } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const root = resolve(__dirname, '..');
 const requireVue = createRequire(resolve(root, 'packages/vue/package.json'));
-const { createSSRApp } = requireVue('vue');
+const { createSSRApp, h } = requireVue('vue');
 const { renderToString } = requireVue('vue/server-renderer');
 
 const warnings = [];
@@ -51,6 +51,32 @@ console.warn = (...args) => { warnings.push(args.join(' ')); };
   const card = await renderToString(createSSRApp(ui.HoverCard, { label: 'プロフィール' }));
   assert.match(card, /role="dialog"/, 'HoverCard はサーバー描画でカードの器を出す');
   assert.match(card, /\shidden/, 'HoverCard のカードはサーバー描画では閉じている');
+  // IconTile は src・emoji・頭文字のどれか 1 つ。読み上げは包む側が持つ。
+  const tile = await renderToString(createSSRApp(ui.IconTile, { name: '𠮷野', emoji: '🍵' }));
+  assert.match(tile, /^<span[^>]*aria-hidden="true"/, 'IconTile は読み上げから外す');
+  assert.match(tile, /🍵/, 'IconTile は src が無ければ絵文字を出す');
+  assert.match(await renderToString(createSSRApp(ui.IconTile, { name: '𠮷野' })), />𠮷<\/span>/, 'IconTile は先頭の 1 書記素を出す');
+  const rail = await renderToString(createSSRApp({
+    render: () => h(ui.IconRail, { label: 'テナント' }, () => [
+      h(ui.IconRailItem, { id: 'rail-a', label: 'Acme', selected: true }),
+      h(ui.IconRailSeparator),
+      h(ui.IconRailItem, { id: 'rail-add', label: '追加', variant: 'action' }),
+    ]),
+  }));
+  assert.match(rail, /^<nav[^>]*aria-label="テナント"/, 'IconRail は nav のランドマーク');
+  assert.equal((rail.match(/aria-current="true"/g) || []).length, 1, 'IconRailItem は選択中の 1 つだけ aria-current');
+  assert.match(rail, /role="tooltip"[^>]*hidden/, 'IconRailItem のツールチップはサーバー描画では隠れている');
+  const panelItems = [{ value: 'profile', label: 'プロフィール', href: '/me', icon: 'user' }, { value: 'logout', label: 'ログアウト', destructive: true }];
+  const panel = await renderToString(createSSRApp(ui.UserPanel, { name: 'hanako', description: 'hanako@example.com', cardLabel: 'hanako のプロフィール', items: panelItems }));
+  assert.match(panel, /aria-haspopup="dialog"[^>]*aria-expanded="false"|aria-expanded="false"[^>]*aria-haspopup="dialog"/, 'UserPanel はサーバー描画では閉じている');
+  assert.match(panel, /<div[^>]*role="dialog"[^>]*hidden/, 'UserPanel のカードはサーバー描画では隠れている');
+  assert.match(panel, /<a[^>]*href="\/me"/, 'UserPanel の href の項目は <a>');
+  assert.doesNotMatch(panel, /_itemIcon_/, 'item-icon を渡さない UserPanel はアイコンの箱を出さない');
+  const iconPanel = await renderToString(createSSRApp({
+    render: () => h(ui.UserPanel, { name: 'hanako', cardLabel: 'hanako のプロフィール', items: panelItems }, { 'item-icon': ({ item }) => h('i', { 'data-icon': item.icon }) }),
+  }));
+  assert.equal((iconPanel.match(/_itemIcon_/g) || []).length, 2, 'item-icon を渡すと全部の項目に同じ幅の箱を出す');
+  assert.equal((iconPanel.match(/data-icon=/g) || []).length, 1, 'item-icon は icon のある項目だけ');
   // Combobox は札の × で <button を出すが、ここで確かめるのは combobox の属性。
   const combo = await renderToString(createSSRApp(ui.Combobox, {
     ariaLabel: '検索', tags: [{ label: 'bug' }], options: [{ value: 'a', label: 'alpha', highlight: [[0, 1]] }],
@@ -61,5 +87,5 @@ console.warn = (...args) => { warnings.push(args.join(' ')); };
   assert.match(combo, /\shidden/, 'Combobox の一覧はサーバー描画では隠れている');
   assert.doesNotMatch(combo, /undefined/, 'Combobox の markup に undefined が出ない');
   assert.deepEqual(warnings, [], 'Field の外でも Vue の警告を出さない');
-  console.log('vue: Dropdown・Picker・ContextMenu・DatePicker・HoverCard・Combobox のサーバー描画と topLayer の印、Field の外で警告が出ないことを確認しました。');
+  console.log('vue: Dropdown・Picker・ContextMenu・DatePicker・HoverCard・IconTile・IconRail・UserPanel・Combobox のサーバー描画と topLayer の印、Field の外で警告が出ないことを確認しました。');
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => { console.warn = warn; });

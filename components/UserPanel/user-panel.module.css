@@ -1,0 +1,196 @@
+@import '../tokens.css';
+
+/* 入れ子の角丸: 外側 = 内側（radius-md）+ 外側の余白。 */
+.root {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 8px;
+  border-radius: calc(var(--koyori-radius-md) + 8px);
+  background: var(--koyori-color-surface-hover);
+  color: var(--koyori-color-text);
+  font-family: var(--koyori-font-family);
+}
+
+.trigger {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--koyori-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.root[data-compact='true'] .trigger {
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.trigger:focus-visible {
+  outline: var(--koyori-focus-width) solid var(--koyori-focus-color);
+  outline-offset: var(--koyori-focus-offset);
+}
+
+@media (hover: hover) {
+  .trigger:hover .name { text-decoration: underline; }
+}
+
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name,
+.description {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.description {
+  color: var(--koyori-color-text-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.action:empty { display: none; }
+
+.card {
+  position: fixed;
+  z-index: var(--koyori-z-menu);
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(var(--koyori-user-panel-card-width, 240px), calc(100vw - 2 * var(--koyori-menu-viewport-margin)));
+  max-height: var(--user-panel-available-height, calc(100dvh - 2 * var(--koyori-menu-viewport-margin)));
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--koyori-color-border);
+  border-radius: var(--koyori-radius-lg);
+  background: var(--koyori-color-surface-raised);
+  color: var(--koyori-color-text);
+  box-shadow: var(--koyori-shadow-panel);
+  font-family: var(--koyori-font-family);
+  font-size: var(--koyori-font-size-sm);
+  line-height: var(--koyori-line-height-sm);
+  text-align: start;
+  white-space: normal;
+}
+
+.card[hidden] { display: none; }
+.card:not([data-side]) { visibility: hidden; }
+.card:focus { outline: none; }
+
+.banner {
+  flex-shrink: 0;
+  height: 64px;
+  background: var(--koyori-user-panel-banner, var(--koyori-color-accent-subtle));
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 0 16px 12px;
+}
+
+/* 帯に 37px 掛かり、左は枠の内側から 15px（Figma）。まわりの輪はカードの地色で、帯との境を切る。 */
+.cardAvatar {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: -37px;
+  margin-bottom: 13px;
+  margin-left: -1px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--koyori-color-surface-raised);
+}
+
+.cardName {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.cardDescription {
+  color: var(--koyori-color-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* 入れ子の角丸: 箱 = 行（radius-md）+ 箱の余白。 */
+.box {
+  flex-shrink: 0;
+  margin: 0 12px 12px;
+  padding: var(--koyori-space-xs);
+  border: 1px solid var(--koyori-color-border);
+  border-radius: calc(var(--koyori-radius-md) + var(--koyori-space-xs));
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: user-panel-in var(--koyori-motion-fast) var(--koyori-ease-out); }
+  .card[data-side='bottom'] { animation-name: user-panel-in-bottom; }
+}
+
+@keyframes user-panel-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+@keyframes user-panel-in-bottom {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (forced-colors: active) {
+  .card { border-color: CanvasText; background: Canvas; color: CanvasText; }
+  .box { border-color: CanvasText; }
+}

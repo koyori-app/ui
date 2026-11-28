@@ -7,7 +7,7 @@ export function avatarSizeStyle(size?: number) {
 }
 
 /** 絵文字の修飾や結合で 1 文字が複数のコードポイントになっても分割しない。 */
-function firstGrapheme(word: string) {
+export function firstGrapheme(word: string) {
   if (typeof Intl.Segmenter !== 'function') return [...word][0] ?? '';
   const { value } = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(word)[Symbol.iterator]().next();
   return value?.segment ?? '';

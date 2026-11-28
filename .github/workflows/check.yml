@@ -67,3 +67,6 @@ jobs:
 
       - name: Dropdown の項目のアイコンと幅をそろえる箱のサーバー描画
         run: node scripts/check-dropdown-item-icon.cjs
+
+      - name: IconRailItem の長押しの判定
+        run: node scripts/check-icon-rail-logic.cjs

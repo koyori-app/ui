@@ -97,6 +97,8 @@ node scripts/check-input.cjs
 node scripts/check-touch-narrow.cjs
 node scripts/check-tooltip.cjs
 node scripts/check-hover-card.cjs
+node scripts/check-icon-rail.cjs
+node scripts/check-user-panel.cjs
 node scripts/check-date-picker.cjs
 node scripts/check-checkbox.cjs
 node scripts/check-data-list.cjs

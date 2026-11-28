@@ -1,0 +1,23 @@
+@import '../tokens.css';
+
+/* 境目の線は利用側が引く。 */
+.rail {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: var(--koyori-icon-rail-width, 64px);
+  height: 100%;
+  min-height: 0;
+  padding: 12px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  background: var(--koyori-color-surface-raised);
+  font-family: var(--koyori-font-family);
+}
+
+.rail::-webkit-scrollbar { display: none; }

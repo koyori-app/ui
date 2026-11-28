@@ -1,0 +1,36 @@
+---
+title: IconTile
+description: 画像・絵文字・頭文字のどれか 1 つを、角丸のタイルに出します。
+---
+
+import IconTilePreview from '../../../components/IconTilePreview.astro';
+
+IconTile は、テナントやワークスペースなどの印を 1 つのタイルに出す飾りの部品です。人を表すときは [Avatar](../avatar/) を使います。Avatar はイニシャルを 2 文字まで出し、読み上げ名を持ちます。
+
+<IconTilePreview />
+
+## 使い方
+
+出すものは `src` → `emoji` → `name` の先頭の 1 文字の順に選びます。
+
+- `src` の画像が読み込めなければ `emoji`、それも無ければ頭文字に切り替えます。`src` を差し替えたら、前の画像の失敗は持ち越しません
+- 頭文字は書記素の単位で取るので、`𠮷` や結合した絵文字も分けません。`name` が空で他も無ければ空のタイルです
+
+```vue
+<IconTile name="Acme" src="/tenants/acme.png" emoji="🏢" />
+```
+
+タイルは `aria-hidden="true"`、画像は `alt=""` で、読み上げから外れます。名前は包む側（ボタンの `aria-label`、隣の文字など）で伝えてください。
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `name` | `string` | 必須 | 頭文字に使う名前 |
+| `src` | `string` | なし | 画像 |
+| `emoji` | `string` | なし | 画像が無い・読めないときの絵文字 |
+| `size` | `number` | `40` | 一辺（px）。絵文字は半分、頭文字は 0.4 倍の大きさ |
+
+## スタイル
+
+角丸は `--koyori-icon-tile-radius`（既定 50%）で変えられます。地は `--koyori-color-surface-hover`、頭文字は太字の `--koyori-color-text-secondary` です。

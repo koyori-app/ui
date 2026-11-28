@@ -1,0 +1,13 @@
+@import '../tokens.css';
+
+.separator {
+  display: block;
+  flex-shrink: 0;
+  width: 32px;
+  height: 1px;
+  background: var(--koyori-color-border);
+}
+
+@media (forced-colors: active) {
+  .separator { background: CanvasText; }
+}
