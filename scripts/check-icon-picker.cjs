@@ -463,6 +463,36 @@ const response = (status, json) => ({ ok: status >= 200 && status < 300, status,
       page.off('request', countData);
       failing = false;
 
+      // 利用側の <form> の中に置いても、検索欄の Enter はフォームを送信しない（空・0 件・先頭を選ぶ、のどれでも）。
+      await story('default');
+      await page.evaluate(() => {
+        const rootElement = document.querySelector('#storybook-root');
+        const form = document.createElement('form');
+        const submit = document.createElement('button');
+        submit.type = 'submit';
+        submit.textContent = '送信';
+        window.iconPickerSubmits = 0;
+        form.addEventListener('submit', (event) => { event.preventDefault(); window.iconPickerSubmits++; });
+        rootElement.replaceWith(form);
+        form.append(rootElement, submit);
+      });
+      const submits = () => page.evaluate(() => window.iconPickerSubmits);
+      await open();
+      await search.focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await submits(), 0, '検索語が空の Enter で送信しない');
+      assert.equal(await dialog.isVisible(), true, '検索語が空の Enter では閉じない');
+      await search.fill('存在しない語ぴよ');
+      await page.waitForFunction(() => document.querySelectorAll('[data-cell]').length === 0);
+      await page.keyboard.press('Enter');
+      assert.equal(await submits(), 0, '0 件の Enter で送信しない');
+      assert.equal(await dialog.isVisible(), true, '0 件の Enter では閉じない');
+      await search.fill('ろけっと');
+      await page.keyboard.press('Enter');
+      await closed('Enter で先頭を選ぶと閉じる');
+      assert.equal(await triggerName(), 'プロジェクトのアイコン: ロケット');
+      assert.equal(await submits(), 0, '先頭を選ぶ Enter で送信しない');
+
       // 画像があるときは画像タブで開く。外すと絵文字の表示に戻り、パネルは開いたまま。
       await story('with-image');
       assert.equal(await triggerName(), 'プロジェクトのアイコン: 画像');

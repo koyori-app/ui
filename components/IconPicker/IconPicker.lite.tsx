@@ -205,11 +205,12 @@ export default function IconPicker(props: IconPickerProps) {
         event.preventDefault();
         cell.focus();
         cell.scrollIntoView({ block: 'nearest' });
-      } else if (event.key === 'Enter' && state.query.trim()) {
-        const first = pickerSections(props.emojis, state.query, state.dataState === 'ready' ? emojiCatalog() : null)[0]?.entries[0];
-        if (!first) return;
+      } else if (event.key === 'Enter') {
+        /* 利用側の <form> の中に置かれても、検索語が空・0 件の Enter でフォームを送信させない。 */
         event.preventDefault();
-        state.pick(first.emoji);
+        if (!state.query.trim()) return;
+        const first = pickerSections(props.emojis, state.query, state.dataState === 'ready' ? emojiCatalog() : null)[0]?.entries[0];
+        if (first) state.pick(first.emoji);
       }
     },
     navigate(event: { key: string; ctrlKey?: boolean; metaKey?: boolean; preventDefault(): void }) {
