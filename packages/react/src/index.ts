@@ -13,6 +13,12 @@ export { default as Sidebar, type SidebarProps } from './generated/components/Si
 export { default as SidebarLink, type SidebarLinkProps } from './generated/components/SidebarLink/SidebarLink.js';
 export { default as Avatar, type AvatarProps } from './generated/components/Avatar/Avatar.js';
 export { default as AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './generated/components/AvatarGroup/AvatarGroup.js';
+export { default as IconTile, type IconTileProps } from './generated/components/IconTile/IconTile.js';
+export { default as IconRail, type IconRailProps } from './generated/components/IconRail/IconRail.js';
+export { default as IconRailItem, type IconRailItemProps } from './generated/components/IconRailItem/IconRailItem.js';
+export { default as IconRailSeparator } from './generated/components/IconRailSeparator/IconRailSeparator.js';
+export { default as UserPanel, type UserPanelProps } from './generated/components/UserPanel/UserPanel.js';
+export { type UserPanelItem, type UserPanelSection } from './generated/components/UserPanel/user-panel.js';
 export { default as Dialog, type DialogProps } from './generated/components/Dialog/Dialog.js';
 export { default as ConfirmDialog, type ConfirmDialogProps } from './generated/components/ConfirmDialog/ConfirmDialog.js';
 export { default as Drawer, type DrawerProps } from './generated/components/Drawer/Drawer.js';

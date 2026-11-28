@@ -45,6 +45,8 @@ export default defineConfig({
             { label: 'Dropdown', slug: 'components/dropdown' },
             { label: 'HoverCard', slug: 'components/hover-card' },
             { label: 'IconPicker', slug: 'components/icon-picker' },
+            { label: 'IconRail・IconRailItem', slug: 'components/icon-rail' },
+            { label: 'IconTile', slug: 'components/icon-tile' },
             { label: 'InlineEdit', slug: 'components/inline-edit' },
             { label: 'Meter', slug: 'components/meter' },
             { label: 'Mention', slug: 'components/mention' },
@@ -65,6 +67,7 @@ export default defineConfig({
             { label: 'Toaster', slug: 'components/toaster' },
             { label: 'Tooltip', slug: 'components/tooltip' },
             { label: 'Tree', slug: 'components/tree' },
+            { label: 'UserPanel', slug: 'components/user-panel' },
           ],
         },
         {

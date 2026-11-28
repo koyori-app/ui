@@ -1,0 +1,61 @@
+---
+title: UserPanel
+description: サイドバーの下端に自分の名前を出し、押すとプロフィールカードを開きます。
+---
+
+import UserPanelPreview from '../../../components/UserPanelPreview.astro';
+
+UserPanel は、アバター・名前・副題の行と右端の操作を並べたパネルです。行を押すと、上にプロフィールカードを開きます。カードは名前とメニュー（プロフィールへのリンク、ログアウトなど）を持ちます。
+
+<UserPanelPreview />
+
+## 使い方
+
+```vue
+<UserPanel :name="me.name" :description="me.email" :src="me.avatar" :card-label="`${me.name} のプロフィール`"
+  :items="[{ items: [{ value: 'profile', label: 'プロフィール', href: '/me' }] }, { items: [{ value: 'logout', label: 'ログアウト', destructive: true }] }]"
+  :on-select="select">
+  <template #action><Button ariaLabel="設定" variant="ghost">…</Button></template>
+  <template #item-icon="{ item }"><component :is="item.icon" /></template>
+</UserPanel>
+```
+
+```tsx
+<UserPanel name={me.name} description={me.email} src={me.avatar} cardLabel={`${me.name} のプロフィール`}
+  items={items} onSelect={select} action={<Button ariaLabel="設定" variant="ghost" icon={<GearIcon />} />} />
+```
+
+- `items` は平らな一覧か節（`{ items }`）の一覧です。節の間に線を引きます。混ぜません
+- `href` のある項目は `<a>`、無い項目は `<button>` です。`href` の項目は既定の遷移を止めないので、利用側のルーターが `click` を拾えます
+- 項目のアイコンは `icon` に入れます。React は描画済みのノード、Vue は `icon` が真値の項目だけ `#item-icon` スロット（`{ item }`）を出します。どれかの項目にあれば、無い項目も同じ幅を空けて文字をそろえます
+- `compact` はアバターのボタンだけを出します（読み上げ名は `name`、`action` は出しません）。狭いサイドバー向けです
+
+## Props
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `name` | `string` | 必須 | 名前 |
+| `description` | `string` | なし | 名前の下の 1 行（メールアドレスなど） |
+| `src` | `string` | なし | アバターの画像 |
+| `cardLabel` | `string` | 必須 | カードの読み上げ名 |
+| `items` | `UserPanelItem[] \| UserPanelSection[]` | 必須 | カードのメニュー |
+| `onSelect` | `(value: string) => void` | なし | 項目を選んだとき |
+| `compact` | `boolean` | `false` | アバターのボタンだけにする |
+| `defaultOpen` | `boolean` | `false` | マウント直後に開いておく。Storybook の撮影用で、フォーカスは動かさない |
+| `onOpenChange` | `(open: boolean) => void` | なし | 開いたとき `true`、閉じたとき `false` |
+| `action` | node / `#action` スロット | なし | 右端の操作 |
+
+`UserPanelItem` は `value`・`label`・`href?`・`destructive?`・`disabled?`・`icon?` です。
+
+## 操作と配置
+
+- 行は `aria-haspopup="dialog"` のボタンで、開いている間は `aria-expanded="true"` です。開くと最初の項目へフォーカスします
+- Esc、外側の押下、フォーカスが外へ出たとき、項目を選んだときに閉じます。Esc と項目の選択では、フォーカスを行のボタンへ戻します。Esc はカードだけを閉じ、外の Dialog や Drawer へは伝えません
+- メニューは `role="menu"` にせず、リンクとボタンを Tab で回ります
+- カードはパネルの上に出し、入らなければ下に出します。Popover API があるブラウザーではトップレイヤーに出すので、`overflow: hidden` のサイドバーやモーダルの Drawer の中でも切られません
+
+## アクセシビリティとスタイル
+
+カードは `role="dialog"`（モーダルではない）と `aria-label`（`cardLabel`）を持ちます。アバターは飾りなので読み上げから外し、行のボタンは名前と副題の文字で読ませます。
+
+パネルの地は `--koyori-color-surface-hover` です。カードの幅は `--koyori-user-panel-card-width`（既定 240px）、上の帯は `--koyori-user-panel-banner`（既定 `--koyori-color-accent-subtle`）で変えられます。メニューの行のホバーは Dropdown と同じ、項目の間を移る背景です。`destructive` の項目は `--koyori-color-danger` です。

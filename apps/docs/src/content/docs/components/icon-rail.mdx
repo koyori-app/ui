@@ -1,0 +1,81 @@
+---
+title: IconRail・IconRailItem
+description: 画面の左端に、アイコンだけの切り替えの列を出します。
+---
+
+import IconRailPreview from '../../../components/IconRailPreview.astro';
+
+IconRail は、テナントやワークスペースを切り替えるアイコンの列です。項目（IconRailItem）は名前をツールチップで出し、右クリックや長押しで項目のメニューを開けます。サイドバーを畳んだアイコンだけの状態は、[Sidebar](../sidebar/) の `rail` を使います。
+
+<IconRailPreview />
+
+## 使い方
+
+```vue
+<IconRail label="テナント">
+  <IconRailItem v-for="tenant in tenants" :key="tenant.id" :id="`rail-${tenant.id}`" :label="tenant.name"
+    :src="tenant.icon" :emoji="tenant.emoji" :selected="tenant.id === current"
+    :on-click="() => switchTo(tenant.id)" :on-menu="(position) => openMenu(tenant, position)" />
+  <IconRailSeparator />
+  <IconRailItem id="rail-add" label="テナントを追加" variant="action" :on-click="add">
+    <template #icon><PlusIcon /></template>
+  </IconRailItem>
+</IconRail>
+```
+
+```tsx
+<IconRail label="テナント">
+  {tenants.map(tenant => <IconRailItem key={tenant.id} id={`rail-${tenant.id}`} label={tenant.name} src={tenant.icon}
+    selected={tenant.id === current} onClick={() => switchTo(tenant.id)} onMenu={position => openMenu(tenant, position)} />)}
+  <IconRailSeparator />
+  <IconRailItem id="rail-add" label="テナントを追加" variant="action" icon={<PlusIcon />} onClick={add} />
+</IconRail>
+```
+
+- 項目の中身は [IconTile](../icon-tile/) と同じく、`src` → `emoji` → `label` の頭文字の順です
+- 選択は利用側が持ちます。`onClick` で今の項目を切り替え、`selected` を渡し直してください
+- `onMenu` の `position` は [ContextMenu](../context-menu/) の `x`・`y` にそのまま渡せます
+- 境目の線（右の枠など）はレールが持たないので、利用側で引きます
+
+## Props
+
+### IconRail
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `label` | `string` | 必須 | `nav` の読み上げ名 |
+| `children` | node / default slot | なし | IconRailItem と IconRailSeparator |
+
+### IconRailItem
+
+| 名前 | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `id` | `string` | 必須 | ツールチップの id。一意で変わらない値 |
+| `label` | `string` | 必須 | ボタンの読み上げ名とツールチップ |
+| `src` | `string` | なし | 画像 |
+| `emoji` | `string` | なし | 画像が無い・読めないときの絵文字 |
+| `selected` | `boolean` | `false` | 今いる項目。`aria-current="true"` を付ける |
+| `variant` | `'item' \| 'action'` | `'item'` | `action` は点線の丸で、中身は `icon`。選択の印は持たない |
+| `icon` | node / `#icon` スロット | なし | `action` の中身 |
+| `disabled` | `boolean` | `false` | 押せない。ツールチップも出さない |
+| `onClick` | `() => void` | なし | 押したとき |
+| `onMenu` | `(position) => void` | なし | 右クリック・Shift + F10・メニューキー・タッチの長押しのとき |
+
+IconRailSeparator は props を持たない、項目の間の線です（読み上げから外れます）。
+
+## 操作
+
+- 項目は Tab で順に回ります。項目はそれぞれ独立した操作で、項目ごとにメニューを受けるため、矢印キーでの移動はありません
+- ホバーとフォーカスでは、右にツールチップを出し、タイルが角丸 12px になって左のバーが 20px 伸びます。選択中の項目はバーが 32px です
+- `onMenu` があると、右クリックとキーボード（Shift + F10・メニューキー）でブラウザーのメニューを止めて `onMenu` を呼びます。キーボードからは座標が無いことがあり、そのときは項目の左下を渡します
+- タッチでは 500ms の長押しで `onMenu` を呼び、項目の左下を渡します。指が 10px を超えて動いたら（スクロール）取り消します。長押しのあとの click は捨て、`onClick` は呼びません
+- `onMenu` が無ければ、右クリックも長押しもブラウザーの既定のままです
+- 項目が入りきらなければ、レールが縦にスクロールします（スクロールバーは出しません）
+
+## アクセシビリティとスタイル
+
+レールは `nav` のランドマークです。項目は `button` で、`label` を `aria-label` に、同じ文をツールチップに出します。
+
+ホバーは Figma の設計に合わせて、タイルの形が変わって左のバーが伸びる動きにしています。項目は離れて並ぶ独立した操作なので、メニューなどで使う、項目の間を移る背景（`shared/highlight`）は使いません。
+
+幅は `--koyori-icon-rail-width`（既定 64px）、地は `--koyori-color-surface-raised` です。バーは `--koyori-color-selection-indicator`、選択中のタイルの地は `--koyori-color-selection` です。角丸とバーの動きは `prefers-reduced-motion` で止めます。
