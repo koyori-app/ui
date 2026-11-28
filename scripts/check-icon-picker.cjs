@@ -379,6 +379,15 @@ const { EMOJI_DATA } = emojiData;
       assert.equal(await dialog.getByRole('alert').getByText('絵文字を読み込めませんでした').count(), 1);
       assert.equal(await cells.count(), 6, 'おすすめは出たまま');
       await a11y();
+      // 検索中も失敗を伝え、カタログを探せていないので 0 件とは言わない。
+      const search = dialog.getByRole('searchbox', { name: '絵文字を検索' });
+      await search.fill('ねこ');
+      await page.waitForFunction(() => document.querySelectorAll('[data-cell]').length === 0);
+      assert.equal(await dialog.getByRole('alert').getByText('絵文字を読み込めませんでした').count(), 1, '検索中も失敗を出す');
+      assert.equal(await dialog.getByText('見つかりませんでした').count(), 0);
+      assert.equal(await dialog.locator('[aria-live="polite"]').textContent(), '', '件数を読み上げない');
+      await search.fill('');
+      await page.waitForFunction(() => document.querySelectorAll('[data-cell]').length === 6);
       // Chrome は失敗した import() を同じ文書の中では取り直さない（モジュールの対応表に失敗を残す）。
       // 再試行は読み込みをやり直すが、同じ失敗がもう一度届く。パネルは閉じず、フォーカスもパネルの中に残る。
       // 失敗を持ち越さないこと自体は、前半の createEmojiLoader の検査で確かめている。

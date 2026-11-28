@@ -93,7 +93,7 @@ export default function IconPicker(props: IconPickerProps) {
       return state.failed ? props.imageErrorMessage ?? '画像を読み込めませんでした' : '';
     },
     countText() {
-      if (!state.query.trim()) return '';
+      if (!state.query.trim() || state.dataState !== 'ready') return '';
       const count = pickerSections(props.emojis, state.query, state.dataState === 'ready' ? emojiCatalog() : null)
         .reduce((sum, section) => sum + section.entries.length, 0);
       return `検索結果 ${count} 件`;
@@ -370,16 +370,17 @@ export default function IconPicker(props: IconPickerProps) {
                     </div>
                   )}
                 </For>
-                <Show when={state.dataState === 'loading' && !state.query.trim()}>
+                {/* 検索中も出す。カタログが無い間の検索はおすすめだけを探すので、0 件と断定しない。 */}
+                <Show when={state.dataState === 'loading'}>
                   <div class={styles.status} role="status">読み込み中</div>
                 </Show>
-                <Show when={state.dataState === 'error' && !state.query.trim()}>
+                <Show when={state.dataState === 'error'}>
                   <div class={styles.status} role="alert">
                     <span>絵文字を読み込めませんでした</span>
                     <Button variant="secondary" label="もう一度読み込む" onClick={() => state.retry()} />
                   </div>
                 </Show>
-                <Show when={state.query.trim() && state.resultCount() === 0}>
+                <Show when={state.dataState === 'ready' && state.query.trim() && state.resultCount() === 0}>
                   <p class={styles.status}>見つかりませんでした</p>
                 </Show>
               </div>
