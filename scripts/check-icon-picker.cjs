@@ -2,31 +2,29 @@
 // ICON_PICKER_TEST_FRAMEWORK=vue などで片方だけを検証できる。
 const assert = require('node:assert/strict');
 const { spawn, execFileSync } = require('node:child_process');
-const { mkdtempSync, rmSync, readFileSync, readdirSync } = require('node:fs');
+const { copyFileSync, existsSync, mkdtempSync, rmSync, readFileSync, readdirSync, writeFileSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { join, resolve } = require('node:path');
+const { fileURLToPath, pathToFileURL } = require('node:url');
 
 const root = resolve(__dirname, '..');
 const compiled = mkdtempSync(join(tmpdir(), 'koyori-icon-picker-'));
-// icon-picker.ts は読み込みのときに require するので、終わるまで消さない。
 process.on('exit', () => rmSync(compiled, { recursive: true, force: true }));
-let iconPicker;
-let emojiData;
-{
-  // icon-picker.ts が import('./emoji-data') するので、両方を一緒に出す。
-  execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--ignoreConfig',
-    '--module', 'commonjs', '--target', 'ES2022', '--skipLibCheck', '--outDir', compiled,
-    resolve(root, 'components/IconPicker/icon-picker.ts'), resolve(root, 'components/IconPicker/emoji-data.ts')], { stdio: 'inherit' });
-  iconPicker = require(join(compiled, 'icon-picker.js'));
-  emojiData = require(join(compiled, 'emoji-data.js'));
-}
-const {
-  uniqueEmojis, emojiKey, normalizeEmojiQuery, buildEmojiCatalog, createEmojiLoader, loadEmojiCatalog, emojiCatalog,
-  emojiName, recommendedEntries, searchEmojis, pickerSections, nextCell, currentCell,
-} = iconPicker;
-const { EMOJI_DATA } = emojiData;
+// icon-picker.ts は import.meta.url を使うので ES モジュールとして出し、データを隣に置く。
+execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--ignoreConfig',
+  '--module', 'esnext', '--target', 'ES2022', '--lib', 'ES2022,DOM', '--skipLibCheck', '--outDir', compiled,
+  resolve(root, 'components/IconPicker/icon-picker.ts')], { stdio: 'inherit' });
+writeFileSync(join(compiled, 'package.json'), '{"type":"module"}');
+copyFileSync(resolve(root, 'components/IconPicker/emoji-data.json'), join(compiled, 'emoji-data.json'));
+const EMOJI_DATA = JSON.parse(readFileSync(resolve(root, 'components/IconPicker/emoji-data.json'), 'utf8'));
+const response = (status, json) => ({ ok: status >= 200 && status < 300, status, json: async () => json() });
 
 (async () => {
+  const {
+    uniqueEmojis, emojiKey, normalizeEmojiQuery, buildEmojiCatalog, createEmojiLoader, fetchEmojiData, loadEmojiCatalog, emojiCatalog,
+    emojiName, recommendedEntries, searchEmojis, pickerSections, nextCell, currentCell,
+  } = await import(pathToFileURL(join(compiled, 'icon-picker.js')).href);
+
   // データ: 1,238 個を 7 つのカテゴリに。人と体・コンポーネント・旗は含めない。
   assert.deepEqual(EMOJI_DATA.map(([label]) => label), ['物と道具', '乗り物と場所', '活動', '動物と自然', '食べ物と飲み物', '記号', '顔と気持ち']);
   assert.deepEqual(EMOJI_DATA.map(([, rows]) => rows.length), [261, 218, 85, 157, 128, 223, 166]);
@@ -48,9 +46,18 @@ const { EMOJI_DATA } = emojiData;
   // 読み込み前は名前を持たない。読み込み後は日本語の名前。
   assert.equal(emojiCatalog(), null);
   assert.equal(emojiName('🚀'), '🚀', '読み込み前は絵文字そのもの');
+  // Node は file: を fetch できないので、fetch を差し替えて icon-picker.js の隣の emoji-data.json を読ませる。
+  const fetched = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    fetched.push(String(url));
+    return response(200, () => JSON.parse(readFileSync(fileURLToPath(url), 'utf8')));
+  };
   const catalog = await loadEmojiCatalog();
   assert.equal(emojiCatalog(), catalog, '成功した結果は残す');
   assert.equal(await loadEmojiCatalog(), catalog, '2 回目は同じ結果');
+  globalThis.fetch = realFetch;
+  assert.deepEqual(fetched, [pathToFileURL(join(compiled, 'emoji-data.json')).href], 'モジュールの隣の emoji-data.json を 1 回だけ取りに行く');
   assert.equal(emojiName('🚀'), 'ロケット');
   assert.equal(emojiName('🛠'), 'ハンマーとレンチ', 'U+FE0F の有無が違っても名前を引ける');
 
@@ -97,6 +104,25 @@ const { EMOJI_DATA } = emojiData;
   assert.equal(calls, 2, '失敗の次は読み直し、同時の 2 回は 1 回だけ読む');
   assert.equal(first.sections.reduce((sum, section) => sum + section.entries.length, 0), 1238);
   assert.equal(buildEmojiCatalog([['a', [['🚀', 'ロケット', '宇宙 発射']]]]).byKey.get('🚀').search, 'ロケット\n宇宙\n発射');
+
+  // fetch は 404 や HTML（SPA の fallback）でも解決するので、どれも失敗にする。
+  const html = () => { throw new SyntaxError("Unexpected token '<'"); };
+  await assert.rejects(fetchEmojiData('x.json', async () => response(404, () => EMOJI_DATA)), /HTTP 404/, '404 は失敗');
+  await assert.rejects(fetchEmojiData('x.json', async () => response(500, () => EMOJI_DATA)), /HTTP 500/, '500 は失敗');
+  await assert.rejects(fetchEmojiData('x.json', async () => response(200, html)), SyntaxError, 'JSON でない本文は失敗');
+  await assert.rejects(fetchEmojiData('x.json', async () => response(200, () => ({ data: EMOJI_DATA }))), /形が違います/, '配列でない JSON は失敗');
+  assert.equal(await fetchEmojiData('x.json', async () => response(200, () => EMOJI_DATA)), EMOJI_DATA, '正常なら配列を返す');
+  // 失敗の次の呼び出しは、新しい要求を出して読み直す。
+  const statuses = [404, 200];
+  const requested = [];
+  const fetchLoader = createEmojiLoader(() => fetchEmojiData('emoji-data.json', async (url) => {
+    requested.push(url);
+    return response(statuses.shift(), () => EMOJI_DATA);
+  }));
+  await assert.rejects(fetchLoader.load(), /HTTP 404/);
+  assert.equal(fetchLoader.current(), null, '失敗は持ち越さない');
+  assert.equal((await fetchLoader.load()).sections.reduce((sum, section) => sum + section.entries.length, 0), 1238);
+  assert.deepEqual(requested, ['emoji-data.json', 'emoji-data.json'], '再試行で fetch をもう一度呼ぶ');
 
   // 節が [8, 20, 3]・8 列: 0-7 / 8-15 16-23 24-27 / 28-30
   const sizes = [8, 20, 3];
@@ -190,7 +216,16 @@ const { EMOJI_DATA } = emojiData;
     assert.match(source, /nextCell/, `${name} 版も同じ移動の計算を通す`);
   }
   for (const framework of ['vue', 'react']) {
-    assert.match(read(`packages/${framework}/src/generated/components/IconPicker/icon-picker.ts`), /import\('\.\/emoji-data'\)/, `${framework} 版はデータを遅延読み込みする`);
+    const generated = `packages/${framework}/src/generated/components/IconPicker`;
+    assert(read(`${generated}/icon-picker.ts`).includes("new URL('./emoji-data.json', import.meta.url)"), `${framework} 版はデータを fetch で遅延読み込みする`);
+    assert.equal(read(`${generated}/emoji-data.json`), read('components/IconPicker/emoji-data.json'), `${framework} 版の隣にデータがある`);
+    // 配布物: 式は利用側のバンドラーが解決するので、そのまま 1 つだけ残し、データは埋め込まず別のファイルで出す。
+    assert(existsSync(resolve(root, `packages/${framework}/dist/index.js`)), `packages/${framework}/dist が無い。pnpm --filter './packages/*' build の後に回す`);
+    const bundle = read(`packages/${framework}/dist/index.js`);
+    assert.equal(bundle.split('new URL("./emoji-data.json", import.meta.url)').length - 1, 1, `${framework} の index.js に式がそのまま 1 つ`);
+    assert(!bundle.includes('data:application/json'), `${framework} の index.js にデータを埋め込まない`);
+    const shipped = JSON.parse(read(`packages/${framework}/dist/emoji-data.json`));
+    assert.equal(shipped.flatMap(([, entries]) => entries).length, 1238, `${framework} の dist/emoji-data.json は 1,238 個`);
   }
   console.log('IconPicker のデータ・検索・読み込み・キー移動、生成物を確認しました。');
 
@@ -372,6 +407,9 @@ const { EMOJI_DATA } = emojiData;
 
       // 読み込みの失敗: おすすめは選べる。「もう一度読み込む」で読み直す。
       failing = true;
+      let dataRequests = 0;
+      const countData = (request) => { if (/emoji-data/.test(request.url())) dataRequests++; };
+      page.on('request', countData);
       await page.route(/emoji-data/, (route) => route.abort());
       await story('default');
       await trigger.click();
@@ -388,22 +426,41 @@ const { EMOJI_DATA } = emojiData;
       assert.equal(await dialog.locator('[aria-live="polite"]').textContent(), '', '件数を読み上げない');
       await search.fill('');
       await page.waitForFunction(() => document.querySelectorAll('[data-cell]').length === 6);
-      // Chrome は失敗した import() を同じ文書の中では取り直さない（モジュールの対応表に失敗を残す）。
-      // 再試行は読み込みをやり直すが、同じ失敗がもう一度届く。パネルは閉じず、フォーカスもパネルの中に残る。
-      // 失敗を持ち越さないこと自体は、前半の createEmojiLoader の検査で確かめている。
+      // 再試行は新しい要求を出す。同じ文書のまま読み込め、パネルは閉じず、フォーカスもパネルの中に残る。
+      assert.equal(dataRequests, 1);
       await page.unroute(/emoji-data/);
       await dialog.getByRole('button', { name: 'もう一度読み込む', exact: true }).click();
       assert.equal(await focused(), '絵文字を検索', 'ボタンが消える前に検索欄へ移す');
-      await dialog.getByRole('alert').waitFor();
+      await page.waitForFunction(() => document.querySelectorAll('[data-cell]').length === 6 + 1238, null, { timeout: 5000 })
+        .catch(async () => { throw new Error(`${framework}: 再試行で読み込めない（${await cells.count()} 個）`); });
+      assert.equal(await dialog.getByRole('alert').count(), 0, '読み込めたら失敗の表示を消す');
       assert.equal(await dialog.isVisible(), true, '再試行でパネルは閉じない');
-      assert.equal(await cells.count(), 6);
+      assert.equal(dataRequests, 2, '再試行でデータをもう一度取りに行く');
       await page.keyboard.press('Escape');
       await closed('Escape で閉じる');
-      // 読み直した文書では読み込める。
+
+      // 再試行を押さず、閉じて開き直しても読み直す。
+      dataRequests = 0;
+      await page.route(/emoji-data/, (route) => route.abort());
       await story('default');
-      await open();
+      await trigger.click();
+      await dialog.getByRole('alert').waitFor();
+      await page.unroute(/emoji-data/);
       await page.keyboard.press('Escape');
       await closed('Escape で閉じる');
+      await open();
+      assert.equal(dataRequests, 2, '開き直すとデータをもう一度取りに行く');
+      await page.keyboard.press('Escape');
+      await closed('Escape で閉じる');
+
+      // fetch は 404 でも解決する。本文が読める JSON でも、HTTP のエラーは失敗として伝える。
+      await page.route(/emoji-data/, (route) => route.fulfill({ status: 404, contentType: 'application/json', body: '[]' }));
+      await story('default');
+      await trigger.click();
+      await dialog.getByRole('alert').waitFor();
+      assert.equal(await cells.count(), 6, '404 でもおすすめは出たまま');
+      await page.unroute(/emoji-data/);
+      page.off('request', countData);
       failing = false;
 
       // 画像があるときは画像タブで開く。外すと絵文字の表示に戻り、パネルは開いたまま。

@@ -1,5 +1,7 @@
 /* 候補の整理・検索・キー移動の計算と、絵文字データの読み込みはここに置き、ブラウザーなしで検証する。 */
-import type { EmojiGroupData } from './emoji-data';
+
+/** 絵文字データ（emoji-data.json）の形。[見出し, [絵文字, 名前, 空白区切りのタグ][]] */
+export type EmojiGroupData = [label: string, entries: [emoji: string, name: string, tags: string][]];
 
 export interface EmojiEntry {
   emoji: string;
@@ -67,13 +69,13 @@ export function buildEmojiCatalog(data: EmojiGroupData[]): EmojiCatalog {
 }
 
 /* 読み込みは 1 つだけ持つ。成功した結果は残し、失敗は持ち越さず次の呼び出しで読み直す。 */
-export function createEmojiLoader(importer: () => Promise<EmojiGroupData[]>) {
+export function createEmojiLoader(read: () => Promise<EmojiGroupData[]>) {
   let pending: Promise<EmojiCatalog> | null = null;
   let loaded: EmojiCatalog | null = null;
   return {
     load() {
       if (loaded) return Promise.resolve(loaded);
-      pending ??= importer().then(
+      pending ??= read().then(
         (data) => {
           loaded = buildEmojiCatalog(data);
           return loaded;
@@ -91,7 +93,18 @@ export function createEmojiLoader(importer: () => Promise<EmojiGroupData[]>) {
   };
 }
 
-const loader = createEmojiLoader(() => import('./emoji-data').then((module) => module.EMOJI_DATA));
+/* fetch は 404 や SPA の fallback（HTML）でも解決するので、HTTP のエラーと配列でない本文も失敗にする。 */
+export async function fetchEmojiData(url: URL | string, fetcher: typeof fetch = fetch): Promise<EmojiGroupData[]> {
+  const response = await fetcher(url);
+  if (!response.ok) throw new Error(`絵文字データを読めませんでした（HTTP ${response.status}）`);
+  const data: unknown = await response.json();
+  if (!Array.isArray(data)) throw new Error('絵文字データの形が違います');
+  return data as EmojiGroupData[];
+}
+
+/* import() と違い、fetch の失敗はモジュールの対応表に残らないので、次の呼び出しは新しい要求になる。
+   式は利用側のバンドラーがアセットとして解決する。scripts/emoji-data-asset.mjs が文字列で探すので、書き方を変えない。 */
+const loader = createEmojiLoader(() => fetchEmojiData(new URL('./emoji-data.json', import.meta.url)));
 
 export function loadEmojiCatalog() {
   return loader.load();

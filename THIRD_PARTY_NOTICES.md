@@ -68,7 +68,7 @@ SOFTWARE.
 - Source: https://github.com/milesj/emojibase
 - Package: `emojibase-data@18.0.0`（`ja/data.json`）
 - License source: https://github.com/milesj/emojibase/blob/master/LICENSE
-- 対象: `components/IconPicker/emoji-data.ts`（`scripts/build-emoji-data.mjs` が作る生成物） とそこから生成する Vue・React のコード
+- 対象: `components/IconPicker/emoji-data.json`（`scripts/build-emoji-data.mjs` が作る生成物） とそこから生成する Vue・React のコード
 - 変更: 絵文字・日本語の名前・タグだけを取り出し、人と体・コンポーネント・旗と Emoji 15.0 より新しいものを除き、カテゴリの見出しと順を付け直した。
 - License: MIT
 
@@ -100,7 +100,7 @@ SOFTWARE.
 
 - Source: https://cldr.unicode.org/
 - License source: https://www.unicode.org/license.txt
-- 対象: 上の emojibase-data の日本語の名前とタグ（元は Unicode CLDR のアノテーション）。`components/IconPicker/emoji-data.ts` とそこから生成する Vue・React のコード
+- 対象: 上の emojibase-data の日本語の名前とタグ（元は Unicode CLDR のアノテーション）。`components/IconPicker/emoji-data.json` とそこから生成する Vue・React のコード
 - License: Unicode License v3
 
 ```text

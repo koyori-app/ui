@@ -486,7 +486,9 @@ Button の中では `icon`（Vue は `#icon`）に `hideLabel` で置き、ボ�
 `label` と、現在値の `emoji`・`imageUrl` を渡します。`imageUrl` があれば絵文字より優先して表示します。
 絵文字は部品が持つ 1,238 個から名前とタグで検索して選べます。`emojis`（省略可。重複は除く）は「おすすめ」として先頭に出します。
 データは emojibase-data 18.0.0 の日本語のデータから `pnpm emoji-data`（`scripts/build-emoji-data.mjs`）で
-`components/IconPicker/emoji-data.ts` に作り、初めて開いたときに別チャンクで読みます（gzip で約 27KB）。
+`components/IconPicker/emoji-data.json` に作り、初めて開いたときに `fetch` で読みます（gzip で約 27KB）。
+ライブラリのビルドでは `scripts/emoji-data-asset.mjs` が `index.js` に埋め込まずに `dist/emoji-data.json` として出し、
+`new URL('./emoji-data.json', import.meta.url)` の解決は利用側のバンドラーに任せます。
 `node scripts/build-emoji-data.mjs --check` は作り直した結果と違えば失敗します（CI でも回します）。
 MIME・サイズの検証、アップロード、保存は利用側で行います。`onImageSelect` は選ばれた `File` をそのまま渡し、
 同じファイルを選び直せるよう通知のあとに入力欄の値を空に戻します。`onImageSelect` を渡さなければ「画像」のタブを出しません。
